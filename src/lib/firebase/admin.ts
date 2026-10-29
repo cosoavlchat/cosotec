@@ -6,8 +6,15 @@ import { AuditLogEntry } from "@/types/audit";
 
 const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "cosoteco";
 
-// Configuración de emuladores para el servidor
-if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true" || process.env.USE_FIREBASE_EMULATOR === "true") {
+// Configuración de emuladores para desarrollo local o cuando no haya credenciales de Google Cloud
+const hasGcpCredentials = Boolean(
+  process.env.FIREBASE_SERVICE_ACCOUNT_KEY ||
+  process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+  process.env.K_SERVICE
+);
+
+if (!hasGcpCredentials || process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === "true" || process.env.USE_FIREBASE_EMULATOR === "true") {
+  process.env.METADATA_SERVER_DETECTION = "none";
   if (!process.env.FIRESTORE_EMULATOR_HOST) {
     process.env.FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080";
   }
@@ -48,6 +55,39 @@ export const adminApp = getAdminApp();
 export const adminDb = getFirestore(adminApp);
 export const adminAuth = getAuth(adminApp);
 export const adminStorage = getStorage(adminApp);
+
+// Detector instantáneo de emulador local (evita bloqueos de red gRPC de 45s cuando no está levantado)
+let emulatorChecked = false;
+let emulatorOnline = false;
+let lastCheckMs = 0;
+
+export async function isFirestoreReady(): Promise<boolean> {
+  if (hasGcpCredentials) return true; // En producción con credenciales siempre se conecta a Cloud Firestore
+  const now = Date.now();
+  if (emulatorChecked && now - lastCheckMs < 5000) {
+    return emulatorOnline;
+  }
+  const net = await import("net");
+  return new Promise((resolve) => {
+    const socket = net.createConnection({ port: 8080, host: "127.0.0.1", timeout: 150 });
+    socket.on("connect", () => {
+      socket.destroy();
+      emulatorChecked = true;
+      emulatorOnline = true;
+      lastCheckMs = Date.now();
+      resolve(true);
+    });
+    const onFail = () => {
+      socket.destroy();
+      emulatorChecked = true;
+      emulatorOnline = false;
+      lastCheckMs = Date.now();
+      resolve(false);
+    };
+    socket.on("error", onFail);
+    socket.on("timeout", onFail);
+  });
+}
 
 /**
  * Registra una entrada en la colección `auditLog`.

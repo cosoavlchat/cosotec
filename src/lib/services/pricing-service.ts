@@ -1,13 +1,17 @@
-import { adminDb, recordAuditLog } from "@/lib/firebase/admin";
+import { adminDb, recordAuditLog, isFirestoreReady } from "@/lib/firebase/admin";
 import { PricingSettings, TravelFee } from "@/types/pricing";
 import { PricingSettingsSchema, TravelFeeSchema } from "@/lib/validations/pricing";
+import { initialPricingSettings, initialTravelFees } from "../../../scripts/seed-data";
 
 export async function getPricingSettings(): Promise<PricingSettings> {
-  const snap = await adminDb.collection("settings").doc("pricing").get();
-  if (!snap.exists) {
-    throw new Error("Configuración de precios (settings/pricing) no encontrada en Firestore");
-  }
-  return snap.data() as PricingSettings;
+  if (!(await isFirestoreReady())) return initialPricingSettings;
+  try {
+    const snap = await adminDb.collection("settings").doc("pricing").get();
+    if (snap.exists && snap.data()) {
+      return snap.data() as PricingSettings;
+    }
+  } catch {}
+  return initialPricingSettings;
 }
 
 export async function updatePricingSettings(
@@ -38,8 +42,14 @@ export async function updatePricingSettings(
 }
 
 export async function getTravelFees(): Promise<TravelFee[]> {
-  const snap = await adminDb.collection("travelFees").orderBy("estadoNombre", "asc").get();
-  return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as TravelFee));
+  if (!(await isFirestoreReady())) return initialTravelFees;
+  try {
+    const snap = await adminDb.collection("travelFees").orderBy("estadoNombre", "asc").get();
+    if (!snap.empty) {
+      return snap.docs.map((d: any) => ({ id: d.id, ...d.data() } as TravelFee));
+    }
+  } catch {}
+  return initialTravelFees;
 }
 
 export async function updateTravelFee(

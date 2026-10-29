@@ -162,3 +162,4 @@ describe("Reglas de Seguridad Firestore (firestore.rules)", () => {
     });
   });
 });
+

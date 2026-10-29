@@ -8,8 +8,8 @@ export const initialPricingSettings: PricingSettings = {
     porcentaje: 10,
   },
   topeDescuentoVendedor: 5,
-  planesPago: ["contado", "credi_contado", "enganche_mensualidades", "msi"],
-  msi: [3, 6, 9, 12],
+  planesPago: ["contado", "credi_contado", "enganche_mensualidades"],
+  msi: [], // REGLA 4: Vacío por defecto; no mostrar "desde $X/mes" hasta que se configuren
   comisionMsiAbsorbe: false,
   vigenciaDias: 15,
   ciudadesSinCosto: ["Toluca", "Metepec", "Ciudad de México", "Monterrey", "Guadalajara", "Querétaro"],
@@ -29,6 +29,90 @@ export const initialBankSettings: BankSettings = {
   clabe: "012180001234567890",
   cuenta: "0123456789",
   convenio: "CPE-1234",
+};
+
+export const initialFeaturesSettings = {
+  modoCotizadorWhatsapp: true, // REGLA 6: Enlace a WhatsApp mientras no exista checkout
+};
+
+export const initialAnalyticsSettings = {
+  ga4Id: "", // REGLA 10: Vacío = desactivado
+  metaPixelId: "", // REGLA 10: Vacío = desactivado
+};
+
+// Colección content (para edición desde admin)
+export const initialContentData = {
+  stats: {
+    cifraDispositivos: "48,000+",
+    dispositivosTexto: "48,000 dispositivos vendidos en Norteamérica y Sudamérica",
+    gobiernosTexto:
+      "Equipo avalado por el sistema nacional de seguridad, instalado en gobiernos de Nuevo León, Tamaulipas y Puebla",
+    aniosExperiencia: "15+",
+    experienciaTexto: "Años de liderazgo en rastreo e ingeniería telemática",
+  },
+  hero: {
+    badge: "Ingeniería Mexicana en Telemetría y Seguridad",
+    titulo: "Protege lo que mueve a tu empresa y a tu familia",
+    subtitulo:
+      "Rastreo satelital GPS de alta precisión, DashCams con IA y seguridad activa contra inhibidores de señal (jammer). Instalación profesional en 48–72 horas.",
+  },
+  faq: [
+    {
+      pregunta: "¿Cuánto tiempo toma la instalación de un GPS o DashCam?",
+      respuesta:
+        "Una vez confirmado el pedido, la instalación se realiza dentro de las 48 a 72 horas hábiles. El tiempo por unidad es de 1.5 a 2 horas aproximadamente, realizado por instaladores técnicos calificados.",
+    },
+    {
+      pregunta: "¿En qué ciudades la instalación no tiene costo de viáticos?",
+      respuesta:
+        "La instalación no genera costo adicional de viáticos en Toluca, Metepec, Ciudad de México (CDMX) y área conurbada, Monterrey, Guadalajara y Querétaro.",
+    },
+    {
+      pregunta: "¿Qué incluye la compra de un equipo GPS?",
+      respuesta:
+        "Incluye el dispositivo homologado, instalación técnica oculta, tarjeta SIM multi-carrier y la licencia de plataforma de rastreo en tiempo real para app móvil y computadora.",
+    },
+    {
+      pregunta: "¿Qué sucede si utilizan un inhibidor de señal (jammer)?",
+      respuesta:
+        "Contamos con la solución Anti-Jammer que detecta la presencia del inhibidor de frecuencia y ejecuta de inmediato el corte o bloqueo a marcha del motor, evitando que la unidad sea desplazada.",
+    },
+    {
+      pregunta: "¿Puedo monitorear las cámaras de la DashCam en vivo?",
+      respuesta:
+        "Sí. Los modelos JC181 y JC450 permiten transmisión de video en vivo de cabina y carretera hacia tu celular o computadora mediante la red 4G LTE y respaldo en la nube.",
+    },
+  ],
+  accesos: {
+    gtSat: {
+      nombre: "Ubicación Satelital GT-SAT",
+      descripcion: "Monitoreo en tiempo real de flotas e historial de ruta.",
+      url: "http://cosoavl.tracktracer.com:8080/track/Track",
+    },
+    sgl: {
+      nombre: "Sistema de Gestión Logística (SGL)",
+      descripcion: "Despacho, kilometraje y control operativo.",
+      url: "http://www.tracktracer.com/cosoavl/",
+    },
+    sphereGt: {
+      nombre: "Ubicación Satelital SGL+",
+      descripcion: "Telemetría avanzada SphereGT y geocercas dinámicas.",
+      url: "http://cosoavl.spheregt.com",
+    },
+    adminSphere: {
+      nombre: "Administración SGL+",
+      descripcion: "Consola de administración de cuentas y configuraciones.",
+      url: "http://cosoavl.spheregt.com/admin/index.html",
+    },
+    videoDashcam: {
+      nombre: "Plataforma de Video DashCam",
+      descripcion: "Gestión de video en vivo y eventos de cabina (URL en proceso de asignación).",
+      url: "", // Pendiente del cliente
+    },
+  },
+  legales: {
+    avisoRevision: "Documento en revisión por el área jurídica y comercial de CoSoAVL.",
+  },
 };
 
 export const initialTravelFees: TravelFee[] = [
@@ -67,7 +151,6 @@ export const initialTravelFees: TravelFee[] = [
 ];
 
 export const initialProducts: Product[] = [
-  // Equipos GPS individuales
   {
     id: "gps-estandar-sin-telemetria",
     slug: "gps-estandar-sin-telemetria",
@@ -76,9 +159,9 @@ export const initialProducts: Product[] = [
     categoria: "gps",
     descripcionCorta: "Ideal para cualquier unidad que no requiere botón de pánico ni accesorios adicionales.",
     descripcion: "Dispositivo de rastreo satelital básico con conectividad multi-carrier y reporte periódico.",
-    queIncluye: ["Dispositivo GPS", "Arnés de instalación", "SIM multi-operador", "Instalación estándar"],
+    queIncluye: ["Dispositivo GPS 4G", "Arnés de instalación", "SIM multi-operador", "Instalación estándar"],
     precioSinIvaCentavos: 399999, // $3,999.99
-    imagenes: ["https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["auto", "camioneta", "taxi", "moto"],
     objetivos: ["robo", "control"],
     esEquipoPrincipal: true,
@@ -96,7 +179,7 @@ export const initialProducts: Product[] = [
     descripcion: "Localizador GPS diseñado para operación continua en vehículos de alquiler o transporte particular.",
     queIncluye: ["Equipo GPS 4G", "Botón de pánico", "SIM 4G", "Licencia anual con app"],
     precioSinIvaCentavos: 517718, // $5,177.18
-    imagenes: ["https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["taxi", "apps", "auto"],
     objetivos: ["robo", "control"],
     esEquipoPrincipal: true,
@@ -113,8 +196,8 @@ export const initialProducts: Product[] = [
     descripcionCorta: "Para autos y camionetas particulares o de trabajo ligero.",
     descripcion: "Rastreo confiable con paro de motor remoto, alertas de velocidad y encendido.",
     queIncluye: ["Dispositivo GPS", "Relevador de paro de motor", "Instalación oculta", "SIM 4G"],
-    precioSinIvaCentavos: 737700, // $7,377.00 (Inconsistencia con cotización de $5,500)
-    imagenes: ["https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=600&q=80"],
+    precioSinIvaCentavos: 737700, // $7,377.00
+    imagenes: [],
     tiposUnidad: ["auto", "camioneta"],
     objetivos: ["robo", "control"],
     esEquipoPrincipal: true,
@@ -132,7 +215,7 @@ export const initialProducts: Product[] = [
     descripcion: "Protección contra descargas de batería, resistente al agua y polvo (IP65).",
     queIncluye: ["GPS sellado impermeable", "Arnés con fusible", "Corte de corriente", "SIM 4G"],
     precioSinIvaCentavos: 737700, // $7,377.00
-    imagenes: ["https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["moto"],
     objetivos: ["robo"],
     esEquipoPrincipal: true,
@@ -150,7 +233,7 @@ export const initialProducts: Product[] = [
     descripcion: "Sin cables de instalación requeridos, fijación magnética de alta adherencia.",
     queIncluye: ["Unidad GPS portátil", "Batería de larga duración (3 días continuos)", "Cargador", "SIM 4G"],
     precioSinIvaCentavos: 757700, // $7,577.00
-    imagenes: ["https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["caja_seca", "caja_refrigerada", "carga"],
     objetivos: ["robo", "carga"],
     esEquipoPrincipal: true,
@@ -168,7 +251,7 @@ export const initialProducts: Product[] = [
     descripcion: "Soporta vibraciones intensas y entradas análogas/digitales para sensores.",
     queIncluye: ["GPS de uso pesado", "Botón de pánico", "Antenas externas", "SIM 4G industrial"],
     precioSinIvaCentavos: 797700, // $7,977.00
-    imagenes: ["https://images.unsplash.com/photo-1519003722824-194d4455a60c?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["camion", "volteo", "autobus"],
     objetivos: ["control", "robo"],
     esEquipoPrincipal: true,
@@ -186,7 +269,7 @@ export const initialProducts: Product[] = [
     descripcion: "Medición exacta de horómetros de motor, voltaje de batería y geocercas en obra.",
     queIncluye: ["Dispositivo reforzado IP67", "Sensor de encendido/horómetro", "Instalación blindada"],
     precioSinIvaCentavos: 817700, // $8,177.00
-    imagenes: ["https://images.unsplash.com/photo-1578328819058-b69f3a3b0f6b?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["maquinaria"],
     objetivos: ["control", "robo"],
     esEquipoPrincipal: true,
@@ -204,7 +287,7 @@ export const initialProducts: Product[] = [
     descripcion: "Detección de enganche/desenganche de tractocamión y monitoreo de batería propia.",
     queIncluye: ["Dispositivo GPS con batería de respaldo extendida", "Caja sellada IP67", "Instalación en chasis"],
     precioSinIvaCentavos: 837700, // $8,377.00
-    imagenes: ["https://images.unsplash.com/photo-1601584115197-04ecc0da31d7?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["caja_seca", "caja_refrigerada"],
     objetivos: ["robo", "carga"],
     esEquipoPrincipal: true,
@@ -222,7 +305,7 @@ export const initialProducts: Product[] = [
     descripcion: "Telemetría avanzada, compatible con sensores de combustible, anti-jammer y botón SOS.",
     queIncluye: ["GPS Profesional 4G", "Botón de pánico oculto", "Paro de motor seguro", "Instalación profesional"],
     precioSinIvaCentavos: 887700, // $8,877.00
-    imagenes: ["https://images.unsplash.com/photo-1501700493788-fa1a4fc9fe62?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["tractocamion", "camion"],
     objetivos: ["robo", "control", "combustible"],
     esEquipoPrincipal: true,
@@ -240,7 +323,7 @@ export const initialProducts: Product[] = [
     descripcion: "Equipo para seguimiento encubierto de carga o contenedores sin fuente de poder.",
     queIncluye: ["GPS portátil", "Batería de 15 días", "Imanes de neodimio de uso rudo", "Cargador"],
     precioSinIvaCentavos: 987700, // $9,877.00
-    imagenes: ["https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     tiposUnidad: ["caja_seca", "caja_refrigerada", "carga"],
     objetivos: ["robo"],
     esEquipoPrincipal: true,
@@ -248,8 +331,6 @@ export const initialProducts: Product[] = [
     orden: 10,
     revisarPrecio: true, // REGLA: marcar revisarPrecio en GPS Portable 15-D
   },
-
-  // Accesorios y Sensores
   {
     id: "boton-panico",
     slug: "boton-panico",
@@ -260,70 +341,10 @@ export const initialProducts: Product[] = [
     descripcion: "Genera evento de emergencia prioritario visible en plataforma y vía notificación push.",
     queIncluye: ["Botón micro-switch con cableado blindado e integración"],
     precioSinIvaCentavos: 37500, // $375.00
-    imagenes: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     esEquipoPrincipal: false,
     activo: true,
     orden: 20,
-  },
-  {
-    id: "equipo-senuelo-gtx3",
-    slug: "equipo-senuelo-gtx3",
-    nombreComercial: "Equipo Señuelo GTX3",
-    modelo: "GTX3-DUMMY",
-    categoria: "seguridad",
-    descripcionCorta: "Dispositivo de distracción para casos de asalto con desconexión fingida.",
-    descripcion: "Al ser localizado por asaltantes, da la impresión de haber desconectado el GPS principal.",
-    queIncluye: ["Equipo señuelo", "Cableado visible estándar"],
-    precioSinIvaCentavos: 50000, // $500.00
-    imagenes: ["https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 21,
-  },
-  {
-    id: "caja-iman-gl200-gl300",
-    slug: "caja-iman-gl200-gl300",
-    nombreComercial: "Caja Imán GL200 y GL300",
-    modelo: "BOX-MAG",
-    categoria: "accesorio",
-    descripcionCorta: "Caja magnética de alta fijación para GPS portátiles.",
-    descripcion: "Resistencia de hasta 40 kg de tracción para colocar en chasis metálicos.",
-    queIncluye: ["Caja plástica reforzada con 2 imanes de neodimio"],
-    precioSinIvaCentavos: 52500, // $525.00
-    imagenes: ["https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 22,
-  },
-  {
-    id: "desinstalacion",
-    slug: "desinstalacion",
-    nombreComercial: "Servicio de Desinstalación",
-    modelo: "SRV-DES",
-    categoria: "servicio",
-    descripcionCorta: "Retiro cuidadoso de equipo GPS o DashCam en taller o a domicilio.",
-    descripcion: "Reacondicionamiento de arnés y cables originales del vehículo.",
-    queIncluye: ["Mano de obra técnica calificada y encintado térmico"],
-    precioSinIvaCentavos: 55000, // $550.00
-    imagenes: ["https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 23,
-  },
-  {
-    id: "antena-gps-externa",
-    slug: "antena-gps-externa",
-    nombreComercial: "Antena GPS Externa",
-    modelo: "ANT-EXT",
-    categoria: "accesorio",
-    descripcionCorta: "Mejora la recepción satelital en cabinas blindadas o zonas rurales complejas.",
-    descripcion: "Antena activa con base magnética y cable de 3 metros.",
-    queIncluye: ["Antena externa amplificada"],
-    precioSinIvaCentavos: 80000, // $800.00
-    imagenes: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 24,
   },
   {
     id: "camara-externa-ip67",
@@ -335,85 +356,10 @@ export const initialProducts: Product[] = [
     descripcion: "Visión nocturna por infrarrojos y certificación IP67 contra agua a presión y polvo.",
     queIncluye: ["Cámara 2 MP", "Cable blindado de 5 m", "Soportes de montaje"],
     precioSinIvaCentavos: 95000, // $950.00
-    imagenes: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     esEquipoPrincipal: false,
     activo: true,
     orden: 25,
-  },
-  {
-    id: "instalacion-auto-camioneta-tracto",
-    slug: "instalacion-auto-camioneta-tracto",
-    nombreComercial: "Instalación Auto, Camioneta y Tracto",
-    modelo: "SRV-INS-STD",
-    categoria: "servicio",
-    descripcionCorta: "Instalación profesional oculta sin perder garantía de la agencia del vehículo.",
-    descripcion: "Conexión a caja de fusibles mediante arnés con protección térmica.",
-    queIncluye: ["Mano de obra, consumibles automotrices y validación en plataforma"],
-    precioSinIvaCentavos: 95000, // $950.00
-    imagenes: ["https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 26,
-  },
-  {
-    id: "seguros-puertas-automatizados",
-    slug: "seguros-puertas-automatizados",
-    nombreComercial: "Seguros de Puertas Automatizados",
-    modelo: "SEG-AUTO",
-    categoria: "seguridad",
-    descripcionCorta: "Apertura y cierre de seguros automotrices vía plataforma o por velocidad.",
-    descripcion: "Integra actuadores mecánicos al sistema de rastreo satelital.",
-    queIncluye: ["Actuador para 2 o 4 puertas con relevador"],
-    precioSinIvaCentavos: 115000, // $1,150.00
-    imagenes: ["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 27,
-  },
-  {
-    id: "bocina",
-    slug: "bocina",
-    nombreComercial: "Bocina para Cabina",
-    modelo: "SPK-01",
-    categoria: "accesorio",
-    descripcionCorta: "Bocina de audio para alertamiento o comunicación de una vía hacia el operador.",
-    descripcion: "Conexión directa a puertos de salida de audio del GPS o DashCam.",
-    queIncluye: ["Bocina 8 Ohms", "Arnés con conector de liberación rápida"],
-    precioSinIvaCentavos: 129969, // $1,299.69
-    imagenes: ["https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 28,
-  },
-  {
-    id: "microfono",
-    slug: "microfono",
-    nombreComercial: "Micrófono Oculto en Cabina",
-    modelo: "MIC-01",
-    categoria: "accesorio",
-    descripcionCorta: "Escucha espía en cabina en situaciones de asalto o secuestro.",
-    descripcion: "Cápsula de alta sensibilidad con supresión de ruido de motor.",
-    queIncluye: ["Micrófono electret y cable de 3 m apantallado"],
-    precioSinIvaCentavos: 139969, // $1,399.69
-    imagenes: ["https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 29,
-  },
-  {
-    id: "desinstalacion-instalacion",
-    slug: "desinstalacion-instalacion",
-    nombreComercial: "Desinstalación e Instalación (Cambio de Unidad)",
-    modelo: "SRV-SWAP",
-    categoria: "servicio",
-    descripcionCorta: "Servicio completo para transferir un equipo de una unidad a otra.",
-    descripcion: "Retiro en vehículo origen y reinstalación oculta en vehículo destino.",
-    queIncluye: ["Doble servicio técnico con validación en plataforma"],
-    precioSinIvaCentavos: 140000, // $1,400.00
-    imagenes: ["https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 30,
   },
   {
     id: "microsd-256gb",
@@ -425,177 +371,10 @@ export const initialProducts: Product[] = [
     descripcion: "Resistencia térmica de -25°C a 85°C con ciclos de sobreescritura extendidos.",
     queIncluye: ["Tarjeta MicroSD 256 GB y adaptador"],
     precioSinIvaCentavos: 178000, // $1,780.00
-    imagenes: ["https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     esEquipoPrincipal: false,
     activo: true,
     orden: 31,
-  },
-  {
-    id: "equipo-sustituto",
-    slug: "equipo-sustituto",
-    nombreComercial: "Equipo Sustituto o de Cambio",
-    modelo: "EQUIPO-SUB",
-    categoria: "servicio",
-    descripcionCorta: "Reemplazo inmediato de equipo ante siniestro o renovación tecnológica.",
-    descripcion: "Mantiene la misma configuración de la unidad en plataforma sin costo de reconfiguración.",
-    queIncluye: ["Equipo configurado listo para instalar"],
-    precioSinIvaCentavos: 195000, // $1,950.00
-    imagenes: ["https://images.unsplash.com/photo-1580910051074-3eb694886505?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 32,
-  },
-  {
-    id: "sensor-temperatura",
-    slug: "sensor-temperatura",
-    nombreComercial: "Sensor de Temperatura para Caja Fría",
-    modelo: "SNS-TEMP-01",
-    categoria: "seguridad",
-    descripcionCorta: "Monitoreo continuo de cadena de frío con alertas de pérdida de temperatura.",
-    descripcion: "Sonda digital de alta precisión para transporte de medicamentos y perecederos.",
-    queIncluye: ["Sonda con cable de 8 m y calibración"],
-    precioSinIvaCentavos: 219969, // $2,199.69
-    imagenes: ["https://images.unsplash.com/photo-1584483766114-2cea6facdf57?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 33,
-  },
-  {
-    id: "renovacion-anual-gps",
-    slug: "renovacion-anual-gps",
-    nombreComercial: "Renovación Anual GPS (Servicio Recurrente)",
-    modelo: "LIC-ANUAL-GPS",
-    categoria: "servicio",
-    descripcionCorta: "Licencia anual de plataforma web/app y plan de datos multi-carrier por unidad.",
-    descripcion: "Mantiene la transmisión continua, historial de recorridos y acceso a soporte técnico.",
-    queIncluye: ["12 meses de plan de datos SIM 4G", "12 meses de acceso ilimitado a plataforma y app"],
-    precioSinIvaCentavos: 258375, // $2,583.75
-    imagenes: ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"],
-    recurrentes: [{ concepto: "Renovación anual GPS", montoCentavos: 258375, periodo: "anual" }],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 34,
-  },
-  {
-    id: "microfono-bocina-bidireccional",
-    slug: "microfono-bocina-bidireccional",
-    nombreComercial: "Micrófono y Bocina Bidireccional",
-    modelo: "AUDIO-2WAY",
-    categoria: "accesorio",
-    descripcionCorta: "Comunicación manos libres en tiempo real entre cabina y centro de control.",
-    descripcion: "Permite llamadas de cabina directas en emergencias o instrucciones de ruta.",
-    queIncluye: ["Módulo de audio bidireccional, micrófono amplificado y bocina sellada"],
-    precioSinIvaCentavos: 269938, // $2,699.38
-    imagenes: ["https://images.unsplash.com/photo-1545454675-3531b543be5d?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 35,
-  },
-  {
-    id: "teclado-rfid-ferceo",
-    slug: "teclado-rfid-ferceo",
-    nombreComercial: "Teclado Lector RFID para Chapa Perno Ferceo",
-    modelo: "RFID-KEY-FER",
-    categoria: "seguridad",
-    descripcionCorta: "Apertura autorizada de caja mediante tarjeta de proximidad RFID o código PIN.",
-    descripcion: "Evita manipulación no autorizada en puntos de descarga y almacenes.",
-    queIncluye: ["Teclado metálico antivandálico IP67 y 2 tarjetas RFID de alta frecuencia"],
-    precioSinIvaCentavos: 282672, // $2,826.72
-    imagenes: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 36,
-  },
-  {
-    id: "datos-extra-dashcam-5gb",
-    slug: "datos-extra-dashcam-5gb",
-    nombreComercial: "Datos Extra DashCam 5 GB Mensual (Recurrente)",
-    modelo: "DATA-5GB-DASH",
-    categoria: "servicio",
-    descripcionCorta: "Paquete mensual de datos 4G de 5 GB para video en vivo ilimitado de DashCams.",
-    descripcion: "Garantiza streaming de video en alta definición sin interrupciones.",
-    queIncluye: ["5 GB adicionales de navegación mensual por unidad"],
-    precioSinIvaCentavos: 35000, // $350.00
-    imagenes: ["https://images.unsplash.com/photo-1544197150-b99a580bb7a8?auto=format&fit=crop&w=600&q=80"],
-    recurrentes: [{ concepto: "Datos extra DashCam 5 GB", montoCentavos: 35000, periodo: "mensual" }],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 37,
-  },
-  {
-    id: "caja-pelican-gl200",
-    slug: "caja-pelican-gl200",
-    nombreComercial: "Caja Pelican GL200",
-    modelo: "PEL-GL200",
-    categoria: "accesorio",
-    descripcionCorta: "Protección grado militar hermética e impermeable para GPS autónomos.",
-    descripcion: "Caja sellada resistente a impactos, lodo, agua y condiciones mineras severas.",
-    queIncluye: ["Caja tipo Pelican sellada con válvula de presión"],
-    precioSinIvaCentavos: 371000, // $3,710.00
-    imagenes: ["https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 38,
-  },
-  {
-    id: "chapa-electromecanica-1-perno-ferceo",
-    slug: "chapa-electromecanica-1-perno-ferceo",
-    nombreComercial: "Chapa Electromecánica 1 Perno Ferceo",
-    modelo: "CHAPA-FER-1P",
-    categoria: "seguridad",
-    descripcionCorta: "Seguridad máxima para puertas de tractocamión y cajas secas.",
-    descripcion: "Bloqueo mecánico con liberación remota solo autorizada desde central de monitoreo.",
-    queIncluye: ["Chapa electromecánica reforzada de 1 perno", "Sensor de estado abierto/cerrado"],
-    precioSinIvaCentavos: 652500, // $6,525.00
-    imagenes: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 39,
-  },
-  {
-    id: "chapa-perno-mecanica-1300lb",
-    slug: "chapa-perno-mecanica-1300lb",
-    nombreComercial: "Chapa Perno Mecánica Exterior 1300 lb",
-    modelo: "CHAPA-1300LB",
-    categoria: "seguridad",
-    descripcionCorta: "Cerradura exterior para cajas de tráiler con resistencia de 1,300 libras de fuerza.",
-    descripcion: "Fabricada en acero tratado anticorrosivo de alta resistencia.",
-    queIncluye: ["Cerradura de 1300 lb", "Soportes de montaje soldables"],
-    precioSinIvaCentavos: 677850, // $6,778.50
-    imagenes: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 40,
-  },
-  {
-    id: "sensor-combustible-equipo",
-    slug: "sensor-combustible-equipo",
-    nombreComercial: "Sensor de Combustible (Solo Equipo)",
-    modelo: "SNS-COMB-EQ",
-    categoria: "seguridad",
-    descripcionCorta: "Sensor digital de nivel de diesel tipo varilla capacitiva.",
-    descripcion: "Lectura continua con 99.5% de precisión contra robo y ordeña de diesel.",
-    queIncluye: ["Varilla capacitiva ajustable hasta 1 metro", "Aisladores térmicos"],
-    precioSinIvaCentavos: 797846, // $7,978.46
-    imagenes: ["https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 41,
-  },
-  {
-    id: "desarrollo-web-service",
-    slug: "desarrollo-web-service",
-    nombreComercial: "Desarrollo de Web Service / API Integration",
-    modelo: "SRV-API",
-    categoria: "servicio",
-    descripcionCorta: "Integración de telemetría hacia ERP, SAP, Oracle o sistemas del cliente.",
-    descripcion: "Entrega de coordenadas, eventos y telemetría en tiempo real vía Webhook o REST.",
-    queIncluye: ["Desarrollo, documentación técnica, pruebas y soporte de integración"],
-    precioSinIvaCentavos: 799900, // $7,999.00
-    imagenes: ["https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 42,
   },
   {
     id: "sensor-combustible-varilla-instalado",
@@ -607,28 +386,11 @@ export const initialProducts: Product[] = [
     descripcion: "Incluye barrenado seguro de tanque, colocación de varilla, sellado y calibración litro por litro.",
     queIncluye: ["Sensor digital de varilla", "Instalación en tanque", "Calibración matemática", "Garantía de sellado"],
     precioSinIvaCentavos: 860000, // $8,600.00
-    imagenes: ["https://images.unsplash.com/photo-1508974239320-0a029497e820?auto=format&fit=crop&w=600&q=80"],
+    imagenes: [],
     esEquipoPrincipal: false,
     activo: true,
     orden: 43,
   },
-  {
-    id: "chapa-magnetica-exterior-1600lb",
-    slug: "chapa-magnetica-exterior-1600lb",
-    nombreComercial: "Chapa Magnética Exterior 1600 lb",
-    modelo: "CHAPA-MAG-1600LB",
-    categoria: "seguridad",
-    descripcionCorta: "Electroimán de máxima potencia (1,600 lb) para seguridad extrema en carreteras peligrosas.",
-    descripcion: "Inmune a ganzúas y palancas, controlada únicamente por software autenticado.",
-    queIncluye: ["Electroimán 1600 lb con carcasa exterior y relevadores de seguridad"],
-    precioSinIvaCentavos: 1581660, // $15,816.60
-    imagenes: ["https://images.unsplash.com/photo-1557597774-9d273605dfa9?auto=format&fit=crop&w=600&q=80"],
-    esEquipoPrincipal: false,
-    activo: true,
-    orden: 44,
-  },
-
-  // Drones empresariales (REGLA 6: activo: false hasta tener precio)
   {
     id: "dji-matrice-4e",
     slug: "dji-matrice-4e",
@@ -638,10 +400,10 @@ export const initialProducts: Product[] = [
     descripcionCorta: "Dron profesional para fotogrametría, topografía y mapeo de alta precisión.",
     descripcion: "Cámara mecánica de obturación rápida, sensor RTK centimétrico y autonomía de 45 minutos.",
     queIncluye: ["Aeronave DJI Matrice 4E", "Control remoto empresarial", "Baterías inteligentes", "Maletín rígido"],
-    precioSinIvaCentavos: 0, // Pendiente de definir por administración
-    imagenes: ["https://images.unsplash.com/photo-1527977966376-1c8408f9f108?auto=format&fit=crop&w=600&q=80"],
+    precioSinIvaCentavos: 0,
+    imagenes: [],
     esEquipoPrincipal: true,
-    activo: false, // REGLA 6: activo: false
+    activo: false, // REGLA: activo: false
     orden: 50,
   },
   {
@@ -653,10 +415,10 @@ export const initialProducts: Product[] = [
     descripcionCorta: "Dron táctico para vigilancia nocturna, inspección térmica y búsqueda y rescate.",
     descripcion: "Equipado con cámara térmica de 640x512, zoom híbrido 56x y telémetro láser de 1,200 metros.",
     queIncluye: ["Aeronave DJI Matrice 4T", "Sensor térmico y visual", "Control enterprise", "Baterías"],
-    precioSinIvaCentavos: 0, // Pendiente de definir por administración
-    imagenes: ["https://images.unsplash.com/photo-1508614589041-895b88991e3e?auto=format&fit=crop&w=600&q=80"],
+    precioSinIvaCentavos: 0,
+    imagenes: [],
     esEquipoPrincipal: true,
-    activo: false, // REGLA 6: activo: false
+    activo: false, // REGLA: activo: false
     orden: 51,
   },
 ];
@@ -667,11 +429,7 @@ export const initialPackages: Package[] = [
     slug: "gps-esencial",
     nombre: "GPS Esencial",
     descripcion: "La solución indispensable de rastreo vehicular con garantía y soporte total.",
-    items: [
-      { productId: "gps-estandar-sin-telemetria", cantidad: 1 },
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
-      { productId: "renovacion-anual-gps", cantidad: 1 },
-    ],
+    items: [{ productId: "gps-estandar-sin-telemetria", cantidad: 1 }],
     precioSinIvaCentavos: 550000, // $5,500.00
     tiposUnidad: ["auto", "camioneta", "taxi", "moto"],
     objetivos: ["robo", "control"],
@@ -683,7 +441,7 @@ export const initialPackages: Package[] = [
     ],
     destacado: true,
     activo: true,
-    revisarPrecio: true, // REGLA 6: revisarPrecio: true
+    revisarPrecio: true, // REGLA: revisarPrecio: true
   },
   {
     id: "gps-flotilla-pro",
@@ -693,8 +451,6 @@ export const initialPackages: Package[] = [
     items: [
       { productId: "gps-flotilla", cantidad: 1 },
       { productId: "boton-panico", cantidad: 1 },
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
-      { productId: "renovacion-anual-gps", cantidad: 1 },
     ],
     precioSinIvaCentavos: 828000, // $8,280.00 (Con IVA: $9,604.80)
     tiposUnidad: ["tractocamion", "camion", "volteo", "autobus"],
@@ -719,7 +475,6 @@ export const initialPackages: Package[] = [
       { productId: "gps-flotilla", cantidad: 1 },
       { productId: "boton-panico", cantidad: 1 },
       { productId: "sensor-combustible-varilla-instalado", cantidad: 1 },
-      { productId: "renovacion-anual-gps", cantidad: 1 },
     ],
     precioSinIvaCentavos: 1688000, // $16,880.00 (Con IVA: $19,580.80)
     tiposUnidad: ["tractocamion", "camion", "maquinaria"],
@@ -739,10 +494,7 @@ export const initialPackages: Package[] = [
     slug: "dashcam-esencial-jc181",
     nombre: "DashCam Esencial (JC181)",
     descripcion: "Cámara inteligente de 2 lentes (cabina y carretera) con paro de motor y botón de pánico.",
-    items: [
-      { productId: "camara-externa-ip67", cantidad: 1 },
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
-    ],
+    items: [{ productId: "camara-externa-ip67", cantidad: 1 }],
     precioSinIvaCentavos: 611000, // $6,110.00 (Con IVA: $7,087.60)
     tiposUnidad: ["auto", "camioneta", "taxi", "apps"],
     objetivos: ["video", "robo"],
@@ -763,9 +515,7 @@ export const initialPackages: Package[] = [
     slug: "dashcam-industrial-jc450",
     nombre: "DashCam Industrial (JC450)",
     descripcion: "Dashcam de grado industrial diseñada para tractocamiones y flotillas pesadas de alto rendimiento.",
-    items: [
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
-    ],
+    items: [],
     precioSinIvaCentavos: 1198000, // $11,980.00 (Con IVA: $13,896.80)
     tiposUnidad: ["tractocamion", "camion", "autobus"],
     objetivos: ["video", "control", "robo"],
@@ -789,7 +539,6 @@ export const initialPackages: Package[] = [
     items: [
       { productId: "camara-externa-ip67", cantidad: 2 },
       { productId: "microsd-256gb", cantidad: 1 },
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
     ],
     precioSinIvaCentavos: 1566000, // $15,660.00 (Con IVA: $18,165.60)
     tiposUnidad: ["tractocamion", "camion", "volteo"],
@@ -810,9 +559,7 @@ export const initialPackages: Package[] = [
     slug: "anti-jammer",
     nombre: "Anti-Jammer",
     descripcion: "Sistema de protección activa contra inhibidores de señal GPS (jammer) con bloqueo preventivo.",
-    items: [
-      { productId: "instalacion-auto-camioneta-tracto", cantidad: 1 },
-    ],
+    items: [],
     precioSinIvaCentavos: 357000, // $3,570.00 (Con IVA: $4,141.20)
     tiposUnidad: ["tractocamion", "camion", "camioneta", "auto"],
     objetivos: ["inhibidor", "robo"],
@@ -827,4 +574,3 @@ export const initialPackages: Package[] = [
     revisarPrecio: false,
   },
 ];
-

@@ -12,6 +12,8 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
   - Public Key y Access Token (Sandbox para desarrollo, Producción para lanzamiento).
 - [ ] **Secret Manager / Variables de producción**:
   - Claves de correo (Resend o SendGrid / Firebase Trigger Email), webhook signing secret.
+- [ ] **IDs de Analítica (Opcionales)**:
+  - Google Analytics 4 (`G-XXXXXXXXXX`) y Meta Pixel (`XXXXXXXXXXXXXXXX`), configurables en `settings/analytics`.
 
 ---
 
@@ -29,6 +31,11 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
 ---
 
 ### 🟢 Contenido y Soporte
+- [ ] **URL oficial de la Plataforma de Video DashCam**:
+  - Necesaria para completar el botón de acceso en `/acceso`. (TrackTracer y SphereGT ya cuentan con sus URLs).
+- [ ] **Políticas y Legales Definitivas**:
+  - Texto oficial de garantía (aclarar contradicción entre "de por vida" vs "1 año"). Mientras tanto, se muestra como borrador con aviso "Documento en revisión".
+  - Aviso de privacidad comercial y términos comerciales definitivos.
 - [ ] **Directorio de contacto operativo de Soporte**:
   - Correo y número de WhatsApp del equipo de soporte para recibir las fichas de instalación automáticas.
 - [ ] **Activos visuales y multimedia**:
@@ -36,11 +43,7 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
   - Fotografías reales de instalaciones terminadas.
   - Logotipos de clientes de gobierno (N.L., Tamaulipas, Puebla, etc.) y empresas privadas.
   - Videos o grabaciones de pantalla de TrackTracer, SphereGT y plataforma de video para la galería y demos.
-- [ ] **Políticas y Legales**:
-  - Texto oficial de garantía (aclarar contradicción entre "de por vida" vs "1 año").
-  - Aviso de privacidad comercial y términos comerciales definitivos.
 - [ ] **Meta / WhatsApp Business**:
   - Plantillas de WhatsApp aprobadas en Meta para seguimiento de carritos abandonados (+24h).
-- [ ] **Facturación CFDI 4.0 (Fase 2)**:
+- [ ] **Facturación CFDI 4.0 (Fase 2 / Fase 3)**:
   - Definir proveedor de timbrado automático (Facturapi o Facturama).
-

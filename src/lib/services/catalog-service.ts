@@ -1,20 +1,41 @@
-import { adminDb, recordAuditLog } from "@/lib/firebase/admin";
+import { adminDb, recordAuditLog, isFirestoreReady } from "@/lib/firebase/admin";
 import { Product, Package } from "@/types/catalog";
 import { ProductSchema, PackageSchema } from "@/lib/validations/catalog";
+import { initialProducts, initialPackages } from "../../../scripts/seed-data";
 
 export async function getProducts(includeInactive: boolean = true): Promise<Product[]> {
-  let query = adminDb.collection("products") as any;
-  if (!includeInactive) {
-    query = query.where("activo", "==", true);
+  if (!(await isFirestoreReady())) {
+    return includeInactive ? initialProducts : initialProducts.filter((p) => p.activo);
   }
-  const snap = await query.orderBy("orden", "asc").get();
-  return snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Product));
+  try {
+    let query = adminDb.collection("products") as any;
+    if (!includeInactive) {
+      query = query.where("activo", "==", true);
+    }
+    const snap = await query.orderBy("orden", "asc").get();
+    if (!snap.empty) {
+      return snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Product));
+    }
+  } catch (err) {
+    // Si Firestore/emulador no está disponible, usar semilla inicial
+  }
+  return includeInactive ? initialProducts : initialProducts.filter((p) => p.activo);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
-  const doc = await adminDb.collection("products").doc(slug).get();
-  if (!doc.exists) return null;
-  return { id: doc.id, ...doc.data() } as Product;
+  if (!(await isFirestoreReady())) {
+    return initialProducts.find((p) => p.slug === slug) || null;
+  }
+  try {
+    const doc = await adminDb.collection("products").doc(slug).get();
+    if (doc.exists) {
+      return { id: doc.id, ...doc.data() } as Product;
+    }
+  } catch (err) {
+    // Si Firestore/emulador no está disponible, usar semilla inicial
+  }
+  const found = initialProducts.find((p) => p.slug === slug);
+  return found || null;
 }
 
 export async function saveProduct(
@@ -80,12 +101,22 @@ export async function toggleProductStatus(
 }
 
 export async function getPackages(includeInactive: boolean = true): Promise<Package[]> {
-  let query = adminDb.collection("packages") as any;
-  if (!includeInactive) {
-    query = query.where("activo", "==", true);
+  if (!(await isFirestoreReady())) {
+    return includeInactive ? initialPackages : initialPackages.filter((p) => p.activo);
   }
-  const snap = await query.get();
-  return snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Package));
+  try {
+    let query = adminDb.collection("packages") as any;
+    if (!includeInactive) {
+      query = query.where("activo", "==", true);
+    }
+    const snap = await query.get();
+    if (!snap.empty) {
+      return snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Package));
+    }
+  } catch (err) {
+    // Si Firestore/emulador no está disponible, usar semilla inicial
+  }
+  return includeInactive ? initialPackages : initialPackages.filter((p) => p.activo);
 }
 
 export async function savePackage(

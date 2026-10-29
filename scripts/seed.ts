@@ -1,6 +1,6 @@
 /**
  * CosoTec - Script de Seed Idempotente
- * Carga el catálogo inicial, paquetes, precios, viáticos y settings.
+ * Carga el catálogo inicial, paquetes, precios, viáticos, settings y contenido oficial.
  * Uso:
  *   npm run seed:local   # Ejecuta contra Firebase Emulator Suite (localhost:8080)
  *   npm run seed:prod    # Ejecuta contra cosoteco en producción (requiere credenciales)
@@ -10,6 +10,9 @@ import {
   initialPricingSettings,
   initialContactSettings,
   initialBankSettings,
+  initialFeaturesSettings,
+  initialAnalyticsSettings,
+  initialContentData,
   initialTravelFees,
   initialProducts,
   initialPackages,
@@ -66,6 +69,17 @@ async function runSeed() {
     console.log(`🔒 Guardando datos bancarios en 'settings/bank' (NO PÚBLICO)...`);
     batch.set(adminDb.collection("settings").doc("bank"), initialBankSettings, { merge: true });
 
+    console.log(`🚀 Guardando features y analytics en 'settings/features' y 'settings/analytics'...`);
+    batch.set(adminDb.collection("settings").doc("features"), initialFeaturesSettings, { merge: true });
+    batch.set(adminDb.collection("settings").doc("analytics"), initialAnalyticsSettings, { merge: true });
+
+    console.log(`📝 Guardando documentos de contenido editable en colección 'content'...`);
+    batch.set(adminDb.collection("content").doc("stats"), initialContentData.stats, { merge: true });
+    batch.set(adminDb.collection("content").doc("hero"), initialContentData.hero, { merge: true });
+    batch.set(adminDb.collection("content").doc("faq"), { items: initialContentData.faq }, { merge: true });
+    batch.set(adminDb.collection("content").doc("accesos"), initialContentData.accesos, { merge: true });
+    batch.set(adminDb.collection("content").doc("legales"), initialContentData.legales, { merge: true });
+
     console.log(`🗺️ Guardando ${initialTravelFees.length} estados en 'travelFees'...`);
     for (const fee of initialTravelFees) {
       const ref = adminDb.collection("travelFees").doc(fee.id);
@@ -88,8 +102,10 @@ async function runSeed() {
     console.log(`   - Productos: ${initialProducts.length}`);
     console.log(`   - Paquetes: ${initialPackages.length}`);
     console.log(`   - Estados de viáticos: ${initialTravelFees.length}`);
+    console.log(`   - Contenido oficial (cifras veraces, hero, FAQ, accesos y legales) cargado en 'content'`);
     console.log(`   - Drones desactivados temporalmente (activo: false)`);
     console.log(`   - Marcados con revisarPrecio: true (GPS Esencial y GPS Portable 15-D)`);
+    console.log(`   - MSI vacío por defecto (no mostrar hasta configurar)`);
   } catch (error: any) {
     console.error("❌ Error conectando a Firestore:", error.message || error);
     if (!isProd) {
