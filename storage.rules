@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAdmin() {
+      return request.auth != null && request.auth.token.role == 'admin';
+    }
+
+    // Imágenes de productos y paquetes en el catálogo
+    match /products/{allPaths=**} {
+      // Lectura pública para la tienda y cotizaciones
+      allow read: if true;
+      // Escritura restringida únicamente a administradores
+      allow write: if isAdmin() 
+                   && request.resource.size < 5 * 1024 * 1024 // Máx 5MB
+                   && request.resource.contentType.matches('image/.*');
+    }
+
+    // Documentos privados (comprobantes SPEI, constancias fiscales)
+    match /private/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
