@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { authenticateServerRequest } from "@/lib/auth/server-auth";
 import { getUsers, createUser, updateUserRole } from "@/lib/services/user-service";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await authenticateServerRequest(req, ["admin"]);
+  if (!auth.success) {
+    return auth.response;
+  }
+
   try {
     const users = await getUsers();
     return NextResponse.json({ users });
@@ -11,11 +17,16 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await authenticateServerRequest(req, ["admin"]);
+  if (!auth.success) {
+    return auth.response;
+  }
+
   try {
     const body = await req.json();
-    const { data, actor = { uid: "admin-session", email: "admin@cosoavl.com" } } = body;
+    const { data } = body;
 
-    const user = await createUser(data, actor);
+    const user = await createUser(data, auth.user);
     return NextResponse.json({ success: true, user });
   } catch (error: any) {
     return NextResponse.json(
@@ -26,11 +37,16 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const auth = await authenticateServerRequest(req, ["admin"]);
+  if (!auth.success) {
+    return auth.response;
+  }
+
   try {
     const body = await req.json();
-    const { data, actor = { uid: "admin-session", email: "admin@cosoavl.com" } } = body;
+    const { data } = body;
 
-    const updated = await updateUserRole(data, actor);
+    const updated = await updateUserRole(data, auth.user);
     return NextResponse.json({ success: true, user: updated });
   } catch (error: any) {
     return NextResponse.json(

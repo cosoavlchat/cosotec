@@ -22,3 +22,4 @@ export const TravelFeeSchema = z.object({
   sinCosto: z.boolean(),
   notas: z.string().optional(),
 });
+

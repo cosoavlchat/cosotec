@@ -29,3 +29,4 @@ if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULAT
     // Si ya fueron conectados previamente en HMR, ignorar advertencia
   }
 }
+

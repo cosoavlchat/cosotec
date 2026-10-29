@@ -1,17 +1,10 @@
 import { adminAuth, adminDb, recordAuditLog } from "@/lib/firebase/admin";
 import { AppUser } from "@/types/user";
 import { CreateUserSchema, UpdateRoleSchema } from "@/lib/validations/user";
-import { getLocalFallbackData, saveLocalFallbackData } from "./data-store";
 
 export async function getUsers(): Promise<AppUser[]> {
-  try {
-    const snap = await adminDb.collection("users").orderBy("createdAt", "desc").get();
-    if (!snap.empty) {
-      return snap.docs.map((doc: any) => ({ uid: doc.id, ...doc.data() } as AppUser));
-    }
-  } catch (e) {}
-
-  return getLocalFallbackData().users;
+  const snap = await adminDb.collection("users").orderBy("createdAt", "desc").get();
+  return snap.docs.map((doc: any) => ({ uid: doc.id, ...doc.data() } as AppUser));
 }
 
 export async function createUser(
@@ -21,20 +14,15 @@ export async function createUser(
   const validated = CreateUserSchema.parse(rawData);
   const now = new Date().toISOString();
 
-  let uid = `user_${Date.now()}`;
-  try {
-    const userRecord = await adminAuth.createUser({
-      email: validated.email,
-      password: validated.password,
-      displayName: validated.nombre,
-      emailVerified: true,
-    });
-    uid = userRecord.uid;
+  const userRecord = await adminAuth.createUser({
+    email: validated.email,
+    password: validated.password,
+    displayName: validated.nombre,
+    emailVerified: true,
+  });
 
-    await adminAuth.setCustomUserClaims(uid, { role: validated.role });
-  } catch (e) {
-    console.warn("No se pudo crear en Firebase Auth, usando mock local para usuario.", e);
-  }
+  const uid = userRecord.uid;
+  await adminAuth.setCustomUserClaims(uid, { role: validated.role });
 
   const appUser: AppUser = {
     uid,
@@ -46,24 +34,18 @@ export async function createUser(
     createdAt: now,
   };
 
-  try {
-    await adminDb.collection("users").doc(uid).set(appUser, { merge: true });
+  await adminDb.collection("users").doc(uid).set(appUser, { merge: true });
 
-    await recordAuditLog({
-      userId: actor.uid,
-      userEmail: actor.email,
-      entity: "user",
-      entityId: uid,
-      action: "create",
-      before: null,
-      after: appUser,
-      metadata: { role: validated.role },
-    });
-  } catch (e) {}
-
-  const local = getLocalFallbackData();
-  const updatedUsers = [appUser, ...local.users.filter((u) => u.email !== appUser.email)];
-  saveLocalFallbackData({ users: updatedUsers });
+  await recordAuditLog({
+    userId: actor.uid,
+    userEmail: actor.email,
+    entity: "user",
+    entityId: uid,
+    action: "create",
+    before: null,
+    after: appUser,
+    metadata: { role: validated.role },
+  });
 
   return appUser;
 }
@@ -75,45 +57,30 @@ export async function updateUserRole(
   const validated = UpdateRoleSchema.parse(rawData);
 
   let beforeData: any = null;
-  try {
-    const snap = await adminDb.collection("users").doc(validated.uid).get();
-    if (snap.exists) {
-      beforeData = snap.data();
-    }
-
-    await adminAuth.setCustomUserClaims(validated.uid, { role: validated.role });
-
-    const updates: Partial<AppUser> = {
-      role: validated.role,
-      ...(validated.activo !== undefined ? { activo: validated.activo } : {}),
-      ...(validated.topeDescuento !== undefined ? { topeDescuento: validated.topeDescuento } : {}),
-    };
-
-    await adminDb.collection("users").doc(validated.uid).update(updates);
-
-    await recordAuditLog({
-      userId: actor.uid,
-      userEmail: actor.email,
-      entity: "user",
-      entityId: validated.uid,
-      action: "update",
-      before: beforeData,
-      after: updates,
-    });
-  } catch (e) {}
-
-  const local = getLocalFallbackData();
-  const userIdx = local.users.findIndex((u) => u.uid === validated.uid);
-  if (userIdx >= 0) {
-    local.users[userIdx] = {
-      ...local.users[userIdx],
-      role: validated.role,
-      ...(validated.activo !== undefined ? { activo: validated.activo } : {}),
-      ...(validated.topeDescuento !== undefined ? { topeDescuento: validated.topeDescuento } : {}),
-    };
-    saveLocalFallbackData({ users: local.users });
-    return local.users[userIdx];
+  const snap = await adminDb.collection("users").doc(validated.uid).get();
+  if (snap.exists) {
+    beforeData = snap.data();
   }
+
+  await adminAuth.setCustomUserClaims(validated.uid, { role: validated.role });
+
+  const updates: Partial<AppUser> = {
+    role: validated.role,
+    ...(validated.activo !== undefined ? { activo: validated.activo } : {}),
+    ...(validated.topeDescuento !== undefined ? { topeDescuento: validated.topeDescuento } : {}),
+  };
+
+  await adminDb.collection("users").doc(validated.uid).update(updates);
+
+  await recordAuditLog({
+    userId: actor.uid,
+    userEmail: actor.email,
+    entity: "user",
+    entityId: validated.uid,
+    action: "update",
+    before: beforeData,
+    after: updates,
+  });
 
   return {
     uid: validated.uid,

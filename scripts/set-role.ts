@@ -1,46 +1,34 @@
 /**
  * CosoTec - Asignación de Roles con Firebase Auth Custom Claims
  * Uso:
- *   npx tsx scripts/set-role.ts <correo> <admin|vendedor|soporte> [password]
+ *   npx tsx scripts/set-role.ts <correo> <admin|vendedor|soporte>
  * Ejemplo:
- *   npx tsx scripts/set-role.ts admin@cosoavl.com admin CosoTec2026!
+ *   npx tsx scripts/set-role.ts admin@cosoavl.com admin
  */
 
-import * as net from "net";
+import * as crypto from "crypto";
 import { UserRole } from "@/types/user";
-import { getLocalFallbackData, saveLocalFallbackData } from "@/lib/services/data-store";
 
 const email = process.argv[2];
 const role = process.argv[3] as UserRole;
-const initialPassword = process.argv[4] || "CosoTec2026!";
 
 const validRoles: UserRole[] = ["admin", "vendedor", "soporte"];
 
-function checkSocket(host: string, port: number, timeoutMs = 1200): Promise<boolean> {
-  return new Promise((resolve) => {
-    const socket = new net.Socket();
-    socket.setTimeout(timeoutMs);
-    socket.on("connect", () => {
-      socket.destroy();
-      resolve(true);
-    });
-    socket.on("timeout", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.on("error", () => {
-      socket.destroy();
-      resolve(false);
-    });
-    socket.connect(port, host);
-  });
+function generateSecurePassword(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+  const bytes = crypto.randomBytes(16);
+  let pass = "";
+  for (let i = 0; i < 14; i++) {
+    pass += chars[bytes[i] % chars.length];
+  }
+  return pass + "!A1";
 }
 
 async function setRole() {
   if (!email || !role) {
     console.log("\n❌ Uso incorrecto:");
-    console.log("   npx tsx scripts/set-role.ts <correo> <rol: admin|vendedor|soporte> [password]");
-    console.log("   Ejemplo: npx tsx scripts/set-role.ts admin@cosoavl.com admin AdminPass123!\n");
+    console.log("   npx tsx scripts/set-role.ts <correo> <rol: admin|vendedor|soporte>");
+    console.log("   Ejemplo: npx tsx scripts/set-role.ts admin@cosoavl.com admin\n");
     process.exit(1);
   }
 
@@ -51,67 +39,50 @@ async function setRole() {
 
   const isProd = process.env.USE_FIREBASE_PROD === "true";
 
-  // Siempre registrar en el store local para disponibilidad inmediata
-  const local = getLocalFallbackData();
-  const existingIdx = local.users.findIndex((u) => u.email === email);
-  const now = new Date().toISOString();
-  const userObj = {
-    uid: existingIdx >= 0 ? local.users[existingIdx].uid : `user_${Date.now()}`,
-    email,
-    nombre: email.split("@")[0],
-    role,
-    activo: true,
-    topeDescuento: role === "vendedor" ? 5 : 0,
-    updatedAt: now,
-    createdAt: existingIdx >= 0 ? local.users[existingIdx].createdAt : now,
-  };
-
-  if (existingIdx >= 0) {
-    local.users[existingIdx] = userObj;
-  } else {
-    local.users.push(userObj);
-  }
-  saveLocalFallbackData({ users: local.users });
-  console.log(`📁 Usuario '${email}' guardado con rol '${role}' en store local.`);
-
   if (!isProd) {
-    const authRunning = await checkSocket("127.0.0.1", 9099);
-    if (!authRunning) {
-      console.log("\n⚠️ [Aviso de Conexión]: El emulador de Firebase Auth no está corriendo en 127.0.0.1:9099.");
-      console.log(`   El rol '${role}' ha quedado asignado y activo en el panel local.`);
-      console.log("   Para arrancar los emuladores: npx firebase emulators:start\n");
-      return;
-    }
+    process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "true";
+    process.env.USE_FIREBASE_EMULATOR = "true";
+    process.env.FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST || "127.0.0.1:8080";
+    process.env.FIREBASE_AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST || "127.0.0.1:9099";
   }
 
   try {
     const { adminAuth, adminDb, recordAuditLog } = await import("@/lib/firebase/admin");
 
     let userRecord;
+    let tempPassword = "";
+
     try {
       userRecord = await adminAuth.getUserByEmail(email);
-      console.log(`👤 Usuario encontrado en Auth: ${userRecord.uid} (${userRecord.email})`);
+      console.log(`👤 Usuario existente encontrado: ${userRecord.uid} (${userRecord.email})`);
     } catch (err: any) {
       if (err.code === "auth/user-not-found") {
-        console.log(`🆕 Creando usuario en Firebase Auth...`);
+        tempPassword = generateSecurePassword();
+        console.log(`🆕 Creando nuevo usuario en Firebase Auth...`);
         userRecord = await adminAuth.createUser({
           email,
-          password: initialPassword,
+          password: tempPassword,
           displayName: email.split("@")[0],
           emailVerified: true,
         });
-        console.log(`✅ Creado con contraseña inicial: ${initialPassword}`);
+        console.log("\n╔══════════════════════════════════════════════════════════════════╗");
+        console.log("║ 🔑 CONTRASEÑA TEMPORAL GENERADA (Guardar ahora - un solo uso):  ║");
+        console.log(`║    ${tempPassword.padEnd(58)}║`);
+        console.log("╚══════════════════════════════════════════════════════════════════╝\n");
       } else {
         throw err;
       }
     }
 
+    // Asignar Custom Claim
     await adminAuth.setCustomUserClaims(userRecord.uid, { role });
     console.log(`🔑 Custom claim asignado: { role: "${role}" }`);
 
+    // Sincronizar documento en Firestore
     const userDocRef = adminDb.collection("users").doc(userRecord.uid);
     const existingSnap = await userDocRef.get();
     const beforeData = existingSnap.exists ? existingSnap.data() : null;
+    const now = new Date().toISOString();
 
     const userData = {
       uid: userRecord.uid,
@@ -119,12 +90,15 @@ async function setRole() {
       nombre: userRecord.displayName || email.split("@")[0],
       role,
       activo: true,
+      topeDescuento: role === "vendedor" ? 5 : 0,
       updatedAt: now,
       ...(beforeData ? {} : { createdAt: now }),
     };
 
     await userDocRef.set(userData, { merge: true });
+    console.log(`📄 Documento sincronizado en colección 'users/${userRecord.uid}'`);
 
+    // Registrar en AuditLog
     await recordAuditLog({
       userId: "cli-script",
       userEmail: "system@cosotec.local",
@@ -136,9 +110,14 @@ async function setRole() {
       metadata: { role, script: "set-role.ts" },
     });
 
-    console.log(`\n🎉 ¡Listo! El usuario ${email} tiene rol '${role}' en Firebase Auth y Firestore.`);
+    console.log(`\n🎉 ¡Listo! El usuario ${email} ahora tiene el rol '${role}' en CosoTec.`);
   } catch (error: any) {
-    console.error("❌ Error conectando con Firebase Admin:", error);
+    console.error("❌ Error conectando a Firebase Auth/Firestore:", error.message || error);
+    if (!isProd) {
+      console.error("\n💡 Recuerda arrancar los emuladores con:");
+      console.error("   npx firebase emulators:start --only firestore,auth,storage\n");
+    }
+    process.exit(1);
   }
 }
 

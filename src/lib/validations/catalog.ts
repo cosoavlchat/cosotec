@@ -46,3 +46,4 @@ export const PackageSchema = z.object({
   activo: z.boolean().default(true),
   revisarPrecio: z.boolean().default(false),
 });
+

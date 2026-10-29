@@ -58,15 +58,14 @@ npm run seed:prod
 
 ### Con el script CLI (`scripts/set-role.ts`)
 ```bash
-npx tsx scripts/set-role.ts admin@cosoavl.com admin CosoTec2026!
+npx tsx scripts/set-role.ts admin@cosoavl.com admin
 ```
 Parámetros:
 1. `correo`: Correo electrónico del usuario (ej. `admin@cosoavl.com`)
 2. `rol`: `admin` | `vendedor` | `soporte`
-3. `password` (opcional): Contraseña inicial si el usuario no existe en Auth.
 
 El script:
-1. Crea o busca al usuario en Firebase Auth.
+1. Crea o busca al usuario en Firebase Auth. Si es nuevo, genera una contraseña temporal segura y la muestra una sola vez en terminal.
 2. Le asigna el Custom Claim `role: 'admin'`.
 3. Sincroniza su ficha en la colección `users/{uid}`.
 4. Genera un registro en `auditLog`.
@@ -99,3 +98,4 @@ El script:
   1. **Barrera de Servidor:** Rutas de API y Server Actions validan con Zod y verifican permisos de sesión.
   2. **Barrera de Base de Datos:** `firestore.rules` prohíbe escrituras a quien no tenga el custom claim `request.auth.token.role == 'admin'`.
 - **Datos Bancarios Protegidos:** `settings/bank` tiene `allow read: if isAdmin();` y nunca es accesible públicamente.
+

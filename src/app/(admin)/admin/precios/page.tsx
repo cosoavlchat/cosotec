@@ -376,3 +376,4 @@ export default function AdminPreciosPage() {
     </div>
   );
 }
+

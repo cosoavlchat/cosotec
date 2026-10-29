@@ -452,3 +452,4 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
     </div>
   );
 }
+

@@ -66,3 +66,4 @@ export async function recordAuditLog(entry: Omit<AuditLogEntry, "timestamp">) {
     // No interrumpir la transacción principal si falla el log secundario, pero registrar el error.
   }
 }
+

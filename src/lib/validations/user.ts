@@ -16,3 +16,4 @@ export const UpdateRoleSchema = z.object({
   activo: z.boolean().optional(),
   topeDescuento: z.number().min(0).max(100).optional(),
 });
+

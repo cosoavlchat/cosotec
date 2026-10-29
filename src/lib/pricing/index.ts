@@ -5,6 +5,8 @@
  */
 
 export const DEFAULT_IVA_PERCENT = 16;
+export const DEFAULT_VOLUMEN_UMBRAL = 5;
+export const DEFAULT_VOLUMEN_PORCENTAJE = 10;
 
 /**
  * Calcula el IVA en centavos redondeado a entero.
@@ -49,6 +51,65 @@ export function desglosePrecio(
     precioSinIvaCentavos,
     ivaCentavos,
     totalConIvaCentavos: precioSinIvaCentavos + ivaCentavos,
+  };
+}
+
+export interface ItemCotizacion {
+  cantidad: number;
+  esEquipoPrincipal: boolean;
+  precioSinIvaCentavos: number;
+}
+
+/**
+ * REGLA 6: Descuento por volumen.
+ * 5 unidades = sin descuento (0%)
+ * 6 o más unidades = 10% de descuento sobre el subtotal
+ * IMPORTANTE: Solo cuentan los equipos principales (esEquipoPrincipal === true),
+ * los accesorios NO suman para alcanzar el umbral.
+ */
+export function calcularDescuentoVolumen(
+  items: ItemCotizacion[],
+  umbralUnidades: number = DEFAULT_VOLUMEN_UMBRAL,
+  porcentajeDescuento: number = DEFAULT_VOLUMEN_PORCENTAJE
+): {
+  unidadesPrincipales: number;
+  aplicaDescuento: boolean;
+  porcentajeAplicado: number;
+  subtotalSinIvaCentavos: number;
+  descuentoCentavos: number;
+  subtotalConDescuentoCentavos: number;
+} {
+  let unidadesPrincipales = 0;
+  let subtotalSinIvaCentavos = 0;
+
+  for (const item of items) {
+    if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
+      throw new TypeError(`Cantidad inválida: ${item.cantidad}`);
+    }
+    if (!Number.isInteger(item.precioSinIvaCentavos) || item.precioSinIvaCentavos < 0) {
+      throw new TypeError(`Precio inválido en centavos: ${item.precioSinIvaCentavos}`);
+    }
+
+    if (item.esEquipoPrincipal) {
+      unidadesPrincipales += item.cantidad;
+    }
+    subtotalSinIvaCentavos += item.precioSinIvaCentavos * item.cantidad;
+  }
+
+  // Al comprar MÁS de 5 unidades (umbral)
+  const aplicaDescuento = unidadesPrincipales > umbralUnidades;
+  const porcentajeAplicado = aplicaDescuento ? porcentajeDescuento : 0;
+  const descuentoCentavos = aplicaDescuento
+    ? Math.round(subtotalSinIvaCentavos * (porcentajeDescuento / 100))
+    : 0;
+
+  return {
+    unidadesPrincipales,
+    aplicaDescuento,
+    porcentajeAplicado,
+    subtotalSinIvaCentavos,
+    descuentoCentavos,
+    subtotalConDescuentoCentavos: subtotalSinIvaCentavos - descuentoCentavos,
   };
 }
 

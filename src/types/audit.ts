@@ -10,3 +10,4 @@ export interface AuditLogEntry {
   after: any;
   metadata?: Record<string, any>;
 }
+

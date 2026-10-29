@@ -38,3 +38,4 @@ export interface ContactSettings {
   direccion: string;
   horarios: string;
 }
+

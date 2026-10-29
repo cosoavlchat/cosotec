@@ -3,8 +3,10 @@ import {
   calcularIvaCentavos,
   precioConIva,
   desglosePrecio,
+  calcularDescuentoVolumen,
   formatMxn,
   parseToCentavos,
+  ItemCotizacion,
 } from "./index";
 
 describe("Motor de Precios CosoTec - Manejo en Centavos", () => {
@@ -63,5 +65,88 @@ describe("Motor de Precios CosoTec - Manejo en Centavos", () => {
     expect(parseToCentavos("$8,280.00")).toBe(828000);
     expect(parseToCentavos(3999.99)).toBe(399999);
     expect(parseToCentavos("0")).toBe(0);
+  });
+});
+
+describe("REGLA 6: Descuento por Volumen y Regla de Equipos Principales", () => {
+  it("5 unidades principales NO reciben descuento por volumen (umbral > 5)", () => {
+    const items: ItemCotizacion[] = [
+      {
+        cantidad: 5,
+        esEquipoPrincipal: true,
+        precioSinIvaCentavos: 550000, // $5,500.00 c/u -> Subtotal $27,500.00 (2,750,000 centavos)
+      },
+    ];
+
+    const resultado = calcularDescuentoVolumen(items, 5, 10);
+    expect(resultado.unidadesPrincipales).toBe(5);
+    expect(resultado.aplicaDescuento).toBe(false);
+    expect(resultado.porcentajeAplicado).toBe(0);
+    expect(resultado.descuentoCentavos).toBe(0);
+    expect(resultado.subtotalSinIvaCentavos).toBe(2750000);
+    expect(resultado.subtotalConDescuentoCentavos).toBe(2750000);
+  });
+
+  it("6 unidades principales reciben 10% de descuento por volumen", () => {
+    const items: ItemCotizacion[] = [
+      {
+        cantidad: 6,
+        esEquipoPrincipal: true,
+        precioSinIvaCentavos: 550000, // $5,500.00 c/u -> Subtotal $33,000.00 (3,300,000 centavos)
+      },
+    ];
+
+    const resultado = calcularDescuentoVolumen(items, 5, 10);
+    expect(resultado.unidadesPrincipales).toBe(6);
+    expect(resultado.aplicaDescuento).toBe(true);
+    expect(resultado.porcentajeAplicado).toBe(10);
+    // 10% de 3,300,000 centavos = 330,000 centavos ($3,300.00)
+    expect(resultado.descuentoCentavos).toBe(330000);
+    // Subtotal final con descuento = 2,970,000 centavos ($29,700.00)
+    expect(resultado.subtotalConDescuentoCentavos).toBe(2970000);
+  });
+
+  it("los accesorios NO cuentan para el umbral de volumen", () => {
+    const items: ItemCotizacion[] = [
+      {
+        cantidad: 4, // Solo 4 equipos principales
+        esEquipoPrincipal: true,
+        precioSinIvaCentavos: 828000, // GPS Flotilla Pro
+      },
+      {
+        cantidad: 10, // 10 accesorios (botones de pánico)
+        esEquipoPrincipal: false,
+        precioSinIvaCentavos: 37500, // $375.00
+      },
+    ];
+
+    const resultado = calcularDescuentoVolumen(items, 5, 10);
+    // Unidades principales son solo 4, por tanto NO califica para descuento
+    expect(resultado.unidadesPrincipales).toBe(4);
+    expect(resultado.aplicaDescuento).toBe(false);
+    expect(resultado.descuentoCentavos).toBe(0);
+  });
+
+  it("cuando hay 6 equipos principales, el descuento del 10% aplica sobre el subtotal completo incluyendo accesorios", () => {
+    const items: ItemCotizacion[] = [
+      {
+        cantidad: 6, // 6 equipos principales
+        esEquipoPrincipal: true,
+        precioSinIvaCentavos: 100000, // $1,000.00 -> $6,000.00 (600,000 centavos)
+      },
+      {
+        cantidad: 4, // 4 accesorios
+        esEquipoPrincipal: false,
+        precioSinIvaCentavos: 25000, // $250.00 -> $1,000.00 (100,000 centavos)
+      },
+    ];
+
+    const resultado = calcularDescuentoVolumen(items, 5, 10);
+    // Total subtotal = 700,000 centavos ($7,000.00)
+    expect(resultado.unidadesPrincipales).toBe(6);
+    expect(resultado.aplicaDescuento).toBe(true);
+    expect(resultado.subtotalSinIvaCentavos).toBe(700000);
+    expect(resultado.descuentoCentavos).toBe(70000); // $700.00
+    expect(resultado.subtotalConDescuentoCentavos).toBe(630000); // $6,300.00
   });
 });

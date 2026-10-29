@@ -827,3 +827,4 @@ export const initialPackages: Package[] = [
     revisarPrecio: false,
   },
 ];
+

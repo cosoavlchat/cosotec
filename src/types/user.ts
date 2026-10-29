@@ -16,3 +16,4 @@ export interface AuthSession {
   role: UserRole | null;
   token?: string;
 }
+
