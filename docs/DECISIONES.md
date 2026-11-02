@@ -226,3 +226,18 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
      No se utilizan razones sociales inventadas ni canales no oficiales.
 
 
+
+10. **Compatibilidad de Dependencias en App Hosting (
+pm ci) y Versión de Node:**
+    - **Resolución de Peer Dependency ERESOLVE:**
+      Durante la fase uild con 
+pm ci en Firebase App Hosting, el paquete @firebase/rules-unit-testing@5.0.2 causaba conflicto de dependencias pares al requerir peer firebase@"^12.0.0", mientras el proyecto utiliza irebase@^13.1.0.
+      Se aplicó la **Opción 1** (solución oficial nativa): se actualizó @firebase/rules-unit-testing a la versión ^6.0.0, la cual declara oficialmente "firebase": "^13.0.0" en sus peerDependencies. Esto resolvió el árbol de dependencias limpiamente sin requerir parches artificiales en overrides ni forzar .npmrc con legacy-peer-deps=true.
+    - **Soporte de Node 22 y Node 24:**
+      El entorno de compilación de Firebase App Hosting opera sobre Node 24. Se configuró "engines": { "node": ">=22 <25" } en package.json, asegurando total compatibilidad tanto en el entorno de desarrollo local (Node 22) como en el builder de producción de App Hosting (Node 24).
+    - **Verificación Local Reproducida:**
+      Se validó el ciclo limpio completo sin banderas de omisión: eliminación de 
+ode_modules, ejecución exitosa de 
+pm ci, 
+pm run build (Turbopack) y 
+pm test (105 tests unitarios en verde).
