@@ -19,6 +19,7 @@ import {
   initialProducts,
   initialPackages,
 } from "./seed-data";
+import { defaultSolutions } from "@/lib/services/solutions-service";
 
 const isProd = process.argv.includes("--prod");
 
@@ -94,6 +95,15 @@ async function runSeed() {
       const ref = adminDb.collection("travelFees").doc(fee.id);
       batch.set(ref, {
         ...fee,
+        updatedAt: new Date().toISOString(),
+      }, { merge: true });
+    }
+
+    console.log(`🚀 Guardando ${defaultSolutions.length} soluciones en 'solutions'...`);
+    for (const sol of defaultSolutions) {
+      const ref = adminDb.collection("solutions").doc(sol.slug);
+      batch.set(ref, {
+        ...sol,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
     }

@@ -3,9 +3,18 @@ import { ShieldCheck, Award, Users, MapPin, Cpu, CheckCircle2 } from "lucide-rea
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Sobre CoSoAVL | CosoTec",
+  title: "Sobre CoSoAVL",
   description:
-    "Más de 15 años de liderazgo en ingeniería telemática, rastreo GPS y seguridad vehicular en México. 48,000 dispositivos vendidos.",
+    "Liderazgo en telemetría, rastreo GPS y seguridad vehicular en México. Más de 48,000 dispositivos vendidos.",
+  alternates: {
+    canonical: "/nosotros",
+  },
+  openGraph: {
+    title: "Sobre CoSoAVL | CosoTec by CoSoAVL",
+    description:
+      "Liderazgo en telemetría, rastreo GPS y seguridad vehicular en México. Más de 48,000 dispositivos vendidos.",
+    url: "/nosotros",
+  },
 };
 
 export default async function NosotrosPage() {
@@ -22,7 +31,7 @@ export default async function NosotrosPage() {
           Ingeniería Mexicana en Telemetría y Seguridad
         </h1>
         <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
-          CoSoAVL nació con el compromiso de brindar a las empresas mexicanas el control absoluto de sus vehículos y transporte de carga, combinando electrónica automotriz de grado industrial y software propio.
+          CoSoAVL nació con el compromiso de brindar a las empresas mexicanas el control absoluto de sus vehículos y transporte de carga, combinando electrónica automotriz de grado industrial y plataformas telemáticas avanzadas.
         </p>
       </div>
 
@@ -37,20 +46,20 @@ export default async function NosotrosPage() {
         <div className="p-8 rounded-3xl bg-white border border-gray-200/80 shadow-xs space-y-2">
           <div className="flex items-center gap-1.5 text-emerald-600">
             <ShieldCheck className="w-6 h-6 shrink-0" />
-            <span className="font-bold text-xs uppercase tracking-wider">Aval Oficial</span>
+            <span className="font-bold text-xs uppercase tracking-wider">Experiencia</span>
           </div>
-          <h3 className="font-bold text-gray-900 text-sm">Gobiernos Estatales</h3>
+          <h3 className="font-bold text-gray-900 text-sm">Soporte y Flotas</h3>
           <p className="text-xs text-gray-500 leading-relaxed">{stats.gobiernosTexto}</p>
         </div>
 
         <div className="p-8 rounded-3xl bg-white border border-gray-200/80 shadow-xs space-y-2">
           <div className="flex items-center gap-1.5 text-[#C9A15B]">
             <Award className="w-6 h-6 shrink-0" />
-            <span className="font-bold text-xs uppercase tracking-wider">Acreditación</span>
+            <span className="font-bold text-xs uppercase tracking-wider">Seguridad</span>
           </div>
-          <h3 className="font-bold text-gray-900 text-sm">Certificación ANERPV</h3>
+          <h3 className="font-bold text-gray-900 text-sm">Recuperación con la ANERPV</h3>
           <p className="text-xs text-gray-500 leading-relaxed">
-            Asociación Nacional de Empresas de Rastreo y Protección Vehicular, enlazados con C4 y C5.
+            Asistencia para recuperación de unidades en coordinación con la Asociación Nacional de Empresas de Rastreo y Protección Vehicular.
           </p>
         </div>
       </div>
@@ -76,10 +85,10 @@ export default async function NosotrosPage() {
           <div className="space-y-2">
             <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-[#7A1428]" />
-              <span>Plataforma y Demos Propios</span>
+              <span>Plataformas Telemáticas Confiables</span>
             </h3>
             <p className="text-gray-600 leading-relaxed pl-6">
-              TrackTracer, SphereGT y servidores dedicados en alta disponibilidad para rastreo fluido de flotas industriales y particulares.
+              Acceso a plataformas consolidadas como TrackTracer y SphereGT para rastreo en tiempo real y telemetría de flotas industriales y particulares.
             </p>
           </div>
 

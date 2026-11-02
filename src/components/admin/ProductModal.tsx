@@ -16,6 +16,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
   const [nombreComercial, setNombreComercial] = useState("");
   const [slug, setSlug] = useState("");
   const [modelo, setModelo] = useState("");
+  const [modeloConfirmado, setModeloConfirmado] = useState(false);
   const [categoria, setCategoria] = useState<ProductCategory>("gps");
   const [precioSinIvaPesos, setPrecioSinIvaPesos] = useState<string>("0");
   const [descripcionCorta, setDescripcionCorta] = useState("");
@@ -39,6 +40,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       setNombreComercial(product.nombreComercial || "");
       setSlug(product.slug || "");
       setModelo(product.modelo || "");
+      setModeloConfirmado(product.modeloConfirmado ?? false);
       setCategoria(product.categoria || "gps");
       setPrecioSinIvaPesos((product.precioSinIvaCentavos / 100).toFixed(2));
       setDescripcionCorta(product.descripcionCorta || "");
@@ -56,6 +58,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       setNombreComercial("");
       setSlug("");
       setModelo("");
+      setModeloConfirmado(false);
       setCategoria("gps");
       setPrecioSinIvaPesos("0.00");
       setDescripcionCorta("");
@@ -150,6 +153,7 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         slug,
         nombreComercial,
         modelo,
+        modeloConfirmado,
         categoria,
         precioSinIvaCentavos: centavosSinIva,
         descripcionCorta,
@@ -224,9 +228,20 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 type="text"
                 value={modelo}
                 onChange={(e) => setModelo(e.target.value)}
-                placeholder="Ej. JC450, GTX3"
+                placeholder="Ej. JC450, Y04g"
                 className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
               />
+              <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={modeloConfirmado}
+                  onChange={(e) => setModeloConfirmado(e.target.checked)}
+                  className="rounded text-[#7A1428] focus:ring-[#7A1428] w-3.5 h-3.5"
+                />
+                <span className="text-[11px] font-medium text-gray-600">
+                  Modelo confirmado (visible en tienda)
+                </span>
+              </label>
             </div>
           </div>
 

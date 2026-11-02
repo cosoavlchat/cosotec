@@ -72,10 +72,10 @@ export async function getContactSettings() {
 }
 
 export async function getFeatureSettings() {
-  if (!(await isFirestoreReady())) return { modoCotizadorWhatsapp: true };
+  if (!(await isFirestoreReady())) return { modoCotizadorWhatsapp: false };
   try {
     const snap = await adminDb.collection("settings").doc("features").get();
     if (snap.exists) return snap.data();
   } catch {}
-  return { modoCotizadorWhatsapp: true };
+  return { modoCotizadorWhatsapp: false };
 }

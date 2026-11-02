@@ -1,78 +1,31 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Car, Truck, Shield, Clock, MapPin, Check, MessageCircle, ArrowRight } from "lucide-react";
-import { getProducts, getPackages } from "@/lib/services/catalog-service";
+import {
+  Car,
+  Truck,
+  Shield,
+  Clock,
+  MapPin,
+  Check,
+  MessageCircle,
+  ArrowRight,
+  ShieldAlert,
+  Sparkles,
+  Layers,
+} from "lucide-react";
+import { getProducts } from "@/lib/services/catalog-service";
+import { getSolutionBySlug, getSolutions } from "@/lib/services/solutions-service";
+import { SolutionTierCard } from "@/components/public/SolutionTierCard";
 import { ProductCard } from "@/components/public/ProductCard";
-import { PackageCard } from "@/components/public/PackageCard";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import type { Metadata } from "next";
 
-interface SolucionData {
-  titulo: string;
-  subtitulo: string;
-  icono: any;
-  amenazas: string[];
-  paqueteSlug: string;
-  productosCompatibles: string[];
-}
-
-const solucionesMap: Record<string, SolucionData> = {
-  "auto-camioneta": {
-    titulo: "Seguridad para Autos y Camionetas",
-    subtitulo: "Rastreo personal, paro de motor remoto y botón de asistencia ante robo o asalto.",
-    icono: Car,
-    amenazas: ["Robo estacionado o con violencia", "Uso no autorizado del vehículo", "Falta de asistencia en carretera"],
-    paqueteSlug: "gps-esencial",
-    productosCompatibles: ["gps-estandar", "boton-panico", "seguros-puertas-automatizados"],
-  },
-  "taxi-apps": {
-    titulo: "Seguridad para Taxi, Uber, Didi y Apps",
-    subtitulo: "Botón de pánico silencioso en cabina y monitoreo continuo las 24 horas.",
-    icono: Car,
-    amenazas: ["Asaltos a chofer durante servicio", "Desconexión de equipo", "Disputas de pasaje"],
-    paqueteSlug: "dashcam-esencial-jc181",
-    productosCompatibles: ["gps-basico-semi", "boton-panico", "microfono"],
-  },
-  "tractocamion": {
-    titulo: "Protección Integral para Tractocamiones",
-    subtitulo: "Telemetría avanzada, protección activa anti-jammer, control de diesel y video multicámara.",
-    icono: Truck,
-    amenazas: ["Ataque con inhibidores de señal (jammer)", "Robo de diesel por ordeña", "Accidentes en carretera"],
-    paqueteSlug: "flotilla-pro-combustible",
-    productosCompatibles: ["gps-flotilla", "anti-jammer", "sensor-combustible-varilla-instalado", "dashcam-industrial-360"],
-  },
-  "camion-autobus": {
-    titulo: "Monitoreo para Camiones, Volteos y Autobuses",
-    subtitulo: "Control estricto de velocidad, cumplimiento de rutas y botón de emergencia.",
-    icono: Truck,
-    amenazas: ["Excesos de velocidad y multas", "Desvío no autorizado de ruta", "Pérdida de control de tiempos"],
-    paqueteSlug: "gps-flotilla-pro",
-    productosCompatibles: ["gps-intermedio", "boton-panico", "bocina"],
-  },
-  "caja-refrigerada": {
-    titulo: "Rastreo para Cajas Secas y Refrigeradas",
-    subtitulo: "Equipos portátiles de larga duración y sensores de temperatura para cadena de frío.",
-    icono: Shield,
-    amenazas: ["Pérdida de temperatura en perecederos", "Desenganche no autorizado de caja", "Robo de mercancía"],
-    paqueteSlug: "gps-flotilla-pro",
-    productosCompatibles: ["gps-portable-3d", "gps-caja", "sensor-temperatura", "chapa-electromecanica-1-perno-ferceo"],
-  },
-  "maquinaria": {
-    titulo: "Control para Maquinaria Pesada y de Construcción",
-    subtitulo: "Medición exacta de horómetros de motor, geocercas en obra y paro preventivo.",
-    icono: Clock,
-    amenazas: ["Uso no autorizado fuera de horario", "Robo en obra durante la noche", "Falta de control de horas de trabajo"],
-    paqueteSlug: "gps-flotilla-pro",
-    productosCompatibles: ["gps-maquinaria-pesada", "sensor-combustible-varilla-instalado"],
-  },
-  "motos": {
-    titulo: "Rastreo para Motocicletas de Reparto",
-    subtitulo: "Dispositivo ultra compacto impermeable que no drena la batería.",
-    icono: MapPin,
-    amenazas: ["Robo de moto estacionada", "Asalto en entrega de último tramo", "Pérdida de señal"],
-    paqueteSlug: "gps-esencial",
-    productosCompatibles: ["gps-motocicleta-y04g"],
-  },
+const iconMap = {
+  Car,
+  Truck,
+  Shield,
+  Clock,
+  MapPin,
 };
 
 export async function generateMetadata({
@@ -81,12 +34,20 @@ export async function generateMetadata({
   params: Promise<{ tipo: string }>;
 }): Promise<Metadata> {
   const { tipo } = await params;
-  const sol = solucionesMap[tipo];
+  const sol = await getSolutionBySlug(tipo);
   if (!sol) return { title: "Solución no encontrada" };
 
   return {
-    title: `${sol.titulo} | CosoTec by CoSoAVL`,
+    title: sol.titulo,
     description: sol.subtitulo,
+    alternates: {
+      canonical: `/soluciones/${tipo}`,
+    },
+    openGraph: {
+      title: `${sol.titulo} | CosoTec by CoSoAVL`,
+      description: sol.subtitulo,
+      url: `/soluciones/${tipo}`,
+    },
   };
 }
 
@@ -96,104 +57,189 @@ export default async function SolucionPage({
   params: Promise<{ tipo: string }>;
 }) {
   const { tipo } = await params;
-  const sol = solucionesMap[tipo];
+  const sol = await getSolutionBySlug(tipo);
   if (!sol) notFound();
 
-  const [allProducts, allPackages] = await Promise.all([
-    getProducts(false),
-    getPackages(false),
-  ]);
+  const allSolutions = await getSolutions();
+  const allProducts = await getProducts(false);
 
-  const recommendedPackage = allPackages.find((p) => p.slug === sol.paqueteSlug && p.activo);
-  const relatedProducts = allProducts.filter(
-    (p) => sol.productosCompatibles.includes(p.slug) && p.activo
+  // Mapeo de productos para los tiers
+  const productMap = new Map(allProducts.map((p) => [p.slug, p]));
+
+  // Accesorios compatibles
+  const relatedProducts = allProducts.filter((p) =>
+    sol.accesoriosCompatiblesSlugs.includes(p.slug)
   );
 
-  const whatsappUrl = buildWhatsAppLink({
-    producto: sol.titulo,
+  const whatsappQuoteUrl = buildWhatsAppLink({
     pagina: `/soluciones/${tipo}`,
     tipoConsulta: "cotizacion",
+    equipo: `Solución Especializada para ${sol.titulo}`,
   });
 
-  const IconComp = sol.icono;
+  const Icon = iconMap[sol.iconoName] || Car;
 
   return (
-    <div className="space-y-16 pb-20">
-      {/* Header Solución */}
-      <section className="bg-gradient-to-r from-[#4A0C18] to-[#7A1428] text-white py-16 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-4 max-w-2xl">
-            <div className="w-12 h-12 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-[#C9A15B]">
-              <IconComp className="w-6 h-6" />
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-black tracking-tight">{sol.titulo}</h1>
-            <p className="text-sm sm:text-base text-gray-200 leading-relaxed">{sol.subtitulo}</p>
-            <div className="pt-2">
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#C9A15B] hover:bg-[#b58f4a] text-gray-900 font-extrabold text-xs rounded-xl shadow-lg transition-transform hover:scale-105"
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-12 sm:space-y-16">
+      {/* 1. Barra de Navegación Rápida entre las 7 Soluciones */}
+      <div className="space-y-2">
+        <span className="text-[11px] uppercase font-bold text-gray-400 tracking-wider block">
+          Cambiar tipo de unidad:
+        </span>
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {allSolutions.map((s) => {
+            const SIcon = iconMap[s.iconoName] || Car;
+            const isCurrent = s.slug === tipo;
+            return (
+              <Link
+                key={s.slug}
+                href={`/soluciones/${s.slug}`}
+                className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                  isCurrent
+                    ? "bg-[#7A1428] text-white shadow-sm"
+                    : "bg-white border border-gray-200/90 text-gray-700 hover:border-[#7A1428]/40 hover:text-[#7A1428]"
+                }`}
+                aria-label={`Ver solución para ${s.titulo}`}
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>Cotizar esta solución por WhatsApp</span>
-              </a>
-            </div>
+                <SIcon className="w-3.5 h-3.5" />
+                <span>{s.titulo}</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Hero de la Solución */}
+      <div className="bg-gradient-to-br from-[#1C0409] via-[#2A060E] to-[#120205] text-white rounded-3xl p-6 sm:p-12 shadow-xl border border-[#C9A15B]/30 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+
+        <div className="relative z-10 max-w-3xl space-y-5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#C9A15B] text-xs font-bold uppercase tracking-wider backdrop-blur-xs border border-white/10">
+            <Icon className="w-4 h-4 text-[#C9A15B]" />
+            <span>Solución Especializada</span>
           </div>
 
-          {/* Tarjeta de Riesgos que resuelve */}
-          <div className="w-full md:w-80 bg-black/30 backdrop-blur-md rounded-2xl p-6 border border-white/15 space-y-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B] block">
-              Riesgos que neutraliza:
-            </span>
-            <ul className="space-y-2 text-xs text-gray-200">
-              {sol.amenazas.map((amenaza, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>{amenaza}</span>
-                </li>
-              ))}
-            </ul>
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+            {sol.titulo}
+          </h1>
+
+          <p className="text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
+            {sol.subtitulo}
+          </p>
+
+          {/* Problema y Riesgos Prioritarios */}
+          <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B] flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Problema Crítico</span>
+              </span>
+              <p className="text-xs text-gray-200 leading-snug">
+                {sol.problema}
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <Check className="w-3.5 h-3.5" />
+                <span>Riesgos Protegidos</span>
+              </span>
+              <ul className="space-y-1 text-xs text-gray-200">
+                {sol.amenazas.map((amenaza, i) => (
+                  <li key={i} className="flex items-start gap-1.5">
+                    <span className="text-[#C9A15B] font-black">•</span>
+                    <span className="leading-tight">{amenaza}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
+        </div>
+      </div>
+
+      {/* 3. Tres Opciones: Básico / Recomendado / Completo */}
+      <section className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-[#7A1428]">
+              <Layers className="w-4 h-4" />
+              <span>Niveles de Equipamiento</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
+              Configuraciones Listas para Instalar
+            </h2>
+          </div>
+          <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
+            Todas las opciones incluyen equipo nuevo de grado automotriz, mano de obra de instalación profesional oculta y primer año de servicio.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {sol.tiers.map((tier) => (
+            <SolutionTierCard
+              key={tier.id}
+              tier={tier}
+              product={productMap.get(tier.productoSlug)}
+              solucionTitulo={sol.titulo}
+            />
+          ))}
         </div>
       </section>
 
-      {/* Paquete Recomendado */}
-      {recommendedPackage && (
-        <section className="max-w-6xl mx-auto px-6 space-y-6">
-          <div className="space-y-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#7A1428]">
-              Configuración Sugerida
-            </span>
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-              Paquete Recomendado para {sol.titulo}
-            </h2>
-          </div>
-          <div className="max-w-md">
-            <PackageCard pkg={recommendedPackage} />
-          </div>
-        </section>
-      )}
-
-      {/* Equipos y Accesorios Compatibles */}
+      {/* 4. Accesorios Compatibles */}
       {relatedProducts.length > 0 && (
-        <section className="max-w-6xl mx-auto px-6 space-y-6">
+        <section className="space-y-6 pt-4 border-t border-gray-100">
           <div className="space-y-1">
             <span className="text-xs font-bold uppercase tracking-wider text-[#7A1428]">
-              Complementos Compatibles
+              Complementos Disponibles
             </span>
             <h2 className="text-2xl font-black text-gray-900 tracking-tight">
-              Equipos y Sensores para esta Unidad
+              Accesorios y Sensores Compatibles con {sol.titulo}
             </h2>
+            <p className="text-xs text-gray-500">
+              Personaliza tu unidad con sensores adicionales, chapas electromecánicas o botones de auxilio.
+            </p>
           </div>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+
+          <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
             {relatedProducts.map((p) => (
               <ProductCard key={p.slug} product={p} />
             ))}
           </div>
         </section>
       )}
+
+      {/* 5. CTA a Cotización a Medida */}
+      <div className="rounded-3xl bg-gray-50 border border-gray-200/80 p-6 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="space-y-2 max-w-xl text-center sm:text-left">
+          <h3 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+            ¿Requieres equipar flotillas o una configuración especial?
+          </h3>
+          <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
+            Te armamos una cotización formal inmediata con descuentos por volumen a partir de 5 unidades y logística de instalación consolidada.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <Link
+            href={`/soluciones?tipo=${tipo}`}
+            className="w-full sm:w-auto px-6 py-3.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl transition-all shadow-xs text-center cursor-pointer"
+            aria-label={`Ver catálogo de soluciones para ${sol.titulo}`}
+          >
+            <span>Explorar Otras Soluciones</span>
+          </Link>
+          <a
+            href={whatsappQuoteUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-6 py-3.5 bg-[#C9A15B] hover:bg-[#b58f4a] text-gray-900 text-xs font-extrabold rounded-xl transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer"
+            aria-label={`Cotizar ${sol.titulo} por WhatsApp`}
+          >
+            <MessageCircle className="w-4 h-4 fill-current text-gray-900" />
+            <span>Asesoría Directa</span>
+          </a>
+        </div>
+      </div>
     </div>
   );
 }
-

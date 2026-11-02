@@ -27,6 +27,10 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
   - Confirmar tope autorizado de descuento aplicable por el vendedor (actualmente configurado con valor provisional del 5% en `settings/pricing.descuentoVendedorTope`).
 - [ ] **Tabla de viáticos por estado**:
   - Definición de montos fijos por visita y por unidad adicional (estados gratuitos: CDMX, Estado de México/Toluca, Nuevo León/Monterrey, Jalisco/Guadalajara, Querétaro).
+- [ ] **Fotos reales por producto confirmadas por el cliente**:
+  - Actualmente la plataforma cuenta con imágenes de muestra neutras con la identidad CosoTec por cada categoría (GPS, DashCam, Seguridad, Accesorios, Drones, Servicios) y el helper inteligente `getProductImage()`. El cliente debe proveer las fotos reales definitivas de cada modelo para cargarlas en `/admin/catalogo`.
+- [ ] **Cotizador guiado de 6 pasos (/cotizar)**:
+  - Construcción del asistente interactivo de diagnóstico vehicular paso a paso según especificación COSOTEC_SPEC.md (mientras tanto, los botones "Cotiza en 1 minuto" dirigen al hub de /soluciones).
 - [ ] **Precios públicos definitivos de inconsistencias detectadas**:
   - *GPS Estándar:* Lista amarilla indica $8,557.32 con IVA, pero cotizaciones recientes indican $5,500.00 con instalación y plan.
   - *GPS Portable 15-D:* Confirmar precio y características.

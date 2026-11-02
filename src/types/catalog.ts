@@ -17,6 +17,7 @@ export interface Product {
   slug: string;
   nombreComercial: string;
   modelo: string;
+  modeloConfirmado?: boolean; // Solo JC181, JC450 y Y04g están confirmados; el resto se oculta al público
   categoria: ProductCategory;
   descripcionCorta: string;
   descripcion: string;

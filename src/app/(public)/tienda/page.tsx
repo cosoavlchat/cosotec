@@ -5,9 +5,18 @@ import { Layers, ShieldCheck, Video, Cpu, Plane, Wrench } from "lucide-react";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Catálogo Oficial de Equipos | CosoTec by CoSoAVL",
+  title: "Catálogo Oficial de Equipos",
   description:
     "Catálogo de GPS vehicular, DashCams con IA, seguridad anti-jammer y drones empresariales. Precios públicos con IVA incluido.",
+  alternates: {
+    canonical: "/tienda",
+  },
+  openGraph: {
+    title: "Catálogo Oficial de Equipos | CosoTec by CoSoAVL",
+    description:
+      "Catálogo de GPS vehicular, DashCams con IA, seguridad anti-jammer y drones empresariales. Precios públicos con IVA incluido.",
+    url: "/tienda",
+  },
 };
 
 export default async function TiendaPage() {

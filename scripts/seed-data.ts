@@ -33,7 +33,7 @@ export const initialBankSettings: BankSettings = {
 };
 
 export const initialFeaturesSettings = {
-  modoCotizadorWhatsapp: true, // REGLA: Enlace a WhatsApp mientras no exista checkout
+  modoCotizadorWhatsapp: false, // Venta en línea activada: Carrito y Checkout habilitados por defecto
   instalacionEnTaller: false, // REGLA 4: Desactivada por defecto hasta confirmación del cliente
 };
 
@@ -48,9 +48,9 @@ export const initialContentData = {
     cifraDispositivos: "48,000+",
     dispositivosTexto: "48,000 dispositivos vendidos en Norteamérica y Sudamérica",
     gobiernosTexto:
-      "Equipo avalado por el sistema nacional de seguridad, instalado en gobiernos de Nuevo León, Tamaulipas y Puebla",
-    aniosExperiencia: "15+",
-    experienciaTexto: "Años de liderazgo en rastreo e ingeniería telemática",
+      "Tecnología telemática de alta precisión con soporte técnico especializado y asistencia para recuperación con la ANERPV",
+    aniosExperiencia: "Trayectoria",
+    experienciaTexto: "Liderazgo en rastreo, telemetría y seguridad de flotas en México",
   },
   hero: {
     badge: "Ingeniería Mexicana en Telemetría y Seguridad",
@@ -67,12 +67,12 @@ export const initialContentData = {
     {
       pregunta: "¿En qué ciudades la instalación no tiene costo de viáticos?",
       respuesta:
-        "La instalación no genera costo adicional de viáticos en Toluca, Metepec, Ciudad de México (CDMX) y área conurbada, Monterrey, Guadalajara y Querétaro.",
+        "La instalación no genera costo adicional de viáticos en las zonas metropolitanas de Toluca, Metepec, Ciudad de México (CDMX), Monterrey, Guadalajara y Querétaro capital.",
     },
     {
       pregunta: "¿Qué incluye la compra de un equipo GPS?",
       respuesta:
-        "Incluye el dispositivo homologado, instalación técnica oculta, tarjeta SIM multi-carrier y la licencia de plataforma de rastreo en tiempo real para app móvil y computadora.",
+        "Incluye el dispositivo GPS, arnés de instalación, instalación técnica oculta, tarjeta SIM de datos y la licencia de plataforma de rastreo en tiempo real para app móvil y computadora.",
     },
     {
       pregunta: "¿Qué sucede si utilizan un inhibidor de señal (jammer)?",
@@ -124,22 +124,22 @@ export const initialTravelFees: TravelFee[] = [
   { id: "CAM", claveInegi: "CAM", estadoNombre: "Campeche", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "CHP", claveInegi: "CHP", estadoNombre: "Chiapas", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "CHH", claveInegi: "CHH", estadoNombre: "Chihuahua", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
-  { id: "CDMX", claveInegi: "CDMX", estadoNombre: "Ciudad de México", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Zona Metropolitana y CDMX sin costo" },
+  { id: "CDMX", claveInegi: "CDMX", estadoNombre: "Ciudad de México", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Sin costo en zona metropolitana; resto del estado se cotiza" },
   { id: "COA", claveInegi: "COA", estadoNombre: "Coahuila", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "COL", claveInegi: "COL", estadoNombre: "Colima", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "DUR", claveInegi: "DUR", estadoNombre: "Durango", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "GUA", claveInegi: "GUA", estadoNombre: "Guanajuato", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "GRO", claveInegi: "GRO", estadoNombre: "Guerrero", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "HID", claveInegi: "HID", estadoNombre: "Hidalgo", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
-  { id: "JAL", claveInegi: "JAL", estadoNombre: "Jalisco", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Guadalajara y zona metropolitana sin costo" },
-  { id: "MEX", claveInegi: "MEX", estadoNombre: "Estado de México", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Toluca, Metepec y Valle de México sin costo" },
+  { id: "JAL", claveInegi: "JAL", estadoNombre: "Jalisco", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Sin costo en zona metropolitana; resto del estado se cotiza" },
+  { id: "MEX", claveInegi: "MEX", estadoNombre: "Estado de México", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Sin costo en zona metropolitana; resto del estado se cotiza" },
   { id: "MIC", claveInegi: "MIC", estadoNombre: "Michoacán", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "MOR", claveInegi: "MOR", estadoNombre: "Morelos", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "NAY", claveInegi: "NAY", estadoNombre: "Nayarit", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
-  { id: "NLE", claveInegi: "NLE", estadoNombre: "Nuevo León", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Monterrey y zona conurbada sin costo" },
+  { id: "NLE", claveInegi: "NLE", estadoNombre: "Nuevo León", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Sin costo en zona metropolitana; resto del estado se cotiza" },
   { id: "OAX", claveInegi: "OAX", estadoNombre: "Oaxaca", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "PUE", claveInegi: "PUE", estadoNombre: "Puebla", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
-  { id: "QRO", claveInegi: "QRO", estadoNombre: "Querétaro", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Querétaro capital y San Juan del Río sin costo" },
+  { id: "QRO", claveInegi: "QRO", estadoNombre: "Querétaro", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: true, notas: "Sin costo en zona metropolitana; resto del estado se cotiza" },
   { id: "ROO", claveInegi: "ROO", estadoNombre: "Quintana Roo", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "SLP", claveInegi: "SLP", estadoNombre: "San Luis Potosí", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
   { id: "SIN", claveInegi: "SIN", estadoNombre: "Sinaloa", montoPorVisitaCentavos: 0, montoPorUnidadCentavos: 0, sinCosto: false },
@@ -160,11 +160,12 @@ const rawProducts: Product[] = [
     id: "gps-estandar-sin-telemetria",
     slug: "gps-estandar-sin-telemetria",
     nombreComercial: "GPS Estándar sin telemetría",
-    modelo: "GTX3",
+    modelo: "",
+    modeloConfirmado: false,
     categoria: "gps",
     descripcionCorta: "Ideal para cualquier unidad que no requiere botón de pánico ni accesorios adicionales.",
-    descripcion: "Dispositivo de rastreo satelital básico con conectividad multi-carrier y reporte periódico.",
-    queIncluye: ["Dispositivo GPS 4G", "Arnés de instalación", "SIM multi-operador", "Instalación estándar"],
+    descripcion: "Dispositivo de rastreo satelital básico con reporte periódico y cobertura nacional.",
+    queIncluye: ["Dispositivo GPS 4G", "Arnés de instalación", "SIM de datos", "Instalación estándar"],
     precioSinIvaCentavos: 399999, // $3,999.99
     imagenes: [],
     tiposUnidad: ["auto", "camioneta", "taxi", "moto"],
@@ -224,6 +225,7 @@ const rawProducts: Product[] = [
     slug: "gps-motocicleta-y04g",
     nombreComercial: "GPS Motocicleta Y04g",
     modelo: "Y04g",
+    modeloConfirmado: true,
     categoria: "gps",
     descripcionCorta: "GPS ultra compacto con consumo de energía mínimo para motocicletas de reparto.",
     descripcion: "Protección contra descargas de batería, resistente al agua y polvo (IP65).",
@@ -375,6 +377,7 @@ const rawProducts: Product[] = [
     slug: "dashcam-jc181",
     nombreComercial: "DashCam Esencial JC181",
     modelo: "JC181",
+    modeloConfirmado: true,
     categoria: "dashcam",
     descripcionCorta: "Cámara inteligente de 2 lentes (cabina y carretera) con GPS integrado y paro de motor.",
     descripcion: "Transmisión de video en vivo 4G, detección de incidentes, botón SOS y audio en cabina.",
@@ -396,6 +399,7 @@ const rawProducts: Product[] = [
     slug: "dashcam-jc450",
     nombreComercial: "DashCam Industrial JC450",
     modelo: "JC450",
+    modeloConfirmado: true,
     categoria: "dashcam",
     descripcionCorta: "Dashcam de grado industrial diseñada para tractocamiones y flotillas pesadas.",
     descripcion: "Soporta hasta 4 canales simultáneos de video, telemetría telemática, paro de motor y botón SOS.",
@@ -680,11 +684,12 @@ const rawProducts: Product[] = [
   {
     id: "microfono",
     slug: "microfono",
-    nombreComercial: "Micrófono Oculto en Cabina",
+    nombreComercial: "Micrófono de Cabina",
     modelo: "MIC-01",
+    modeloConfirmado: false,
     categoria: "accesorio",
-    descripcionCorta: "Escucha espía en cabina en situaciones de asalto o secuestro.",
-    descripcion: "Cápsula de alta sensibilidad con supresión de ruido de motor.",
+    descripcionCorta: "Audio para atención de emergencias en cabina.",
+    descripcion: "Audio para atención de emergencias en cabina. Informa a tus operadores sobre el uso de audio y video en cabina.",
     queIncluye: ["Micrófono electret y cable de 3 m apantallado"],
     precioSinIvaCentavos: 139969, // $1,399.69
     imagenes: [],
@@ -846,7 +851,7 @@ const rawProducts: Product[] = [
     categoria: "servicio",
     descripcionCorta: "Préstamo o reemplazo temporal de dispositivo de rastreo durante mantenimiento o garantía.",
     descripcion: "Asignación de hardware sustituto para asegurar la continuidad operativa de la flota sin interrupción.",
-    queIncluye: ["Equipo temporal homologado", "Programación de parámetros", "Soporte de activación"],
+    queIncluye: ["Equipo temporal de respaldo", "Programación de parámetros", "Soporte de activación"],
     precioSinIvaCentavos: 195000, // $1,950.00
     imagenes: [],
     esEquipoPrincipal: false,
@@ -878,7 +883,7 @@ const rawProducts: Product[] = [
     nombreComercial: "Renovación Anual GPS (Servicio Recurrente)",
     modelo: "LIC-ANUAL-GPS",
     categoria: "servicio",
-    descripcionCorta: "Licencia anual de plataforma web/app y plan de datos multi-carrier por unidad.",
+    descripcionCorta: "Licencia anual de plataforma web/app y plan de datos móviles por unidad.",
     descripcion: "Mantiene la transmisión continua, historial de recorridos y acceso a soporte técnico.",
     queIncluye: ["12 meses de plan de datos SIM 4G", "12 meses de acceso ilimitado a plataforma y app"],
     precioSinIvaCentavos: 258375, // $2,583.75
@@ -924,7 +929,9 @@ function resolveProductSampleImage(product: { slug?: string; categoria?: string;
   if (slug.includes("chapa") || slug.includes("perno") || slug.includes("seguro") || slug.includes("rfid")) return "/products/chapa-seguridad.webp";
   if (cat === "dron" || slug.includes("dron")) return "/products/dron-empresarial.webp";
   if (slug.includes("panico") || slug.includes("sos") || slug.includes("boton")) return "/products/boton-panico.webp";
+  if (cat === "accesorio") return "/products/accesorio-generico.webp";
   if (cat === "servicio" || slug.includes("servicio") || slug.includes("instalacion")) return "/products/servicio-instalacion.webp";
+  if (cat === "seguridad") return "/products/antijammer.webp";
   return "/products/gps-standard.webp";
 }
 
@@ -1056,7 +1063,7 @@ export const initialPackages: Package[] = [
       "Cámara 2 lentes para flotillas industriales con GPS y paro de motor",
       "Paro de motor seguro y botón SOS",
       "Audio en cabina con bocina y micrófono de alta ganancia",
-      "Instalación profesional certificada",
+      "Instalación profesional oculta",
       "SIM 4G 1 mes cortesía (5 GB)",
       "Licencia anual con nube de 7 días y soporte CoSoAVL",
     ],
@@ -1108,8 +1115,8 @@ export const initialPackages: Package[] = [
     queIncluye: [
       "Módulo detector de inhibición de RF / jammer",
       "Bloqueo automático e inmediato a marcha en caso de ataque",
-      "Reconocimiento de operador por RFID",
-      "Instalación técnica certificada y soporte",
+      "Comunicación RFID que no depende de antenas",
+      "Instalación técnica y soporte",
     ],
     destacado: false,
     activo: true,

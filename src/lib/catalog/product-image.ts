@@ -49,9 +49,18 @@ export function getProductImage(product: {
     return "/products/boton-panico.webp";
   }
 
+  if (cat === "accesorio") {
+    return "/products/accesorio-generico.webp";
+  }
+
   if (cat === "servicio" || slug.includes("servicio") || slug.includes("instalacion")) {
     return "/products/servicio-instalacion.webp";
   }
 
+  if (cat === "seguridad") {
+    return "/products/antijammer.webp";
+  }
+
   return "/products/gps-standard.webp";
 }
+

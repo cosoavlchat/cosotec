@@ -3,9 +3,18 @@ import { PackageCard } from "@/components/public/PackageCard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Paquetes Comerciales Listos | CosoTec by CoSoAVL",
+  title: "Paquetes Comerciales Listos para Instalar",
   description:
     "Kits listos de rastreo GPS, DashCams industriales y seguridad anti-jammer con instalación profesional incluida.",
+  alternates: {
+    canonical: "/paquetes",
+  },
+  openGraph: {
+    title: "Paquetes Comerciales Listos | CosoTec by CoSoAVL",
+    description:
+      "Kits listos de rastreo GPS, DashCams industriales y seguridad anti-jammer con instalación profesional incluida.",
+    url: "/paquetes",
+  },
 };
 
 export default async function PaquetesPage() {

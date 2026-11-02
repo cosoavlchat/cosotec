@@ -19,7 +19,7 @@ export function hasCookieConsent(): boolean {
  * Los datos sensibles del cliente y tokens se purgan antes de enviar a GA4 / Meta.
  */
 export function trackAnalyticsEvent(
-  eventName: "ViewContent" | "Contact" | "Lead",
+  eventName: "ViewContent" | "Contact" | "Lead" | "AddToCart" | "InitiateCheckout" | "Purchase",
   params?: Record<string, any>
 ) {
   if (typeof window === "undefined") return;

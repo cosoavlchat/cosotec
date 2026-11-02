@@ -33,7 +33,7 @@ export default function PlataformaGpsPage() {
             href="/tienda/gps"
             className="px-6 py-3 rounded-xl bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold transition-all shadow-xs"
           >
-            Ver Equipos GPS Homologados
+            Ver Equipos GPS Disponibles
           </Link>
           <a
             href={whatsappUrl}

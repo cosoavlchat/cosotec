@@ -16,10 +16,10 @@ const categoryTitles: Record<string, { title: string; desc: string }> = {
   },
   seguridad: {
     title: "Seguridad Activa y Sensores",
-    desc: "Sistemas anti-jammer por RFID, chapas electromecánicas y sensores de combustible.",
+    desc: "Sistemas activos anti-jammer, chapas electromecánicas y sensores de combustible.",
   },
   accesorio: {
-    title: "Accesorios Homologados",
+    title: "Accesorios y Complementos",
     desc: "Botones de pánico, micrófonos, antenas activas y tarjetas MicroSD especializadas.",
   },
   dron: {
@@ -44,12 +44,20 @@ export async function generateMetadata({
   const allProducts = await getProducts(false);
   const count = allProducts.filter((p) => p.categoria === (categoria as ProductCategory)).length;
   if (count === 0) {
-    return { title: "Categoría no disponible | CosoTec", robots: { index: false } };
+    return { title: "Categoría no disponible", robots: { index: false } };
   }
 
   return {
-    title: `${meta.title} | Catálogo CosoTec`,
+    title: meta.title,
     description: meta.desc,
+    alternates: {
+      canonical: `/tienda/${categoria}`,
+    },
+    openGraph: {
+      title: `${meta.title} | CosoTec by CoSoAVL`,
+      description: meta.desc,
+      url: `/tienda/${categoria}`,
+    },
   };
 }
 

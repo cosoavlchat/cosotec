@@ -30,15 +30,31 @@ export async function generateMetadata({
     return { title: "Producto no encontrado" };
   }
 
+  const desc = product.descripcionCorta || product.descripcion || "Rastreo satelital GPS y telemetría profesional.";
+
   return {
-    title: `${product.nombreComercial} | CosoTec by CoSoAVL`,
-    description: product.descripcionCorta || product.descripcion,
+    title: product.nombreComercial,
+    description: desc,
+    alternates: {
+      canonical: `/p/${product.slug}`,
+    },
     openGraph: {
-      title: `${product.nombreComercial} - CoSoAVL`,
-      description: product.descripcionCorta || product.descripcion,
+      title: `${product.nombreComercial} | CosoTec by CoSoAVL`,
+      description: desc,
+      url: `/p/${product.slug}`,
     },
   };
 }
+
+const categoryLabels: Record<string, string> = {
+  gps: "GPS",
+  dashcam: "DashCam",
+  seguridad: "Seguridad",
+  accesorio: "Accesorio",
+  sensor: "Sensor",
+  dron: "Dron",
+  servicio: "Servicio",
+};
 
 export default async function ProductDetailPage({
   params,
@@ -57,10 +73,10 @@ export default async function ProductDetailPage({
 
   const whatsappUrl = buildWhatsAppLink({
     producto: product.nombreComercial,
-    modelo: product.modelo,
+    modelo: product.modeloConfirmado ? product.modelo : undefined,
     precioConIva: product.revisarPrecio ? undefined : formattedPrice,
     pagina: `/p/${product.slug}`,
-    tipoConsulta: product.revisarPrecio ? "cotizacion" : "compra",
+    tipoConsulta: product.revisarPrecio ? "cotizacion" : "asesoria",
   });
 
   const allProducts = await getProducts(false);
@@ -131,9 +147,9 @@ export default async function ProductDetailPage({
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#7A1428]/10 text-[#7A1428] border border-[#7A1428]/20">
-                {product.categoria}
+                {categoryLabels[product.categoria] || product.categoria.toUpperCase()}
               </span>
-              {product.modelo && (
+              {product.modeloConfirmado && product.modelo && (
                 <span className="text-xs font-mono text-gray-500">Modelo: {product.modelo}</span>
               )}
             </div>
@@ -182,24 +198,34 @@ export default async function ProductDetailPage({
             )}
 
             {/* CTAs */}
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <AddToCartButton product={product} />
+            <div className="pt-2 flex flex-col gap-3">
+              {product.revisarPrecio ? (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3.5 px-6 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-700 text-white cursor-pointer"
+                  aria-label={`Solicitar cotización por WhatsApp para ${product.nombreComercial}`}
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Solicitar cotización por WhatsApp</span>
+                </a>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                  <AddToCartButton product={product} />
 
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex-1 py-3.5 px-6 font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2 hover:scale-[1.02] ${
-                  product.revisarPrecio
-                    ? "bg-amber-600 hover:bg-amber-700 text-white"
-                    : "bg-[#7A1428] hover:bg-[#4A0C18] text-white"
-                }`}
-              >
-                <MessageCircle className="w-4 h-4 text-[#C9A15B]" />
-                <span>
-                  {product.revisarPrecio ? "Solicitar cotización por WhatsApp" : "Comprar / Agendar por WhatsApp"}
-                </span>
-              </a>
+                  <a
+                    href={whatsappUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto py-3.5 px-5 font-bold text-xs rounded-xl border border-gray-200 text-gray-700 hover:text-[#25D366] hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    aria-label={`Asesoría por WhatsApp para ${product.nombreComercial}`}
+                  >
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                    <span>Asesoría por WhatsApp</span>
+                  </a>
+                </div>
+              )}
             </div>
 
             <div className="pt-2 flex items-center gap-2 text-[11px] text-gray-500 border-t border-gray-100">
@@ -207,6 +233,17 @@ export default async function ProductDetailPage({
               <span>Instalación técnica en 48–72 horas tras confirmación</span>
             </div>
           </div>
+
+          {/* Aviso sobre audio y video en cabina si corresponde */}
+          {(product.categoria === "dashcam" || product.slug.includes("microfono") || product.slug.includes("audio")) && (
+            <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+              <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <span className="font-bold">Aviso legal y privacidad de cabina: </span>
+                Informa a tus operadores sobre el uso de audio y video en cabina.
+              </p>
+            </div>
+          )}
 
           {/* Qué Incluye (Dinámico según casillas de instalación y plan) */}
           {(() => {

@@ -5,20 +5,29 @@ import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Instalación y Cobertura Nacional | CosoTec by CoSoAVL",
+  title: "Instalación y Cobertura Nacional",
   description:
-    "Instalación profesional en 48 a 72 horas. Ciudades sin costo de viáticos y tabla por estado.",
+    "Instalación profesional en 48 a 72 horas hábiles. Ciudades sin costo de viáticos y tabla por estado.",
+  alternates: {
+    canonical: "/instalacion",
+  },
+  openGraph: {
+    title: "Instalación y Cobertura Nacional | CosoTec by CoSoAVL",
+    description:
+      "Instalación profesional en 48 a 72 horas hábiles. Ciudades sin costo de viáticos y tabla por estado.",
+    url: "/instalacion",
+  },
 };
 
 export default async function InstalacionPage() {
   const travelFees = await getTravelFees();
 
   const ciudadesSinCosto = [
-    "Toluca y Metepec (Valle de Toluca)",
+    "Toluca, Metepec y Valle de Toluca (Estado de México)",
     "Ciudad de México (CDMX) y Zona Metropolitana",
-    "Monterrey y Zona Conurbada (Nuevo León)",
+    "Monterrey y Zona Metropolitana (Nuevo León)",
     "Guadalajara y Zona Metropolitana (Jalisco)",
-    "Santiago de Querétaro y San Juan del Río (Querétaro)",
+    "Santiago de Querétaro y Zona Metropolitana (Querétaro)",
   ];
 
   const whatsappUrl = buildWhatsAppLink({
@@ -38,7 +47,7 @@ export default async function InstalacionPage() {
           Instalación Profesional y Viáticos por Estado
         </h1>
         <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-          Nuestros técnicos certificados instalan en tus patios, talleres o domicilio sin cortar arneses originales del vehículo ni invalidar la garantía de agencia.
+          Nuestros técnicos certificados instalan en tus patios, talleres o domicilio sin cortar arneses originales del vehículo mediante conectores y fusibles automotrices seguros.
         </p>
       </div>
 
@@ -48,7 +57,7 @@ export default async function InstalacionPage() {
           <div className="w-10 h-10 rounded-xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center font-bold">
             <Clock className="w-5 h-5" />
           </div>
-          <h3 className="font-bold text-gray-900 text-sm">48 a 72 Horas</h3>
+          <h3 className="font-bold text-gray-900 text-sm">48 a 72 Horas Hábiles</h3>
           <p className="text-xs text-gray-500 leading-relaxed">
             Tiempo estándar de agendamiento tras la confirmación de pago de tu cotización o pedido.
           </p>
@@ -60,7 +69,7 @@ export default async function InstalacionPage() {
           </div>
           <h3 className="font-bold text-gray-900 text-sm">1.5 a 2 Horas por Unidad</h3>
           <p className="text-xs text-gray-500 leading-relaxed">
-            Instalación oculta hermética con encintado automotriz de alta temperatura y pruebas de corte de motor.
+            Instalación oculta hermética y pruebas de comunicación en plataforma y corte de motor.
           </p>
         </div>
 
@@ -70,7 +79,7 @@ export default async function InstalacionPage() {
           </div>
           <h3 className="font-bold text-gray-900 text-sm">Sin Límite de Cupo</h3>
           <p className="text-xs text-gray-500 leading-relaxed">
-            Capacidad para equipar desde un auto particular hasta flotillas de cientos de tractocamiones a nivel nacional.
+            Capacidad para equipar desde un auto particular hasta flotillas completas de transporte en cualquier punto del país.
           </p>
         </div>
       </div>
@@ -85,7 +94,7 @@ export default async function InstalacionPage() {
             Ciudades y Zonas Metropolitanas Sin Costo de Viáticos
           </h2>
           <p className="text-xs text-gray-200">
-            En estas zonas, la mano de obra de instalación no genera ningún cargo adicional por viáticos.
+            Sin costo en zona metropolitana; resto del estado se cotiza para Estado de México, Ciudad de México, Jalisco, Nuevo León y Querétaro.
           </p>
         </div>
 
@@ -99,14 +108,14 @@ export default async function InstalacionPage() {
         </div>
       </div>
 
-      {/* Matriz de Viáticos por Estado (REGLA 5) */}
+      {/* Matriz de Viáticos por Estado */}
       <div className="bg-white rounded-3xl border border-gray-200/80 shadow-xs overflow-hidden space-y-4 p-6 sm:p-8">
         <div className="space-y-1">
           <h2 className="text-xl font-black text-gray-900 tracking-tight">
             Tabla de Viáticos por Entidad Federativa (32 Estados)
           </h2>
           <p className="text-xs text-gray-500">
-            Reglas de viáticos aplicables para instalaciones foráneas fuera de las zonas metropolitanas exentas.
+            Sin costo en zona metropolitana; resto del estado se cotiza para MEX, CDMX, JAL, NLE y QRO.
           </p>
         </div>
 
@@ -122,17 +131,19 @@ export default async function InstalacionPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {travelFees.map((fee) => {
-                // REGLA 5:
-                // Si fee.sinCosto -> "Sin costo"
-                // Si fee.monto == 0 y !fee.sinCosto -> "Se cotiza"
-                // Si fee.monto > 0 -> precioConIva(fee.monto)
-                const textoVisita = fee.sinCosto
+                const isMetroExempt = ["MEX", "CDMX", "JAL", "NLE", "QRO"].includes(fee.claveInegi);
+
+                const textoVisita = isMetroExempt
+                  ? "Sin costo en zona metropolitana; resto del estado se cotiza"
+                  : fee.sinCosto
                   ? "Sin costo"
                   : fee.montoPorVisitaCentavos === 0
                   ? "Se cotiza"
                   : formatMxn(precioConIva(fee.montoPorVisitaCentavos, 16));
 
-                const textoUnidad = fee.sinCosto
+                const textoUnidad = isMetroExempt
+                  ? "Sin costo en zona metropolitana; resto del estado se cotiza"
+                  : fee.sinCosto
                   ? "Sin costo"
                   : fee.montoPorUnidadCentavos === 0
                   ? "Se cotiza"
@@ -150,7 +161,9 @@ export default async function InstalacionPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`font-semibold ${
-                          fee.sinCosto
+                          isMetroExempt
+                            ? "text-emerald-700"
+                            : fee.sinCosto
                             ? "text-emerald-700"
                             : textoVisita === "Se cotiza"
                             ? "text-amber-700"
@@ -164,7 +177,9 @@ export default async function InstalacionPage() {
                     <td className="px-4 py-3">
                       <span
                         className={`font-semibold ${
-                          fee.sinCosto
+                          isMetroExempt
+                            ? "text-emerald-700"
+                            : fee.sinCosto
                             ? "text-emerald-700"
                             : textoUnidad === "Se cotiza"
                             ? "text-amber-700"
@@ -176,7 +191,11 @@ export default async function InstalacionPage() {
                     </td>
 
                     <td className="px-4 py-3">
-                      {fee.sinCosto ? (
+                      {isMetroExempt ? (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                          Zona Metropolitana
+                        </span>
+                      ) : fee.sinCosto ? (
                         <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                           Zona Exenta
                         </span>

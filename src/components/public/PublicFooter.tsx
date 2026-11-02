@@ -70,7 +70,7 @@ export function PublicFooter() {
             </li>
             <li>
               <Link href="/tienda/accesorio" className="hover:text-white transition-colors">
-                Accesorios Homologados
+                Accesorios y Complementos
               </Link>
             </li>
             <li>
@@ -109,7 +109,7 @@ export function PublicFooter() {
             </li>
             <li>
               <Link href="/nosotros" className="hover:text-white transition-colors">
-                Empresa y Certificación ANERPV
+                Asistencia con la ANERPV
               </Link>
             </li>
             <li>
@@ -147,11 +147,6 @@ export function PublicFooter() {
                 Póliza de Garantía (Borrador)
               </Link>
             </li>
-            <li>
-              <Link href="/admin/login" className="hover:text-[#C9A15B] transition-colors font-semibold">
-                Acceso Personal CoSoAVL
-              </Link>
-            </li>
           </ul>
         </div>
       </div>
@@ -162,7 +157,7 @@ export function PublicFooter() {
           <p>© {new Date().getFullYear()} CoSoAVL — Todos los derechos reservados.</p>
           <p className="flex items-center gap-1 justify-center sm:justify-end text-gray-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Infraestructura protegida • Capital 100% Mexicano</span>
+            <span>Capital 100% Mexicano</span>
           </p>
         </div>
       </div>

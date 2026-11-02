@@ -45,8 +45,8 @@ export default async function HomePage() {
 
   const pasos = [
     { num: "01", titulo: "Elige tu equipo o paquete", desc: "Selecciona el GPS o DashCam ideal para tu unidad o cotiza directamente con un asesor." },
-    { num: "02", titulo: "Agenda tu fecha y lugar", desc: "Coordinamos la visita técnica a domicilio o en taller en 48–72 horas tras confirmación." },
-    { num: "03", titulo: "Instalación profesional oculta", desc: "Técnicos certificados instalan sin cortar arneses originales ni perder garantía de agencia." },
+    { num: "02", titulo: "Agenda tu fecha y lugar", desc: "Coordinamos la visita técnica a domicilio o en taller en 48–72 horas hábiles tras confirmación." },
+    { num: "03", titulo: "Instalación profesional oculta", desc: "Técnicos certificados realizan la instalación oculta sin cortar arneses originales del vehículo." },
     { num: "04", titulo: "Toma el control en tu celular", desc: "Descarga la app móvil y monitorea en tiempo real velocidad, ubicación y paro de motor." },
   ];
 
@@ -111,19 +111,19 @@ export default async function HomePage() {
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <a
-              href={whatsappHeroUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C9A15B] hover:bg-[#b58f4a] text-gray-900 font-extrabold text-sm rounded-xl shadow-xl transition-all hover:scale-105"
+            <Link
+              href="/soluciones"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-[#C9A15B] hover:bg-[#b58f4a] text-gray-900 font-extrabold text-sm rounded-xl shadow-xl transition-all hover:scale-105 cursor-pointer"
+              aria-label="Cotizar solución de rastreo en 1 minuto"
             >
-              <MessageCircle className="w-4 h-4 fill-current text-gray-900" />
-              <span>Cotiza en 1 minuto por WhatsApp</span>
-            </a>
+              <ArrowRight className="w-4 h-4 text-gray-900" />
+              <span>Cotiza en 1 minuto</span>
+            </Link>
 
             <Link
               href="/paquetes"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/20 transition-colors backdrop-blur-xs"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/20 transition-colors backdrop-blur-xs cursor-pointer"
+              aria-label="Ver paquetes listos para instalar"
             >
               <span>Ver Paquetes Listos</span>
               <ArrowRight className="w-4 h-4" />
@@ -137,12 +137,12 @@ export default async function HomePage() {
               <p className="text-xs text-gray-200 leading-snug">{stats.dispositivosTexto}</p>
             </div>
             <div className="p-4 rounded-xl bg-black/40 backdrop-blur-xs border border-white/15 space-y-1">
-              <span className="text-xs font-bold text-[#C9A15B] uppercase tracking-wider block">Homologación</span>
+              <span className="text-xs font-bold text-[#C9A15B] uppercase tracking-wider block">Soporte y Cobertura</span>
               <p className="text-xs text-gray-200 leading-snug">{stats.gobiernosTexto}</p>
             </div>
             <div className="p-4 rounded-xl bg-black/40 backdrop-blur-xs border border-white/15 space-y-1 sm:col-span-2 lg:col-span-1">
               <span className="text-2xl font-black text-[#C9A15B] block">48–72h</span>
-              <p className="text-xs text-gray-200 leading-snug">Tiempo récord de instalación garantizado en Toluca, CDMX, MTY, GDL y QRO sin viáticos.</p>
+              <p className="text-xs text-gray-200 leading-snug">Instalación en 48–72h hábiles • Sin costo en zona metropolitana de Toluca, CDMX, MTY, GDL y QRO.</p>
             </div>
           </div>
         </div>
@@ -238,32 +238,32 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Centro de Monitoreo & Plataforma de Ingeniería */}
+      {/* Centro de Monitoreo & Plataforma */}
       <section className="max-w-7xl mx-auto px-6">
         <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1c1214] via-[#2d1218] to-[#12080a] text-white border border-[#C9A15B]/30 shadow-2xl grid grid-cols-1 lg:grid-cols-12 items-center">
           <div className="p-8 sm:p-12 lg:col-span-7 space-y-6 relative z-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A15B]/20 border border-[#C9A15B]/40 text-[#C9A15B] text-xs font-bold uppercase tracking-wider">
               <Shield className="w-3.5 h-3.5" />
-              <span>Monitoreo 24/7 y Homologación Nacional</span>
+              <span>Monitoreo Telemático y Seguridad de Flotas</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-              Control total de tu flota con ingeniería satelital de vanguardia
+              Control total de tu flota con tecnología telemática avanzada
             </h2>
             <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
-              Servidores dedicados de alta disponibilidad, geocercas en tiempo real, corte de motor remoto seguro, detección de sabotaje de antenas y tecnología anti-jammer homologada ante corporaciones de seguridad y aseguradoras en todo México.
+              Geocercas en tiempo real, corte de motor remoto seguro, detección de sabotaje de antenas, sensores de combustible y tecnología activa anti-jammer con asistencia para recuperación de unidades con la ANERPV.
             </p>
             <div className="pt-2 flex flex-wrap gap-3 text-xs font-semibold">
               <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
                 <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
-                <span>Compatibilidad Espejo C4 / C5</span>
+                <span>Asistencia con la ANERPV</span>
               </div>
               <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
                 <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
-                <span>99.9% Uptime de Servidores</span>
+                <span>Alertas en Tiempo Real</span>
               </div>
               <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
                 <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
-                <span>Instalación Oculta Certificada</span>
+                <span>Instalación Profesional Oculta</span>
               </div>
             </div>
           </div>

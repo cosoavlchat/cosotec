@@ -14,19 +14,24 @@ const inter = Inter({
   display: "swap",
 });
 
+const siteBaseUrl =
+  process.env.APP_BASE_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "https://cosotec--cosotec7.us-east4.hosted.app";
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://cosotec.com"),
+  metadataBase: new URL(siteBaseUrl),
   title: {
     default: "CosoTec by CoSoAVL — GPS, DashCams y Seguridad Vehicular",
     template: "%s | CosoTec by CoSoAVL",
   },
   description:
-    "Rastreo satelital GPS automotriz e industrial, DashCams inteligentes con IA y protección anti-jammer. Instalación profesional en 48–72 horas. CoSoAVL Metepec, Estado de México.",
+    "Rastreo satelital GPS automotriz e industrial, DashCams inteligentes con IA y protección anti-jammer. Instalación profesional en 48–72 horas hábiles. CoSoAVL Metepec, Estado de México.",
   openGraph: {
     title: "CosoTec by CoSoAVL — GPS, DashCams y Seguridad Vehicular",
     description:
       "Venta e instalación de GPS, DashCams y seguridad para transporte. 48,000 dispositivos vendidos.",
-    url: "https://cosotec.com",
+    url: siteBaseUrl,
     siteName: "CosoTec by CoSoAVL",
     locale: "es_MX",
     type: "website",

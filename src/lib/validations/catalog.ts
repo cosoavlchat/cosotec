@@ -10,6 +10,7 @@ export const ProductSchema = z.object({
   slug: z.string().min(2, "El slug debe tener al menos 2 caracteres").regex(/^[a-z0-9-]+$/, "Slug inválido (solo minúsculas, números y guiones)"),
   nombreComercial: z.string().min(2, "El nombre comercial es obligatorio"),
   modelo: z.string().default(""),
+  modeloConfirmado: z.boolean().default(false),
   categoria: z.enum(["gps", "dashcam", "seguridad", "accesorio", "dron", "servicio"]),
   descripcionCorta: z.string().default(""),
   descripcion: z.string().default(""),

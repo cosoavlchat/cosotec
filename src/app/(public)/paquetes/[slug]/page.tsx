@@ -2,8 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getPackages } from "@/lib/services/catalog-service";
 import { precioConIva, formatMxn } from "@/lib/pricing";
-import { Check, MessageCircle, AlertTriangle, Clock, ArrowRight, Sparkles } from "lucide-react";
+import { Check, MessageCircle, AlertTriangle, Clock, Sparkles } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
+import { AddPackageToCartButton } from "@/components/public/AddPackageToCartButton";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -17,8 +18,16 @@ export async function generateMetadata({
   if (!pkg) return { title: "Paquete no encontrado" };
 
   return {
-    title: `${pkg.nombre} | Paquete CosoTec by CoSoAVL`,
+    title: `Paquete ${pkg.nombre}`,
     description: pkg.descripcion,
+    alternates: {
+      canonical: `/paquetes/${pkg.slug}`,
+    },
+    openGraph: {
+      title: `Paquete ${pkg.nombre} | CosoTec by CoSoAVL`,
+      description: pkg.descripcion,
+      url: `/paquetes/${pkg.slug}`,
+    },
   };
 }
 
@@ -40,11 +49,11 @@ export default async function PaqueteDetailPage({
     producto: `Paquete ${pkg.nombre}`,
     precioConIva: pkg.revisarPrecio ? undefined : formattedPrice,
     pagina: `/paquetes/${pkg.slug}`,
-    tipoConsulta: pkg.revisarPrecio ? "cotizacion" : "compra",
+    tipoConsulta: pkg.revisarPrecio ? "cotizacion" : "asesoria",
   });
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 space-y-10">
       <div className="flex items-center gap-2 text-xs text-gray-500">
         <Link href="/" className="hover:text-gray-900">Inicio</Link>
         <span>/</span>
@@ -53,7 +62,7 @@ export default async function PaqueteDetailPage({
         <span className="text-gray-900 font-semibold">{pkg.nombre}</span>
       </div>
 
-      <div className="bg-white rounded-3xl p-8 sm:p-10 border border-gray-200/80 shadow-md space-y-8">
+      <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-md space-y-8">
         <div className="space-y-3">
           {pkg.destacado && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7A1428] text-white text-[10px] font-bold uppercase tracking-wider">
@@ -72,7 +81,7 @@ export default async function PaqueteDetailPage({
         <div className="p-6 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-4">
           {pkg.revisarPrecio ? (
             <div className="space-y-1">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>Precio por confirmar</span>
               </div>
@@ -93,17 +102,34 @@ export default async function PaqueteDetailPage({
             </div>
           )}
 
-          <a
-            href={whatsappUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white font-bold text-xs rounded-xl shadow-md transition-all hover:scale-105"
-          >
-            <MessageCircle className="w-4 h-4 text-[#C9A15B]" />
-            <span>
-              {pkg.revisarPrecio ? "Cotizar este paquete por WhatsApp" : "Comprar / Agendar Paquete"}
-            </span>
-          </a>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            {pkg.revisarPrecio ? (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition-all cursor-pointer"
+                aria-label={`Cotizar paquete ${pkg.nombre} por WhatsApp`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>Cotizar este paquete por WhatsApp</span>
+              </a>
+            ) : (
+              <>
+                <AddPackageToCartButton pkg={pkg} />
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 border border-gray-200 text-gray-700 hover:text-[#25D366] hover:bg-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                  aria-label={`Asesoría por WhatsApp sobre paquete ${pkg.nombre}`}
+                >
+                  <MessageCircle className="w-4 h-4 text-[#25D366]" />
+                  <span>Asesoría por WhatsApp</span>
+                </a>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Qué Incluye */}
@@ -126,4 +152,3 @@ export default async function PaqueteDetailPage({
     </div>
   );
 }
-

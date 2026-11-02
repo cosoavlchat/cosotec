@@ -362,8 +362,34 @@ const images: ImageSpec[] = [
       </g>
 
       <text x="400" y="420" fill="#1E293B" font-family="system-ui, sans-serif" font-size="16" font-weight="900" text-anchor="middle">INSTALACIÓN PROFESIONAL OCULTA</text>
-      <text x="400" y="440" fill="#7A1428" font-family="system-ui, sans-serif" font-size="12" font-weight="800" text-anchor="middle">48–72 Horas Garantizadas</text>
-      <text x="400" y="460" fill="#64748B" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Sin Cortar Cables · Garantía de Agencia Intacta</text>
+      <text x="400" y="440" fill="#7A1428" font-family="system-ui, sans-serif" font-size="12" font-weight="800" text-anchor="middle">Coordinación en 48–72 Horas Hábiles</text>
+      <text x="400" y="460" fill="#64748B" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Técnicos Certificados · Estándar Automotriz</text>
+    `),
+  },
+
+  // 11. Accesorio Neutro de Telemetría
+  {
+    name: "accesorio-generico.webp",
+    svg: baseStudio(`
+      <!-- Floor Shadow -->
+      <ellipse cx="400" cy="385" rx="140" ry="25" fill="url(#floorShadow)"/>
+
+      <!-- Accessory Box / Housing -->
+      <rect x="290" y="210" width="220" height="150" rx="20" fill="url(#chassisGrad)" stroke="url(#metalBevel)" stroke-width="4"/>
+
+      <!-- Cable / Connector Representation -->
+      <path d="M260 285 C275 285 280 285 290 285" stroke="#475569" stroke-width="8" stroke-linecap="round"/>
+      <path d="M510 285 C525 285 530 285 540 285" stroke="#475569" stroke-width="8" stroke-linecap="round"/>
+      
+      <!-- Gold Status Accent -->
+      <circle cx="400" cy="270" r="28" fill="#7A1428" stroke="#C9A15B" stroke-width="2"/>
+      <path d="M390 270 L397 277 L412 262" stroke="#C9A15B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+      <!-- Branding Label -->
+      <text x="400" y="325" fill="#94A3B8" font-family="system-ui, sans-serif" font-size="11" font-weight="800" text-anchor="middle" letter-spacing="1">COSOTEC ACCESSORY</text>
+
+      <text x="400" y="425" fill="#1E293B" font-family="system-ui, sans-serif" font-size="15" font-weight="900" text-anchor="middle">ACCESORIO DE TELEMETRÍA</text>
+      <text x="400" y="445" fill="#64748B" font-family="system-ui, sans-serif" font-size="11" font-weight="600" text-anchor="middle">Componente Original de Integración Vehicular</text>
     `),
   },
 ];
@@ -383,3 +409,4 @@ async function generate() {
 }
 
 generate().catch(console.error);
+

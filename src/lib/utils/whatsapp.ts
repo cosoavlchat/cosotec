@@ -10,15 +10,17 @@ export const CORREO_VENTAS = "ventas@cosoavl.com";
 
 export interface WhatsAppLinkParams {
   producto?: string;
+  equipo?: string;
   modelo?: string;
   precioConIva?: string;
   cantidad?: number;
   pagina?: string;
-  tipoConsulta?: "compra" | "cotizacion" | "general" | "instalacion" | "demo";
+  tipoConsulta?: "compra" | "cotizacion" | "general" | "instalacion" | "demo" | "asesoria";
 }
 
 export function buildWhatsAppLink({
   producto,
+  equipo,
   modelo,
   precioConIva,
   cantidad = 1,
@@ -33,12 +35,15 @@ export function buildWhatsAppLink({
     mensaje += `solicito información sobre cobertura y tiempos de instalación:\n\n`;
   } else if (tipoConsulta === "demo") {
     mensaje += `me gustaría solicitar una demostración de la plataforma:\n\n`;
+  } else if (tipoConsulta === "asesoria") {
+    mensaje += `solicito asesoría técnica sobre:\n\n`;
   } else {
     mensaje += `me interesa cotizar:\n\n`;
   }
 
-  if (producto) {
-    mensaje += `📍 *Producto:* ${producto}${modelo ? ` (${modelo})` : ""}\n`;
+  const prodNombre = producto || equipo;
+  if (prodNombre) {
+    mensaje += `📍 *Producto:* ${prodNombre}${modelo ? ` (${modelo})` : ""}\n`;
   }
   if (cantidad > 1) {
     mensaje += `🔢 *Cantidad de unidades:* ${cantidad}\n`;
