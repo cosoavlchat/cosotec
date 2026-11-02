@@ -85,8 +85,15 @@ export async function getQuotes(
     query = query.where("estado", "==", filtros.estado);
   }
 
-  const snap = await query.orderBy("createdAt", "desc").get();
+  let snap;
+  try {
+    snap = await query.orderBy("createdAt", "desc").get();
+  } catch {
+    // Fallback con ordenamiento en memoria si el índice compuesto de Firestore aún no está listo
+    snap = await query.get();
+  }
   let quotes = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Quote));
+  quotes.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Filtros adicionales en memoria si aplica
   if (filtros?.clienteId) {
