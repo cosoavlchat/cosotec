@@ -61,3 +61,4 @@ export function verifyCronAuth(req: NextRequest): { authorized: boolean; respons
 
   return { authorized: true };
 }
+

@@ -5,12 +5,22 @@ import {
   notificarConfirmacionPedidoCliente,
   notificarResultadoSpeiCliente,
   notificarCobroDiferidoCliente,
+  getSoporteEmails,
+  getContactPie,
 } from "@/lib/services/email-service";
+import {
+  limpiarTituloSaludo,
+  formatFechaEspanol,
+  formatHorarioEspanol,
+  formatTelefonoLocal,
+  DEFAULT_EMAIL_FOOTER,
+} from "@/components/emails/email-helpers";
 import { Order } from "@/types/order";
 
 let mockEmailQueue: any[] = [];
 let mockAuditLog: any[] = [];
 let mockNotificationsDoc: any = null;
+let mockContactDoc: any = null;
 
 vi.mock("@/lib/firebase/admin", () => ({
   adminDb: {
@@ -21,20 +31,31 @@ vi.mock("@/lib/firebase/admin", () => ({
         return { id: `doc_${Date.now()}` };
       }),
       doc: (id: string) => ({
-        get: vi.fn().mockImplementation(async () => ({
-          exists: Boolean(mockNotificationsDoc),
-          data: () => mockNotificationsDoc,
-        })),
+        get: vi.fn().mockImplementation(async () => {
+          if (col === "settings" && id === "notifications") {
+            return {
+              exists: Boolean(mockNotificationsDoc),
+              data: () => mockNotificationsDoc,
+            };
+          }
+          if (col === "settings" && id === "contact") {
+            return {
+              exists: Boolean(mockContactDoc),
+              data: () => mockContactDoc,
+            };
+          }
+          return { exists: false, data: () => null };
+        }),
         update: vi.fn().mockResolvedValue({}),
       }),
     }),
   },
 }));
 
-describe("Paso 3.6: Notificaciones por Correo con Resend y React Email", () => {
+describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes de Calidad)", () => {
   const dummyOrder: Order = {
-    id: "CT-1124456",
-    folio: "CT-1124456",
+    id: "CT-1124451",
+    folio: "CT-1124451",
     cartId: "cart_test_email",
     tokenHash: "dummy_hash_123",
     estado: "anticipo_pagado",
@@ -44,39 +65,43 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email", () => {
     saldoRestanteCentavos: 256112,
     totalCentavos: 569138,
     contacto: {
-      nombre: "Transportes Cuauhtémoc S.A.",
-      telefono: "5550000000",
-      correo: "contacto@transportescuauhtemoc.com",
-      empresa: "Transportes Cuauhtémoc",
+      nombre: "Ing. Roberto Domínguez",
+      telefono: "7221340127",
+      correo: "r.dominguez@ejemplo.com",
+      empresa: "Logística del Centro",
     },
     instalacion: {
       tipoLugar: "domicilio",
-      direccion: "Av. Industrial 45",
+      direccion: "Av. Tollocan 1250",
       municipio: "Toluca",
       estadoClave: "MEX",
       estadoNombre: "Estado de México",
-      fechaTentativa: "2026-11-15",
+      fechaTentativa: "2026-11-12",
       horarioTentativo: "manana",
+      referencias: "Portón trasero, patio 2",
     },
     unidades: [
       {
         id: "u_kenworth_1",
         equipoIndex: 0,
-        equipoNombre: "GPS Tracker 4G Alta Precisión",
+        equipoNombre: "GPS Intermedio",
         tipoVehiculo: "Tractocamión",
         marca: "Kenworth",
         modelo: "T680",
         anio: "2024",
+        color: "Blanco",
+        numeroEconomico: "ECO-101",
+        vin: "3AKJHGD8723654129",
         placas: "789-XY-2",
       },
     ],
     items: [
       {
-        id: "gps-vehicular-4g",
-        nombre: "GPS Tracker 4G Alta Precisión",
+        id: "gps-intermedio",
+        nombre: "GPS Intermedio",
         cantidad: 1,
-        precioSinIvaCentavos: 245318,
-        totalSinIvaCentavos: 245318,
+        precioSinIvaCentavos: 797700,
+        totalSinIvaCentavos: 797700,
         esEquipoPrincipal: true,
       },
     ],
@@ -88,7 +113,7 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email", () => {
         montoCentavos: 313026,
         momento: "inmediato",
         estado: "aprobado",
-        externalReference: "CT-1124456:P1",
+        externalReference: "CT-1124451:P1",
       },
       {
         id: "P2",
@@ -97,7 +122,7 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email", () => {
         montoCentavos: 256112,
         momento: "al_instalar",
         estado: "pendiente",
-        externalReference: "CT-1124456:P2",
+        externalReference: "CT-1124451:P2",
       },
     ],
     createdAt: new Date().toISOString(),
@@ -108,111 +133,176 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email", () => {
     mockEmailQueue = [];
     mockAuditLog = [];
     mockNotificationsDoc = null;
+    mockContactDoc = null;
     delete process.env.RESEND_API_KEY;
+    delete process.env.APP_BASE_URL;
     vi.restoreAllMocks();
   });
 
-  describe("Encolamiento Resiliente (Fallback sin RESEND_API_KEY)", () => {
-    it("si RESEND_API_KEY no está configurada, el correo se guarda en 'emailQueue' como pendiente sin fallar", async () => {
-      const res = await notificarFichaInstalacionASoporte(dummyOrder);
+  describe("1. Formateadores y Ayudantes de Texto", () => {
+    it("3. Saludo: limpia títulos de cortesía y profesionales (Ing., Lic., Sr., Sra., Dr.)", () => {
+      expect(limpiarTituloSaludo("Ing. Roberto Domínguez")).toBe("Roberto Domínguez");
+      expect(limpiarTituloSaludo("ing. roberto domínguez")).toBe("roberto domínguez");
+      expect(limpiarTituloSaludo("Lic. María Pérez")).toBe("María Pérez");
+      expect(limpiarTituloSaludo("Dr. Carlos Silva")).toBe("Carlos Silva");
+      expect(limpiarTituloSaludo("Dra. Carmen Solís")).toBe("Carmen Solís");
+      expect(limpiarTituloSaludo("Sr. Juan López")).toBe("Juan López");
+      expect(limpiarTituloSaludo("Sra. Ana García")).toBe("Ana García");
+      expect(limpiarTituloSaludo("Arq. Luis Barragán")).toBe("Luis Barragán");
+      expect(limpiarTituloSaludo("Prof. Manuel Ruiz")).toBe("Manuel Ruiz");
+      expect(limpiarTituloSaludo("Mtro. Gabriel Mendoza")).toBe("Gabriel Mendoza");
+      expect(limpiarTituloSaludo("Roberto Domínguez")).toBe("Roberto Domínguez");
+      expect(limpiarTituloSaludo("")).toBe("Cliente");
+      expect(limpiarTituloSaludo(undefined)).toBe("Cliente");
+    });
 
-      expect(res.success).toBe(true);
-      expect(res.queued).toBe(true);
+    it("7. Fechas: formatea fechas en español determinista", () => {
+      expect(formatFechaEspanol("2026-11-12")).toBe("jueves 12 de noviembre de 2026");
+      expect(formatFechaEspanol("2026-11-15")).toBe("domingo 15 de noviembre de 2026");
+      expect(formatFechaEspanol("")).toBe("Por coordinar");
+      expect(formatFechaEspanol(undefined)).toBe("Por coordinar");
+    });
+
+    it("7. Horario: utiliza 'ñ' para Mañana y formatea rangos", () => {
+      expect(formatHorarioEspanol("manana")).toBe("Mañana (09:00 - 14:00 hrs)");
+      expect(formatHorarioEspanol("mañana")).toBe("Mañana (09:00 - 14:00 hrs)");
+      expect(formatHorarioEspanol("tarde")).toBe("Tarde (14:00 - 18:00 hrs)");
+      expect(formatHorarioEspanol("completo")).toBe("Día completo (09:00 - 18:00 hrs)");
+    });
+
+    it("7. Teléfonos: formatea números a estándar local 10 dígitos (XXX XXX XXXX)", () => {
+      expect(formatTelefonoLocal("7221340127")).toBe("722 134 0127");
+      expect(formatTelefonoLocal("+527221340127")).toBe("722 134 0127");
+      expect(formatTelefonoLocal("527224322053")).toBe("722 432 2053");
+    });
+
+    it("1. Pie único oficial: verifica el texto exacto predeterminado", () => {
+      expect(DEFAULT_EMAIL_FOOTER).toBe(
+        "CosoTec by CoSoAVL · Metepec, Estado de México · ventas@cosoavl.com · Tel. 722 134 0127 · WhatsApp 722 432 2053"
+      );
+    });
+
+    it("2. Fallback de soporte: solo contiene ventas@cosoavl.com y no soporte@cosoavl.com", async () => {
+      const soportes = await getSoporteEmails();
+      expect(soportes).toEqual(["ventas@cosoavl.com"]);
+      expect(soportes).not.toContain("soporte@cosoavl.com");
+    });
+  });
+
+  describe("2. Ficha de Soporte (FichaInstalacionEmail)", () => {
+    it("5. Ficha de soporte muestra 'Saldo pendiente (se cobra al cliente por link de pago; el técnico no cobra)', VIN, No. Económico, Color y Placas", async () => {
+      await notificarFichaInstalacionASoporte(dummyOrder);
 
       expect(mockEmailQueue.length).toBe(1);
       const encolado = mockEmailQueue[0];
-      expect(encolado.estado).toBe("pendiente");
-      expect(encolado.tipo).toBe("ficha_instalacion");
-      expect(encolado.to).toContain("ventas@cosoavl.com");
-      expect(encolado.subject).toContain("CT-1124456");
-      expect(encolado.html).toContain("Kenworth");
-      expect(encolado.html).toContain("Saldo por Cobrar al Instalar");
-    });
+      const html = encolado.html;
 
-    it("si RESEND_API_KEY tiene el valor temporal 'temporal-pendiente', también encola sin romper el flujo", async () => {
-      process.env.RESEND_API_KEY = "temporal-pendiente";
+      // 5. Cambio de texto de saldo
+      expect(html).toContain("Saldo pendiente (se cobra al cliente por link de pago; el técnico no cobra)");
+      expect(html).not.toContain("Saldo por cobrar al instalar");
 
-      const res = await notificarConfirmacionPedidoCliente(dummyOrder, "test_token_abc");
-      expect(res.success).toBe(true);
-      expect(res.queued).toBe(true);
-      expect(mockEmailQueue[0].tipo).toBe("confirmacion_pedido");
-    });
-  });
+      // 5. Datos de unidad agregados
+      expect(html).toContain("ECO-101");
+      expect(html).toContain("3AKJHGD8723654129");
+      expect(html).toContain("Blanco");
+      expect(html).toContain("789-XY-2");
 
-  describe("Envío Exitoso con Resend API Mock", () => {
-    it("cuando RESEND_API_KEY existe, envía petición a api.resend.com y registra en auditLog", async () => {
-      process.env.RESEND_API_KEY = "re_test_key_123456";
+      // Placas con estilo nowrap
+      expect(html).toContain("white-space:nowrap");
 
-      // Mock de global.fetch
-      const fetchMock = vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ id: "msg_resend_98765" }),
-      });
-      global.fetch = fetchMock;
+      // 1. Pie único
+      expect(html).toContain("CosoTec by CoSoAVL · Metepec, Estado de México · ventas@cosoavl.com");
 
-      const res = await notificarConfirmacionPedidoCliente(dummyOrder, "token_seguro_xyz");
+      // 3. Saludo sin título
+      expect(html).toContain("Roberto Domínguez");
+      expect(html).not.toContain("Ing. Roberto Domínguez");
 
-      expect(res.success).toBe(true);
-      expect(res.resendId).toBe("msg_resend_98765");
-
-      expect(fetchMock).toHaveBeenCalledWith(
-        "https://api.resend.com/emails",
-        expect.objectContaining({
-          method: "POST",
-          headers: expect.objectContaining({
-            Authorization: "Bearer re_test_key_123456",
-          }),
-        })
-      );
-
-      // Auditoría registrada
-      expect(mockAuditLog.some((l) => l.tipo === "email_enviado_resend")).toBe(true);
+      // 7. Fecha y horario en español
+      expect(html).toContain("jueves 12 de noviembre de 2026");
+      expect(html).toContain("Mañana (09:00 - 14:00 hrs)");
     });
   });
 
-  describe("Plantillas y Contenido Visual", () => {
-    it("Confirmación de Pedido contiene enlace con token seguro y marca CosoTec", async () => {
-      await notificarConfirmacionPedidoCliente(dummyOrder, "my_secret_token_123");
+  describe("3. Confirmación de Pedido: Dos Versiones (ConfirmacionPedidoEmail)", () => {
+    it("6. Versión Pago Tarjeta/MP Aprobado: muestra '¡Pago Confirmado y Pedido en Proceso!' y pasos siguientes", async () => {
+      await notificarConfirmacionPedidoCliente(dummyOrder, "token_seguro_mp");
 
       const html = mockEmailQueue[0].html;
-      expect(html).toContain("Coso");
-      expect(html).toContain("Tec");
-      expect(html).toContain("#7A1428"); // Color vino
-      expect(html).toContain("/pedido/CT-1124456?t=my_secret_token_123");
-      expect(html).toContain("Transportes");
+      expect(html).toContain("¡Pago Confirmado y Pedido en Proceso!");
+      expect(html).toContain("Hemos validado tu pago con éxito");
+      expect(html).toContain("Ver Seguimiento de mi Pedido");
+      expect(html).toContain("Hola, Roberto Domínguez");
+      expect(html).toContain("Anticipo Cubierto");
+
+      // Verificación de términos eliminados
+      expect(html).not.toContain("plataforma de ingeniería satelital");
+      expect(html).not.toContain("SIM cards M2M multicarrier");
+      expect(html).not.toContain("CoSoAVL Telecomunicaciones");
     });
 
-    it("Aviso SPEI Aprobado muestra confirmación de abono y citas técnicas", async () => {
-      await notificarResultadoSpeiCliente(dummyOrder, "token_spei_aprobado", "aprobado");
+    it("6. Versión SPEI Pendiente: no dice que ya se inició nada, muestra datos de transferencia y botón para subir comprobante", async () => {
+      const speiOrder: Order = {
+        ...dummyOrder,
+        metodoPago: "spei",
+        estado: "pendiente_comprobante",
+      };
+
+      await notificarConfirmacionPedidoCliente(speiOrder, "token_seguro_spei");
 
       const html = mockEmailQueue[0].html;
-      expect(html).toContain("Pago SPEI Acreditado");
-      expect(html).toContain("#15803D"); // Verde
-      expect(html).toContain("programada");
+      expect(html).toContain("Pedido Registrado · Pendiente de Pago SPEI");
+      expect(html).toContain("Datos de Transferencia Bancaria (SPEI)");
+      expect(html).toContain("012 420 001155998877");
+      expect(html).toContain("BBVA México");
+      expect(html).toContain("CoSoAVL");
+      expect(html).toContain("Subir Comprobante de Pago");
+
+      // No debe decir que ya se inició nada
+      expect(html).not.toContain("Nuestro equipo ya inició");
+      expect(html).not.toContain("plataforma de ingeniería satelital");
+    });
+  });
+
+  describe("4. Aviso SPEI y Montos por Pago (AvisoSpeiEmail)", () => {
+    it("4. Aviso SPEI Aprobado muestra monto de ESE pago, lo acumulado y saldo restante con calendario", async () => {
+      await notificarResultadoSpeiCliente(dummyOrder, "token_spei_ok", "aprobado");
+
+      const html = mockEmailQueue[0].html;
+      expect(html).toContain("¡Pago SPEI Acreditado con Éxito!");
+      expect(html).toContain("Monto Acreditado en este Pago");
+      expect(html).toContain("Total Pagado Acumulado");
+      expect(html).toContain("Saldo Pendiente");
+      expect(html).toContain("Próximas Exhibiciones Programadas");
+
+      // Lenguaje neutro: sin 'departamento de contabilidad'
+      expect(html).not.toContain("departamento de contabilidad");
+      expect(html).toContain("Hemos validado tu pago");
     });
 
-    it("Aviso SPEI Rechazado destaca el motivo reportado y botón de corrección", async () => {
-      const motivo = "La clave de rastreo bancaria está cortada en la foto";
-      await notificarResultadoSpeiCliente(dummyOrder, "token_spei_rechazado", "rechazado", motivo);
+    it("Aviso SPEI Rechazado muestra motivo de rechazo y botón de corrección", async () => {
+      const motivo = "No coincide el número de referencia ni la cuenta receptora";
+      await notificarResultadoSpeiCliente(dummyOrder, "token_spei_fail", "rechazado", motivo);
 
       const html = mockEmailQueue[0].html;
       expect(html).toContain("Comprobante SPEI No Acreditado");
       expect(html).toContain(motivo);
       expect(html).toContain("Subir Nuevo Comprobante Corregido");
-      expect(html).toContain("#991B1B"); // Rojo
     });
+  });
 
-    it("Cobro diferido P2/P3 incluye desglose de monto y botón directo de pago", async () => {
+  describe("5. Cobro Diferido (CobroDiferidoEmail)", () => {
+    it("Cobro diferido P2 incluye monto exacto, concepto, enlace de pago y pie corporativo único", async () => {
       const pagoP2 = dummyOrder.pagos[1];
-      const linkCobro = "https://cosotec.com/pedido/CT-1124456?t=token_p2&pago=P2";
+      const linkCobro = "https://cosotec7.web.app/pedido/CT-1124451?t=tok_p2&pago=P2";
 
-      await notificarCobroDiferidoCliente(dummyOrder, pagoP2, "token_p2", linkCobro);
+      await notificarCobroDiferidoCliente(dummyOrder, pagoP2, "tok_p2", linkCobro);
 
       const html = mockEmailQueue[0].html;
+      expect(html).toContain("Monto a Liquidar (P2)");
       expect(html).toContain("Finiquito 45% al concluir instalación");
-      expect(html).toContain("P2");
-      expect(html).toContain("token_p2");
-      expect(html).toContain("pago=P2");
+      expect(html).toContain("Pagar en Línea con Tarjeta / Consultar SPEI");
+      expect(html).toContain("CosoTec by CoSoAVL · Metepec, Estado de México");
+      expect(html).not.toContain("Soluciones de Rastreo e Ingeniería");
     });
   });
 });

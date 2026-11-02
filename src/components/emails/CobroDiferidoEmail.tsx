@@ -1,6 +1,11 @@
 import React from "react";
 import { Order, OrderPagoProgramado } from "@/types/order";
 import { formatMxn } from "@/lib/pricing";
+import { EmailFooter } from "./EmailFooter";
+import {
+  limpiarTituloSaludo,
+  getAppBaseUrl,
+} from "./email-helpers";
 
 interface CobroDiferidoEmailProps {
   order: Order;
@@ -8,6 +13,7 @@ interface CobroDiferidoEmailProps {
   token: string;
   linkCobro: string;
   siteUrl?: string;
+  customFooter?: string;
 }
 
 export function CobroDiferidoEmail({
@@ -15,18 +21,46 @@ export function CobroDiferidoEmail({
   pago,
   token,
   linkCobro,
-  siteUrl = "https://cosotec.com",
+  siteUrl,
+  customFooter,
 }: CobroDiferidoEmailProps) {
   const { folio, contacto } = order;
+  const baseUrl = getAppBaseUrl(siteUrl);
+  const nombreSaludo = limpiarTituloSaludo(contacto.nombre);
 
   return (
-    <div style={{ backgroundColor: "#F5F3F2", padding: "30px 15px", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" }}>
-      <table align="center" width="100%" style={{ maxWidth: "600px", backgroundColor: "#ffffff", borderRadius: "16px", overflow: "hidden", border: "1px solid #E5E7EB", borderCollapse: "separate" }}>
+    <div
+      style={{
+        backgroundColor: "#F5F3F2",
+        padding: "30px 15px",
+        fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      <table
+        align="center"
+        width="100%"
+        style={{
+          maxWidth: "600px",
+          backgroundColor: "#ffffff",
+          borderRadius: "16px",
+          overflow: "hidden",
+          border: "1px solid #E5E7EB",
+          borderCollapse: "separate",
+        }}
+      >
         {/* Header */}
         <tbody>
           <tr>
             <td style={{ backgroundColor: "#7A1428", padding: "26px 30px", textAlign: "center" }}>
-              <span style={{ color: "#C9A15B", fontSize: "11px", fontWeight: "bold", textTransform: "uppercase", letterSpacing: "1px" }}>
+              <span
+                style={{
+                  color: "#C9A15B",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                }}
+              >
                 Calendario de Pagos Programados
               </span>
               <h1 style={{ color: "#ffffff", fontSize: "22px", margin: "6px 0 0 0", fontWeight: "800" }}>
@@ -41,16 +75,32 @@ export function CobroDiferidoEmail({
           {/* Body */}
           <tr>
             <td style={{ padding: "30px" }}>
-              <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 20px 0", lineHeight: "1.6" }}>
-                Estimado(a) <strong>{contacto.nombre}</strong>,
+              <p style={{ fontSize: "15px", color: "#111827", margin: "0 0 16px 0", lineHeight: "1.6", fontWeight: "600" }}>
+                Hola, {nombreSaludo}
               </p>
               <p style={{ fontSize: "14px", color: "#374151", margin: "0 0 20px 0", lineHeight: "1.6" }}>
                 Te compartimos el enlace seguro para realizar la liquidación de la exhibición correspondiente a tu pedido:
               </p>
 
               {/* Tarjeta de Pago */}
-              <div style={{ backgroundColor: "#F9FAFB", border: "1px solid #E5E7EB", borderRadius: "12px", padding: "20px", marginBottom: "25px", textAlign: "center" }}>
-                <span style={{ fontSize: "12px", color: "#6B7280", textTransform: "uppercase", fontWeight: "600" }}>
+              <div
+                style={{
+                  backgroundColor: "#F9FAFB",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "12px",
+                  padding: "20px",
+                  marginBottom: "25px",
+                  textAlign: "center",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: "12px",
+                    color: "#6B7280",
+                    textTransform: "uppercase",
+                    fontWeight: "600",
+                  }}
+                >
                   Monto a Liquidar ({pago.id})
                 </span>
                 <p style={{ fontSize: "28px", color: "#7A1428", fontWeight: "900", margin: "8px 0" }}>
@@ -61,7 +111,7 @@ export function CobroDiferidoEmail({
                 </p>
                 {pago.fechaEstimada && (
                   <p style={{ fontSize: "11px", color: "#9CA3AF", margin: "4px 0 0 0" }}>
-                    Vencimiento / Programación: {pago.fechaEstimada}
+                    Momento / Programación: {pago.fechaEstimada}
                   </p>
                 )}
               </div>
@@ -90,21 +140,28 @@ export function CobroDiferidoEmail({
               </div>
 
               {/* WhatsApp */}
-              <div style={{ textAlign: "center", paddingTop: "15px", borderTop: "1px solid #F3F4F6", fontSize: "12px", color: "#6B7280" }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  paddingTop: "15px",
+                  borderTop: "1px solid #F3F4F6",
+                  fontSize: "12px",
+                  color: "#6B7280",
+                }}
+              >
                 ¿Requieres asistencia o comprobante fiscal? Escríbenos al{" "}
-                <a href="https://wa.me/527224322053" style={{ color: "#7A1428", fontWeight: "bold", textDecoration: "none" }}>
+                <a
+                  href="https://wa.me/527224322053"
+                  style={{ color: "#7A1428", fontWeight: "bold", textDecoration: "none" }}
+                >
                   722 432 2053
                 </a>
               </div>
             </td>
           </tr>
 
-          {/* Footer */}
-          <tr>
-            <td style={{ backgroundColor: "#F9FAFB", padding: "16px 30px", borderTop: "1px solid #E5E7EB", textAlign: "center", fontSize: "11px", color: "#9CA3AF" }}>
-              CosoTec by CoSoAVL · Soluciones de Rastreo e Ingeniería · {siteUrl}
-            </td>
-          </tr>
+          {/* Footer Único y Común */}
+          <EmailFooter customText={customFooter} />
         </tbody>
       </table>
     </div>

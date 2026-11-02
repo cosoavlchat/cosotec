@@ -1,4 +1,3 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import React from "react";
 import { adminDb } from "@/lib/firebase/admin";
 import { Order, OrderPagoProgramado } from "@/types/order";
@@ -6,8 +5,15 @@ import { FichaInstalacionEmail } from "@/components/emails/FichaInstalacionEmail
 import { ConfirmacionPedidoEmail } from "@/components/emails/ConfirmacionPedidoEmail";
 import { AvisoSpeiEmail } from "@/components/emails/AvisoSpeiEmail";
 import { CobroDiferidoEmail } from "@/components/emails/CobroDiferidoEmail";
+import { DEFAULT_EMAIL_FOOTER, getAppBaseUrl } from "@/components/emails/email-helpers";
 
-const DEFAULT_SOPORTE_EMAILS = ["ventas@cosoavl.com", "soporte@cosoavl.com"];
+async function renderHtml(element: React.ReactElement): Promise<string> {
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  return renderToStaticMarkup(element);
+}
+
+// 2. Fallback de soporte: solo ventas@cosoavl.com (eliminado soporte@cosoavl.com)
+const DEFAULT_SOPORTE_EMAILS = ["ventas@cosoavl.com"];
 const DEFAULT_FROM = "CosoTec <onboarding@resend.dev>";
 
 export interface SendEmailParams {
@@ -42,6 +48,24 @@ export async function getSoporteEmails(): Promise<string[]> {
     console.warn("[getSoporteEmails] No se pudo leer settings/notifications, usando defaults:", err);
   }
   return DEFAULT_SOPORTE_EMAILS;
+}
+
+/**
+ * 1. Obtiene el pie corporativo desde settings/contact o retorna el predeterminado oficial.
+ */
+export async function getContactPie(): Promise<string> {
+  try {
+    const snap = await adminDb.collection("settings").doc("contact").get();
+    if (snap.exists) {
+      const data = snap.data();
+      if (typeof data?.pieCompleto === "string" && data.pieCompleto.trim().length > 0) {
+        return data.pieCompleto.trim();
+      }
+    }
+  } catch (err) {
+    // Silencioso, usar fallback oficial
+  }
+  return DEFAULT_EMAIL_FOOTER;
 }
 
 /**
@@ -147,9 +171,11 @@ export async function notificarFichaInstalacionASoporte(order: Order, siteUrl?: 
   const soporteEmails = await getSoporteEmails();
   const unidadesCount = order.unidades?.length || 0;
   const subject = `[Nueva Instalación] Pedido #${order.folio} - ${order.contacto.nombre} (${unidadesCount} unidades)`;
+  const baseUrl = getAppBaseUrl(siteUrl);
+  const customFooter = await getContactPie();
 
-  const html = renderToStaticMarkup(
-    React.createElement(FichaInstalacionEmail, { order, siteUrl })
+  const html = await renderHtml(
+    React.createElement(FichaInstalacionEmail, { order, siteUrl: baseUrl, customFooter })
   );
 
   return enviarEmail({
@@ -163,6 +189,7 @@ export async function notificarFichaInstalacionASoporte(order: Order, siteUrl?: 
 
 /**
  * 2. Envía la confirmación oficial del pedido al cliente con su enlace protegido.
+ * Dos versiones: Pago aprobado vs Pedido SPEI pendiente de validación.
  */
 export async function notificarConfirmacionPedidoCliente(order: Order, token: string, siteUrl?: string) {
   if (!order.contacto.correo) {
@@ -170,9 +197,19 @@ export async function notificarConfirmacionPedidoCliente(order: Order, token: st
     return { success: false, error: "Cliente sin correo" };
   }
 
-  const subject = `¡Confirmación de tu Pedido #${order.folio} en CosoTec!`;
-  const html = renderToStaticMarkup(
-    React.createElement(ConfirmacionPedidoEmail, { order, token, siteUrl })
+  const esSpeiPendiente =
+    order.metodoPago === "spei" &&
+    (order.estado === "pendiente_comprobante" || order.estado === "comprobante_subido");
+
+  const subject = esSpeiPendiente
+    ? `Pedido #${order.folio} Registrado - Instrucciones de Pago SPEI`
+    : `¡Confirmación de tu Pedido #${order.folio} en CosoTec!`;
+
+  const baseUrl = getAppBaseUrl(siteUrl);
+  const customFooter = await getContactPie();
+
+  const html = await renderHtml(
+    React.createElement(ConfirmacionPedidoEmail, { order, token, siteUrl: baseUrl, customFooter })
   );
 
   return enviarEmail({
@@ -192,7 +229,8 @@ export async function notificarResultadoSpeiCliente(
   token: string,
   accion: "aprobado" | "rechazado",
   motivoRechazo?: string,
-  siteUrl?: string
+  siteUrl?: string,
+  pagoId?: string
 ) {
   if (!order.contacto.correo) return { success: false, error: "Cliente sin correo" };
 
@@ -201,8 +239,19 @@ export async function notificarResultadoSpeiCliente(
       ? `✓ Pago SPEI Acreditado con Éxito - Pedido #${order.folio}`
       : `Acción requerida: Comprobante SPEI de Pedido #${order.folio}`;
 
-  const html = renderToStaticMarkup(
-    React.createElement(AvisoSpeiEmail, { order, token, accion, motivoRechazo, siteUrl })
+  const baseUrl = getAppBaseUrl(siteUrl);
+  const customFooter = await getContactPie();
+
+  const html = await renderHtml(
+    React.createElement(AvisoSpeiEmail, {
+      order,
+      token,
+      accion,
+      motivoRechazo,
+      siteUrl: baseUrl,
+      customFooter,
+      pagoId,
+    })
   );
 
   return enviarEmail({
@@ -210,7 +259,7 @@ export async function notificarResultadoSpeiCliente(
     subject,
     html,
     tipo: "aviso_spei",
-    metadata: { folio: order.folio, accion, motivoRechazo },
+    metadata: { folio: order.folio, accion, motivoRechazo, pagoId },
   });
 }
 
@@ -227,8 +276,18 @@ export async function notificarCobroDiferidoCliente(
   if (!order.contacto.correo) return { success: false, error: "Cliente sin correo" };
 
   const subject = `Recordatorio de Pago ${pago.id} (${pago.concepto}) - Pedido #${order.folio}`;
-  const html = renderToStaticMarkup(
-    React.createElement(CobroDiferidoEmail, { order, pago, token, linkCobro, siteUrl })
+  const baseUrl = getAppBaseUrl(siteUrl);
+  const customFooter = await getContactPie();
+
+  const html = await renderHtml(
+    React.createElement(CobroDiferidoEmail, {
+      order,
+      pago,
+      token,
+      linkCobro,
+      siteUrl: baseUrl,
+      customFooter,
+    })
   );
 
   return enviarEmail({
@@ -239,3 +298,4 @@ export async function notificarCobroDiferidoCliente(
     metadata: { folio: order.folio, pagoId: pago.id, montoCentavos: pago.montoCentavos },
   });
 }
+

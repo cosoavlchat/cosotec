@@ -187,3 +187,22 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
      - PDF: `%PDF-` (`25 50 44 46 2D`)
    - Archivos que no coincidan con su firma binaria son rechazados con `400 Bad Request`.
 
+9. **Paso 3.6: Notificaciones Transaccionales con Resend, Limitaciones de Sandbox y Configuración DNS:**
+   - **Encolamiento Resiliente (`emailQueue`):** Si `RESEND_API_KEY` falta o tiene el valor `"temporal-pendiente"`, el correo se almacena en la colección `emailQueue` con estado `"pendiente"`. El checkout del cliente y el webhook de pagos nunca se interrumpen por demoras o falta de credenciales de mensajería.
+   - **Limitación del Remitente de Prueba (`onboarding@resend.dev`):**
+     > [!IMPORTANT]
+     > En modo de prueba (`onboarding@resend.dev`), la API de Resend **únicamente entrega correos a la dirección del propietario de la cuenta registrada en Resend**. Si se intenta enviar a otro destinatario (ej. correos de clientes o personal externo), Resend rechaza la entrega con un error 403 (*"You can only send testing emails to your own email address..."*). En dicho caso, nuestro servicio intercepta el rechazo y resguarda el correo en `emailQueue` con `estado: "error"`.
+   - **Registros DNS Obligatorios para Dominio Propio en Producción:**
+     Para enviar a cualquier cliente final sin restricciones desde `ventas@cosotec.com` (o `notificaciones@cosotec.com`), se debe registrar el dominio en [Resend Domains](https://resend.com/domains) y dar de alta los siguientes registros DNS en el panel del registrador:
+     | Tipo | Nombre de Host | Valor / Destino | Prioridad | Propósito |
+     | :--- | :--- | :--- | :---: | :--- |
+     | **TXT** | `resend._domainkey` | `k=rsa; p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQ...` *(generado por Resend)* | — | Autenticación criptográfica DKIM |
+     | **TXT** | `send` | `v=spf1 include:amazonses.com ~all` | — | Autorización de servidores SPF |
+     | **MX** | `send` | `feedback-smtp.us-east-1.amazonses.com` | `10` | Manejo de rebotes (*Return-Path*) |
+     | **TXT** | `_dmarc` | `v=DMARC1; p=none; rua=mailto:dmarc@cosotec.com` | — | Política de protección DMARC |
+   - **Pie de Correo Corporativo Único:**
+     Todos los correos emplean una firma idéntica y estandarizada (con fallback a `settings/contact`):
+     `"CosoTec by CoSoAVL · Metepec, Estado de México · ventas@cosoavl.com · Tel. 722 134 0127 · WhatsApp 722 432 2053"`.
+     No se utilizan razones sociales inventadas ni canales no oficiales.
+
+
