@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/auth/admin-auth-context";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -24,6 +24,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, role, loading, logout } = useAdminAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Si estamos en la página de login, no aplicar layout administrativo ni guard
   const isLoginPage = pathname === "/admin/login";
@@ -104,14 +105,19 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   // 4. Renderizado del panel con sesión válida
   return (
     <div className="flex h-screen bg-[#F5F3F2] overflow-hidden">
-      <AdminSidebar currentRole={role} />
+      <AdminSidebar
+        currentRole={role}
+        mobileOpen={mobileMenuOpen}
+        onCloseMobile={() => setMobileMenuOpen(false)}
+      />
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <AdminHeader
           currentRole={role}
           userEmail={user.email || ""}
           onLogout={logout}
+          onToggleMobileMenu={() => setMobileMenuOpen(!mobileMenuOpen)}
         />
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-3.5 sm:p-8">
           <div className="max-w-7xl mx-auto">{children}</div>
         </main>
       </div>
