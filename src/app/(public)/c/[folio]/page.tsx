@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ShieldAlert, ShieldX, Clock, CheckCircle2, AlertTriangle, FileText, ArrowRight, Printer, MessageCircle, Phone } from "lucide-react";
+import { ShieldAlert, ShieldX, Clock, CheckCircle2, AlertTriangle, FileText, ArrowRight, Printer, MessageCircle, Phone, Download, HelpCircle } from "lucide-react";
 import { obtenerCotizacionPorFolio, validarTokenCotizacion } from "@/lib/quotes";
+import { registrarAperturaCotizacion } from "@/lib/services/quotes-service";
 import { formatMxn } from "@/lib/pricing";
 
 interface PageProps {
@@ -157,30 +158,133 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
     );
   }
 
-  // CASO 4: Token válido -> Renderizar cotización
-  const vencida = new Date(quote.venceAt).getTime() < Date.now();
+  // CASO 4: Token válido -> Registrar apertura (PRIVACIDAD: SIN IP NI USER AGENT)
+  await registrarAperturaCotizacion(folio).catch((err) =>
+    console.error("[Cotización] Error al registrar apertura:", err)
+  );
+
+  // CASO 5: Cotización pendiente de autorización interna
+  if (quote.estado === "pendiente_autorizacion") {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-4 py-16 bg-[#F5F3F2]">
+        <div className="max-w-md w-full bg-white rounded-2xl p-8 border border-amber-200/80 shadow-md text-center space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+            <Clock className="w-9 h-9" />
+          </div>
+          <div className="space-y-2">
+            <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+              En Revisión Interna
+            </span>
+            <h1 className="text-2xl font-extrabold text-[#1C1C1E]">
+              Cotización en Proceso de Aprobación
+            </h1>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Esta cotización se encuentra en revisión interna por la gerencia para validar los descuentos y condiciones solicitadas.
+            </p>
+          </div>
+          <p className="text-xs text-gray-500">
+            Tu asesor comercial te compartirá el enlace activo en cuanto se complete la autorización.
+          </p>
+          <div className="pt-2">
+            <a
+              href={`https://wa.me/52${quote.vendedorWhatsapp || "7224322053"}?text=Hola%20${encodeURIComponent(quote.vendedorNombre || "Asesor")},%20consulto%20el%20estatus%20de%20mi%20cotizaci%C3%B3n%20${quote.folio}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Consultar con mi Asesor
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // CASO 6: Token válido -> Renderizar cotización
+  const venceAtTimestamp = quote.venceAt ? new Date(quote.venceAt).getTime() : Date.now() + 86400000;
+  const vencida = venceAtTimestamp < Date.now();
+  const esVersionObsoleta = quote.esVersionActiva === false;
+  const estaPagada = quote.estado === "pagada" || quote.estado === "pagada_parcial";
+  const puedePagar = !vencida && !esVersionObsoleta && !estaPagada && (quote.estado === "enviada" || quote.estado === "vista");
+
   const fechaEmision = new Date(quote.createdAt).toLocaleDateString("es-MX", {
     year: "numeric",
     month: "long",
     day: "numeric",
   });
-  const fechaVencimiento = new Date(quote.venceAt).toLocaleDateString("es-MX", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const fechaVencimiento = quote.venceAt
+    ? new Date(quote.venceAt).toLocaleDateString("es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "15 días naturales";
+
+  const vendedorWa = quote.vendedorWhatsapp || "7224322053";
+  const vendedorNombre = quote.vendedorNombre || "Asesor CoSoAVL";
 
   return (
     <div className="min-h-screen bg-[#F5F3F2] py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Banner de versión anterior */}
+        {esVersionObsoleta && (
+          <div className="rounded-2xl bg-amber-50 border border-amber-300 p-4 sm:p-5 flex items-start justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs sm:text-sm text-amber-900">
+                <p className="font-bold">Hay una versión más reciente de esta cotización</p>
+                <p>
+                  Esta versión ({quote.folio}) ha sido sustituida por una actualización posterior y ya no permite pagos directos.
+                </p>
+              </div>
+            </div>
+            {quote.versionMasRecienteFolio && (
+              <Link
+                href={`/c/${quote.versionMasRecienteFolio}?t=${token}`}
+                className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors"
+              >
+                Ver versión actual
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
+          </div>
+        )}
+
         {/* Banner de cotización vencida */}
         {vencida && (
-          <div className="rounded-2xl bg-amber-500/10 border border-amber-300 p-4 sm:p-5 flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
-            <div className="space-y-1 text-xs sm:text-sm text-amber-900">
-              <p className="font-bold">Esta cotización ha vencido</p>
+          <div className="rounded-2xl bg-rose-50 border border-rose-300 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-rose-700 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-xs sm:text-sm text-rose-900">
+                <p className="font-bold">Esta cotización venció, solicita una actualización a tu asesor</p>
+                <p>
+                  La vigencia concluyó el {fechaVencimiento}. Solicita a tu asesor una reactivación con las condiciones actuales.
+                </p>
+              </div>
+            </div>
+            <a
+              href={`https://wa.me/52${vendedorWa}?text=Hola%20${encodeURIComponent(vendedorNombre)},%20mi%20cotizaci%C3%B3n%20${quote.folio}%20ha%20vencido.%20%C2%BFMe%20apoyas%20a%20actualizarla?`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Actualizar por WhatsApp
+            </a>
+          </div>
+        )}
+
+        {/* Banner de cotización con pagos registrados */}
+        {estaPagada && (
+          <div className="rounded-2xl bg-emerald-50 border border-emerald-300 p-4 sm:p-5 flex items-start gap-3 shadow-xs">
+            <CheckCircle2 className="w-5 h-5 text-emerald-700 shrink-0 mt-0.5" />
+            <div className="space-y-1 text-xs sm:text-sm text-emerald-900">
+              <p className="font-bold">
+                {quote.estado === "pagada" ? "Cotización Liquidada" : "Anticipo Registrado"}
+              </p>
               <p>
-                La vigencia límite de 15 días concluyó el {fechaVencimiento}. Los precios y disponibilidad de stock mostrados son únicamente de referencia histórica. Contacta a un asesor comercial para reactivarla con las promociones actuales.
+                Esta cotización cuenta con pagos registrados en el sistema y se encuentra en etapa de coordinación técnica.
               </p>
             </div>
           </div>
@@ -198,11 +302,21 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                 <span
                   className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
                     vencida
+                      ? "bg-rose-400/20 text-rose-200 border border-rose-400/30"
+                      : esVersionObsoleta
                       ? "bg-amber-400/20 text-amber-200 border border-amber-400/30"
+                      : estaPagada
+                      ? "bg-emerald-400/20 text-emerald-200 border border-emerald-400/30"
                       : "bg-emerald-400/20 text-emerald-200 border border-emerald-400/30"
                   }`}
                 >
-                  {vencida ? "Vencida" : "Vigente"}
+                  {estaPagada
+                    ? quote.estado === "pagada" ? "Pagada" : "Anticipo Pagado"
+                    : esVersionObsoleta
+                    ? "Versión Anterior"
+                    : vencida
+                    ? "Vencida"
+                    : "Vigente"}
                 </span>
               </div>
               <h1 className="text-3xl font-extrabold tracking-tight mt-1 font-mono">
@@ -215,8 +329,8 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
 
             <div className="text-left sm:text-right text-xs text-gray-200 space-y-0.5">
               <p className="font-bold text-white text-sm">CosoTec by CoSoAVL</p>
-              <p>Metepec, Estado de México</p>
-              <p>ventas@cosoavl.com • WhatsApp 722 432 2053</p>
+              <p>Asesor: <strong className="text-white">{vendedorNombre}</strong></p>
+              <p>Metepec, Estado de México • WhatsApp {vendedorWa}</p>
             </div>
           </div>
 
@@ -443,28 +557,52 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
 
             {/* Botones de Acción */}
             <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 print:hidden">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                 <a
-                  href={`https://wa.me/527224322053?text=Hola,%20deseo%20confirmar%20mi%20cotizaci%C3%B3n%20folio%20${quote.folio}`}
+                  href={`/api/cotizaciones/${quote.folio}/pdf?t=${token}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 text-gray-800 font-bold text-xs transition-colors shadow-xs"
                 >
-                  <MessageCircle className="w-4 h-4" />
-                  Confirmar por WhatsApp
+                  <Download className="w-4 h-4 text-gray-600" />
+                  Descargar PDF
                 </a>
 
-                <Link
-                  href={`/checkout?folio=${quote.folio}&t=${token}`}
-                  className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs transition-colors shadow-xs ${
-                    vencida
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed pointer-events-none"
-                      : "bg-[#7A1428] hover:bg-[#5C0F1E] text-white"
-                  }`}
+                <a
+                  href={`https://wa.me/52${vendedorWa}?text=Hola%20${encodeURIComponent(vendedorNombre)},%20tengo%20preguntas%20sobre%20mi%20cotizaci%C3%B3n%20${quote.folio}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs"
                 >
-                  Pagar en Línea
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
+                  <MessageCircle className="w-4 h-4" />
+                  WhatsApp Asesor
+                </a>
+
+                {puedePagar ? (
+                  <Link
+                    href={`/checkout?cotizacion=${quote.folio}&t=${token}`}
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#7A1428] hover:bg-[#5C0F1E] text-white font-bold text-xs transition-colors shadow-xs"
+                  >
+                    Pagar Cotización en Línea
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                ) : (
+                  <button
+                    disabled
+                    className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gray-200 text-gray-500 font-bold text-xs cursor-not-allowed"
+                    title={
+                      vencida
+                        ? "Cotización vencida"
+                        : esVersionObsoleta
+                        ? "Versión anterior no pagable"
+                        : estaPagada
+                        ? "Cotización ya pagada"
+                        : "No disponible para pago directo"
+                    }
+                  >
+                    {estaPagada ? "Cotización Pagada" : "Pago no disponible"}
+                  </button>
+                )}
               </div>
 
               <div className="text-xs text-gray-500 flex items-center gap-4">

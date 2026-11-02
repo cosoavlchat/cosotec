@@ -10,7 +10,7 @@ import { Step4Factura } from "@/components/checkout/Step4Factura";
 import { Step5Pago } from "@/components/checkout/Step5Pago";
 import { CheckoutSummary } from "@/components/checkout/CheckoutSummary";
 import { CartStep, CartItem } from "@/types/cart";
-import { ShieldCheck, Plus, ShoppingCart, ArrowRight } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Plus, ShoppingCart, ArrowRight, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -21,6 +21,11 @@ function CheckoutInner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [maxStep, setMaxStep] = useState<CartStep>(5);
 
+  const cotizacionParam = searchParams.get("cotizacion") || searchParams.get("folio");
+  const tokenParam = searchParams.get("t");
+  const [quoteLoaded, setQuoteLoaded] = useState(false);
+  const [quoteError, setQuoteError] = useState<{ message: string; whatsapp?: string } | null>(null);
+
   const pasoParam = searchParams.get("paso");
   const parsedStep = pasoParam ? parseInt(pasoParam, 10) : NaN;
   const targetStep: CartStep = (!isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 5)
@@ -30,6 +35,132 @@ function CheckoutInner() {
   const [currentStep, setCurrentStep] = useState<CartStep>(targetStep);
   const [orderError, setOrderError] = useState<{ message: string; errorId?: string } | null>(null);
 
+  // Cargar datos inmutables desde cotización si se accede desde /c/[folio]
+  useEffect(() => {
+    if (!cotizacionParam || !tokenParam || quoteLoaded) return;
+
+    let cancelled = false;
+    async function loadQuote() {
+      try {
+        const res = await fetch(`/api/cotizaciones/${cotizacionParam}?t=${tokenParam}`);
+        const data = await res.json();
+
+        if (cancelled) return;
+
+        if (!res.ok || !data.success || !data.quote) {
+          setQuoteError({
+            message: data.error || "No pudimos cargar la cotización.",
+            whatsapp: "7224322053",
+          });
+          return;
+        }
+
+        const q = data.quote;
+
+        // Validaciones estrictas de cotización
+        if (q.esVersionActiva === false) {
+          setQuoteError({
+            message: "Hay una versión más reciente de esta cotización.",
+            whatsapp: q.vendedorWhatsapp || "7224322053",
+          });
+          return;
+        }
+
+        const vencida = q.venceAt ? new Date(q.venceAt).getTime() < Date.now() : false;
+        if (vencida) {
+          setQuoteError({
+            message: "Esta cotización venció, solicita una actualización a tu asesor",
+            whatsapp: q.vendedorWhatsapp || "7224322053",
+          });
+          return;
+        }
+
+        if (q.estado === "pagada" || q.estado === "pagada_parcial") {
+          setQuoteError({
+            message: "Esta cotización ya cuenta con pagos registrados.",
+            whatsapp: q.vendedorWhatsapp || "7224322053",
+          });
+          return;
+        }
+
+        if (q.estado === "pendiente_autorizacion") {
+          setQuoteError({
+            message: "Esta cotización se encuentra pendiente de autorización interna.",
+            whatsapp: q.vendedorWhatsapp || "7224322053",
+          });
+          return;
+        }
+
+        // Prellenar carrito con los datos inmutables de la cotización
+        const cartItems: CartItem[] = (q.items || []).map((it: any) => ({
+          id: it.id,
+          tipo: "producto" as const,
+          nombre: it.nombre,
+          categoria: it.categoria || "gps",
+          precioSinIvaCentavos: it.precioSinIvaCentavos,
+          cantidad: it.cantidad,
+          esEquipoPrincipal: Boolean(it.esEquipoPrincipal),
+          incluyeInstalacion: Boolean(it.incluyeInstalacion),
+          incluyePlanPrimerAnio: Boolean(it.incluyePlanPrimerAnio),
+        }));
+
+        await saveCurrentState({
+          items: cartItems,
+          contacto: {
+            nombre: q.cliente?.nombre || "",
+            telefono: q.cliente?.telefono || "",
+            correo: q.cliente?.correo || "",
+            empresa: q.cliente?.empresa,
+          },
+          ...(q.cliente?.rfc
+            ? {
+                factura: {
+                  requiereFactura: true,
+                  rfc: q.cliente.rfc,
+                  razonSocial: q.cliente.empresa || q.cliente.nombre || "",
+                  usoCfdi: "G03",
+                },
+              }
+            : {}),
+          instalacion: q.instalacion
+            ? {
+                estadoClave: q.instalacion.estadoClave,
+                estadoNombre: q.instalacion.estadoNombre,
+                municipio: q.instalacion.municipio,
+                direccion: "Por confirmar con asesor técnico",
+                tipoLugar: "domicilio",
+              }
+            : q.estadoInstalacion
+            ? {
+                estadoClave: q.estadoInstalacion.clave,
+                estadoNombre: q.estadoInstalacion.nombre,
+                municipio: q.estadoInstalacion.nombre,
+                direccion: "Por confirmar con asesor técnico",
+                tipoLugar: "domicilio",
+              }
+            : undefined,
+          pago: {
+            planSeleccionado: q.condiciones?.planSeleccionado || "contado",
+            metodoSeleccionado: "mercadopago",
+          },
+        });
+
+        setQuoteLoaded(true);
+      } catch (err) {
+        console.error("Error al cargar cotización en checkout:", err);
+        setQuoteError({
+          message: "Ocurrió un error al cargar la información de la cotización.",
+          whatsapp: "7224322053",
+        });
+      }
+    }
+
+    loadQuote();
+    return () => {
+      cancelled = true;
+    };
+  }, [cotizacionParam, tokenParam, quoteLoaded, saveCurrentState]);
+
   useEffect(() => {
     if (!isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 5) {
       setCurrentStep(parsedStep as CartStep);
@@ -38,9 +169,9 @@ function CheckoutInner() {
     }
   }, [parsedStep, ctxStep]);
 
-  // Si no hay items, asegurar que exista al menos 1 producto principal de prueba
+  // Si no hay items y no proviene de cotización, asegurar que exista al menos 1 producto principal de prueba
   useEffect(() => {
-    if (items.length === 0) {
+    if (!cotizacionParam && items.length === 0) {
       const defaultGps: CartItem = {
         id: "gps-tracker-4g",
         tipo: "producto",
@@ -53,7 +184,7 @@ function CheckoutInner() {
       };
       addItem(defaultGps);
     }
-  }, [items.length, addItem]);
+  }, [cotizacionParam, items.length, addItem]);
 
   // Prellenar datos coherentes si se navega a pasos avanzados directamente
   useEffect(() => {
@@ -110,10 +241,20 @@ function CheckoutInner() {
         pago: { planSeleccionado, metodoSeleccionado },
       });
 
+      const requestBody: any = {
+        cartId: cart?.id,
+        planSeleccionado,
+        metodoSeleccionado,
+      };
+      if (cotizacionParam) {
+        requestBody.cotizacionFolio = cotizacionParam;
+        requestBody.token = tokenParam;
+      }
+
       const res = await fetch("/api/checkout/crear-orden", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cartId: cart?.id }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await res.json();
@@ -165,42 +306,83 @@ function CheckoutInner() {
           </div>
         </div>
 
-        {/* Stepper de 5 pasos */}
-        <CheckoutStepper
-          currentStep={currentStep}
-          maxStepAllowed={maxStep}
-          onSelectStep={(s) => goToStep(s)}
-        />
-
-        {/* Grid de Formulario Activo + Resumen Lateral */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Columna Principal: Paso Actual (7 columnas) */}
-          <div className="lg:col-span-7 space-y-6">
-            {currentStep === 1 && <Step1Contacto onNext={handleNextStep} />}
-            {currentStep === 2 && (
-              <Step2Instalacion onNext={handleNextStep} onBack={handleBackStep} />
-            )}
-            {currentStep === 3 && (
-              <Step3Unidades onNext={handleNextStep} onBack={handleBackStep} />
-            )}
-            {currentStep === 4 && (
-              <Step4Factura onNext={handleNextStep} onBack={handleBackStep} />
-            )}
-            {currentStep === 5 && (
-              <Step5Pago
-                onBack={handleBackStep}
-                onConfirmOrder={handleConfirmOrder}
-                isSubmitting={isSubmitting}
-                orderError={orderError}
-              />
-            )}
+        {/* Aviso de error o cotización no pagable */}
+        {quoteError ? (
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-amber-200/80 shadow-md text-center max-w-lg mx-auto space-y-5 my-8">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto">
+              <ShieldAlert className="w-9 h-9" />
+            </div>
+            <div className="space-y-2">
+              <span className="inline-block px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200">
+                Atención Comercial
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900">
+                {quoteError.message}
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 leading-relaxed">
+              Por políticas de integridad y vigencia de precios en CosoTec, un asesor comercial te ayudará a reactivar tu cotización o confirmar la versión vigente en un solo clic.
+            </p>
+            <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
+              {quoteError.whatsapp && (
+                <a
+                  href={`https://wa.me/52${quoteError.whatsapp}?text=Hola,%20solicito%20actualizar%20mi%20cotizaci%C3%B3n%20${cotizacionParam || ""}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors shadow-xs"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Actualizar por WhatsApp
+                </a>
+              )}
+              <Link
+                href="/tienda"
+                className="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-colors"
+              >
+                Ver Tienda
+              </Link>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Stepper de 5 pasos */}
+            <CheckoutStepper
+              currentStep={currentStep}
+              maxStepAllowed={maxStep}
+              onSelectStep={(s) => goToStep(s)}
+            />
 
-          {/* Columna Secundaria: Resumen Financiero y Carrito (5 columnas) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-24">
-            <CheckoutSummary />
-          </div>
-        </div>
+            {/* Grid de Formulario Activo + Resumen Lateral */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Columna Principal: Paso Actual (7 columnas) */}
+              <div className="lg:col-span-7 space-y-6">
+                {currentStep === 1 && <Step1Contacto onNext={handleNextStep} />}
+                {currentStep === 2 && (
+                  <Step2Instalacion onNext={handleNextStep} onBack={handleBackStep} />
+                )}
+                {currentStep === 3 && (
+                  <Step3Unidades onNext={handleNextStep} onBack={handleBackStep} />
+                )}
+                {currentStep === 4 && (
+                  <Step4Factura onNext={handleNextStep} onBack={handleBackStep} />
+                )}
+                {currentStep === 5 && (
+                  <Step5Pago
+                    onBack={handleBackStep}
+                    onConfirmOrder={handleConfirmOrder}
+                    isSubmitting={isSubmitting}
+                    orderError={orderError}
+                  />
+                )}
+              </div>
+
+              {/* Columna Secundaria: Resumen Financiero y Carrito (5 columnas) */}
+              <div className="lg:col-span-5 lg:sticky lg:top-24">
+                <CheckoutSummary />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

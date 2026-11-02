@@ -74,6 +74,9 @@ export interface Order {
   mercadoPagoOrderId?: string;
   mercadoPagoPreferenceId?: string;
   metodoPagoDetalle?: string;
+  folioCotizacion?: string; // Vinculación si la orden proviene de una cotización
+  vendedorId?: string; // Vendedor asignado
+  vendedorNombre?: string;
   motivoRevision?: string;
   motivoRechazo?: string;
   notas?: string;

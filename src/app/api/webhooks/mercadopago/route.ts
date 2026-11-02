@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
       orderFolio = f;
       targetPagoId = p || "P1";
     } else {
-      const match = externalReference.match(/^(CT-[A-Za-z0-9]+)-(P\d+)$/i);
+      const match = externalReference.match(/^(CT-[A-Za-z0-9]+(?:-v\d+)?)-(P\d+)$/i);
       if (match) {
         orderFolio = match[1];
         targetPagoId = match[2].toUpperCase();
@@ -308,6 +308,28 @@ export async function POST(req: NextRequest) {
         await notificarFichaInstalacionASoporte(orderData).catch((err) =>
           console.error("[Webhook MP] Error notificando ficha a soporte:", err)
         );
+      }
+
+      // Si la orden proviene de una cotización de vendedor, actualizar su estado a pagada o pagada_parcial
+      if (orderData.folioCotizacion) {
+        const quoteRef = adminDb.collection("quotes").doc(orderData.folioCotizacion);
+        const quoteSnap = await quoteRef.get();
+        if (quoteSnap.exists) {
+          const quoteNuevoEstado = nuevoEstado === "pagado" ? "pagada" : "pagada_parcial";
+          await quoteRef.update({
+            estado: quoteNuevoEstado,
+            updatedAt: nowIso,
+          });
+          await adminDb.collection("auditLog").add({
+            tipo: "cotizacion_pago_registrado",
+            folioCotizacion: orderData.folioCotizacion,
+            orderFolio: orderData.folio,
+            nuevoEstado: quoteNuevoEstado,
+            pagoId: targetPagoId,
+            montoCentavos: montoCentavosCobrado,
+            fecha: nowIso,
+          });
+        }
       }
 
       // Bitácora de auditoría

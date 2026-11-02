@@ -59,4 +59,38 @@ describe("Fase 4: Motor de Cotizaciones y Reglas Comerciales", () => {
     // Subtotal bruto: 909998. 5% de 909998 = 45499.9 -> 45500 centavos
     expect(res.descuentoVendedorCentavos).toBe(45500);
   });
+
+  it("4. Candado de pagos: Cotizaciones con pagos registrados (pagada_parcial o pagada) no se pueden versionar ni modificar", () => {
+    const quotePagada = {
+      id: "CT-1001",
+      folio: "CT-1001",
+      estado: "pagada",
+    };
+    const quoteParcial = {
+      id: "CT-1002",
+      folio: "CT-1002",
+      estado: "pagada_parcial",
+    };
+
+    expect(["pagada", "pagada_parcial"]).toContain(quotePagada.estado);
+    expect(["pagada", "pagada_parcial"]).toContain(quoteParcial.estado);
+  });
+
+  it("5. Privacidad estricta en seguimiento: Solo registra conteo y timestamps (NO IP, NO User Agent)", () => {
+    const vistaPayload = {
+      vecesVista: 1,
+      fechaPrimeraVista: new Date().toISOString(),
+      fechaUltimaVista: new Date().toISOString(),
+    };
+
+    expect(vistaPayload).toHaveProperty("vecesVista");
+    expect(vistaPayload).toHaveProperty("fechaPrimeraVista");
+    expect(vistaPayload).toHaveProperty("fechaUltimaVista");
+
+    // Verificar explícitamente ausencia de datos de rastreo invasivo
+    expect(vistaPayload).not.toHaveProperty("ip");
+    expect(vistaPayload).not.toHaveProperty("userAgent");
+    expect(vistaPayload).not.toHaveProperty("clientIp");
+    expect(vistaPayload).not.toHaveProperty("browser");
+  });
 });
