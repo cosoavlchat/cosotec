@@ -3,6 +3,7 @@ import { securityHeaders } from "./src/config/security-headers";
 import { redirects } from "./src/config/redirects";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: {
     rules: {
       "*.css": {
