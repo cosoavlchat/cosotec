@@ -18,3 +18,4 @@ export async function POST(
     return NextResponse.json({ error: error.message || "Error al solicitar reasignación" }, { status: 400 });
   }
 }
+

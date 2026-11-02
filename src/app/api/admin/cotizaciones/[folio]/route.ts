@@ -37,3 +37,4 @@ export async function PUT(
     return NextResponse.json({ error: error.message || "Error al actualizar cotización" }, { status: 400 });
   }
 }
+

@@ -12,11 +12,14 @@ export function PublicFooter() {
           <div className="flex items-center gap-3">
             <Link href="/" className="inline-block group py-1" aria-label="CosoTec Inicio">
               <div className="relative inline-block">
-                <div className="absolute -inset-2 bg-gradient-to-r from-white/25 via-[#C9A15B]/25 to-white/25 blur-lg opacity-60 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none" />
+                <div
+                  className="absolute -inset-x-4 -inset-y-2 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.65)_45%,rgba(255,255,255,0.15)_70%,transparent_90%)] blur-sm pointer-events-none rounded-full"
+                  aria-hidden="true"
+                />
                 <img
                   src="/logo-cosotec.png"
                   alt="CosoTec by CoSoAVL"
-                  className="relative z-10 h-10 w-auto object-contain drop-shadow-[0_2px_12px_rgba(201,161,91,0.4)]"
+                  className="relative z-10 h-10 w-auto object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
                   width={180}
                   height={44}
                 />

@@ -15,3 +15,4 @@ describe("Fase 4: Módulo de Clientes y Normalización Telefónica", () => {
     expect(formatearWhatsapp("+5217224322053")).toBe("722 432 2053");
   });
 });
+

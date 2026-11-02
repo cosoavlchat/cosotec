@@ -18,3 +18,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message || "Error al verificar WhatsApp" }, { status: 500 });
   }
 }
+

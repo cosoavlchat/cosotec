@@ -99,14 +99,19 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
-          {/* 1. Logo Oficial sin fondo al principio del Hero con resplandor dorado */}
+          {/* 1. Logo Oficial sin fondo al principio del Hero con halo radial blanco y sombra oscura */}
           <div className="flex justify-center mb-2 animate-in fade-in slide-in-from-top-6 duration-700">
             <div className="relative inline-block group">
-              <div className="absolute -inset-4 bg-gradient-to-r from-[#C9A15B]/35 via-white/20 to-[#C9A15B]/35 blur-2xl opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none rounded-full" />
+              {/* Halo radial blanco detrás para que resalten los tonos oscuros del logo */}
+              <div
+                className="absolute -inset-x-8 -inset-y-4 sm:-inset-x-12 sm:-inset-y-6 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.70)_40%,rgba(255,255,255,0.20)_70%,transparent_90%)] blur-md sm:blur-lg pointer-events-none rounded-full"
+                aria-hidden="true"
+              />
+              {/* Logo con leve sombra oscura justo detrás de las letras */}
               <img
                 src="/logo-cosotec.png"
                 alt="CosoTec by CoSoAVL"
-                className="relative z-10 h-16 sm:h-22 w-auto object-contain drop-shadow-[0_4px_28px_rgba(201,161,91,0.5)] transition-transform duration-500 hover:scale-105"
+                className="relative z-10 h-16 sm:h-22 w-auto object-contain drop-shadow-[0_2px_4px_rgba(0,0,0,0.85)] drop-shadow-[0_4px_10px_rgba(0,0,0,0.45)] transition-transform duration-500 hover:scale-105"
                 width={320}
                 height={88}
                 fetchPriority="high"
