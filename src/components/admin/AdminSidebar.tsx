@@ -83,20 +83,16 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
   return (
     <aside className="w-64 bg-[#4A0C18] text-white flex flex-col min-h-screen shrink-0 border-r border-[#7A1428]/40 shadow-xl">
       {/* Brand Header */}
-      <div className="p-6 border-b border-[#7A1428]/50">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-[#7A1428] flex items-center justify-center font-bold text-white border border-[#C9A15B]/50 shadow-inner">
-            C
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-              Coso<span className="text-[#C9A15B]">Tec</span>
-            </h1>
-            <p className="text-[10px] uppercase tracking-wider text-[#C9A15B] font-semibold">
-              by CoSoAVL
-            </p>
-          </div>
-        </div>
+      <div className="p-5 border-b border-[#7A1428]/50">
+        <Link href="/admin" className="flex items-center justify-center bg-white rounded-xl py-2 px-3 shadow-sm hover:opacity-95 transition-opacity" aria-label="CosoTec Admin Dashboard">
+          <img
+            src="/logo-cosotec.png"
+            alt="CosoTec by CoSoAVL"
+            className="h-9 w-auto object-contain"
+            width={160}
+            height={36}
+          />
+        </Link>
       </div>
 
       {/* Role Switcher (SOLO en entorno de desarrollo local NODE_ENV=development) */}

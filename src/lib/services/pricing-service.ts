@@ -2,6 +2,52 @@ import { adminDb, recordAuditLog, isFirestoreReady } from "@/lib/firebase/admin"
 import { PricingSettings, TravelFee, BankSettings } from "@/types/pricing";
 import { PricingSettingsSchema, TravelFeeSchema } from "@/lib/validations/pricing";
 import { initialPricingSettings, initialTravelFees, initialBankSettings } from "../../../scripts/seed-data";
+import { initialZonasSinCosto, ZonaSinCostoItem } from "@/lib/pricing/zonas-sin-costo";
+
+export async function getZonasSinCosto(): Promise<ZonaSinCostoItem[]> {
+  if (!(await isFirestoreReady())) return initialZonasSinCosto;
+  try {
+    const snap = await adminDb.collection("zonasSinCosto").get();
+    if (!snap.empty) {
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() } as ZonaSinCostoItem));
+    }
+  } catch (e) {
+    console.warn("[getZonasSinCosto] Error leyendo zonasSinCosto:", e);
+  }
+  return initialZonasSinCosto;
+}
+
+export async function updateZonaSinCosto(
+  id: string,
+  data: Partial<ZonaSinCostoItem>,
+  user?: { uid: string; email: string }
+): Promise<ZonaSinCostoItem> {
+  const ref = adminDb.collection("zonasSinCosto").doc(id);
+  const snap = await ref.get();
+  const before = snap.exists ? snap.data() : null;
+  const updated = {
+    ...(before || {}),
+    ...data,
+    id,
+    updatedAt: new Date().toISOString(),
+  } as ZonaSinCostoItem;
+
+  await ref.set(updated, { merge: true });
+
+  if (user) {
+    await recordAuditLog({
+      userId: user.uid,
+      userEmail: user.email,
+      entity: "zonasSinCosto",
+      entityId: id,
+      action: "update",
+      before,
+      after: updated,
+    });
+  }
+
+  return updated;
+}
 
 export async function getPricingSettings(): Promise<PricingSettings> {
   if (!(await isFirestoreReady())) return initialPricingSettings;

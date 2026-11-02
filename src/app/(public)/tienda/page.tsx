@@ -7,14 +7,14 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Catálogo Oficial de Equipos",
   description:
-    "Catálogo de GPS vehicular, DashCams con IA, seguridad anti-jammer y drones empresariales. Precios públicos con IVA incluido.",
+    "Catálogo de GPS vehicular, DashCams de 2 y 4 canales con video en vivo, seguridad anti-jammer y complementos telemáticos. Precios públicos con IVA incluido.",
   alternates: {
     canonical: "/tienda",
   },
   openGraph: {
     title: "Catálogo Oficial de Equipos | CosoTec by CoSoAVL",
     description:
-      "Catálogo de GPS vehicular, DashCams con IA, seguridad anti-jammer y drones empresariales. Precios públicos con IVA incluido.",
+      "Catálogo de GPS vehicular, DashCams de 2 y 4 canales con video en vivo, seguridad anti-jammer y complementos telemáticos. Precios públicos con IVA incluido.",
     url: "/tienda",
   },
 };

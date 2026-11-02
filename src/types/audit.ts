@@ -3,7 +3,7 @@ export interface AuditLogEntry {
   timestamp: string; // ISO 8601
   userId: string;
   userEmail: string;
-  entity: "product" | "package" | "pricing" | "travelFee" | "user" | "bank" | "contact";
+  entity: "product" | "package" | "pricing" | "travelFee" | "user" | "bank" | "contact" | "zonasSinCosto";
   entityId: string;
   action: "create" | "update" | "delete" | "toggle_status" | "set_role";
   before: any;

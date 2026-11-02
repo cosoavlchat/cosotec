@@ -10,21 +10,19 @@ export function PublicFooter() {
         {/* Columna 1: Marca y Presencia */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#7A1428] text-white font-black text-xl flex items-center justify-center border border-[#C9A15B]/50 shadow-md">
-              C
-            </div>
-            <div>
-              <span className="text-2xl font-black tracking-tight text-white block leading-none">
-                Coso<span className="text-[#C9A15B]">Tec</span>
-              </span>
-              <span className="text-[10px] uppercase font-bold text-[#C9A15B] tracking-widest block mt-0.5">
-                by CoSoAVL
-              </span>
-            </div>
+            <Link href="/" className="inline-block bg-white rounded-xl px-3 py-1.5 shadow-sm hover:opacity-95 transition-opacity" aria-label="CosoTec Inicio">
+              <img
+                src="/logo-cosotec.png"
+                alt="CosoTec by CoSoAVL"
+                className="h-9 sm:h-10 w-auto object-contain"
+                width={180}
+                height={40}
+              />
+            </Link>
           </div>
 
           <p className="text-gray-300 leading-relaxed pr-4">
-            Especialistas en ingeniería telemática, rastreo satelital GPS de grado automotriz e industrial, DashCams inteligentes con IA y seguridad activa contra inhibidores de señal (jammer).
+            Especialistas en ingeniería telemática, rastreo satelital GPS de grado automotriz e industrial, DashCams vehiculares con video en vivo y seguridad activa contra inhibidores de señal (jammer).
           </p>
 
           <div className="space-y-2 text-gray-300">

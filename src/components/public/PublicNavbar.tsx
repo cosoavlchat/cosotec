@@ -85,19 +85,16 @@ export function PublicNavbar() {
       {/* Main Navbar */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-4">
-          {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 shrink-0 group" aria-label="Ir a la página de inicio">
-            <div className="w-10 h-10 rounded-xl bg-[#7A1428] text-white font-black text-xl flex items-center justify-center border border-[#C9A15B]/50 shadow-md group-hover:scale-105 transition-transform">
-              C
-            </div>
-            <div>
-              <span className="text-2xl font-black tracking-tight text-gray-900 block leading-none">
-                Coso<span className="text-[#C9A15B]">Tec</span>
-              </span>
-              <span className="text-[10px] uppercase font-bold text-[#7A1428] tracking-widest block mt-0.5">
-                by CoSoAVL
-              </span>
-            </div>
+          {/* Brand Logo Oficial */}
+          <Link href="/" className="flex items-center shrink-0 group py-1" aria-label="CosoTec by CoSoAVL - Ir a la página de inicio">
+            <img
+              src="/logo-cosotec.png"
+              alt="CosoTec by CoSoAVL - Consultoría y Soluciones"
+              className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-102"
+              width={200}
+              height={48}
+              fetchPriority="high"
+            />
           </Link>
 
           {/* Desktop Navigation Links */}

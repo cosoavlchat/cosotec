@@ -56,7 +56,7 @@ export const initialContentData = {
     badge: "Ingeniería Mexicana en Telemetría y Seguridad",
     titulo: "Protege lo que mueve a tu empresa y a tu familia",
     subtitulo:
-      "Rastreo satelital GPS de alta precisión, DashCams con IA y seguridad activa contra inhibidores de señal (jammer). Instalación profesional en 48–72 horas.",
+      "Rastreo satelital GPS de alta precisión, DashCams vehiculares con video en vivo y seguridad activa contra inhibidores de señal (jammer). Instalación profesional en 48–72 horas.",
   },
   faq: [
     {

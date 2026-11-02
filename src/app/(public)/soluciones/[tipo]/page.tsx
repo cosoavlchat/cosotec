@@ -19,6 +19,7 @@ import { SolutionTierCard } from "@/components/public/SolutionTierCard";
 import { ProductCard } from "@/components/public/ProductCard";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import type { Metadata } from "next";
+import type { Product } from "@/types/catalog";
 
 const iconMap = {
   Car,
@@ -110,54 +111,70 @@ export default async function SolucionPage({
       </div>
 
       {/* 2. Hero de la Solución */}
-      <div className="bg-gradient-to-br from-[#1C0409] via-[#2A060E] to-[#120205] text-white rounded-3xl p-6 sm:p-12 shadow-xl border border-[#C9A15B]/30 relative overflow-hidden">
+      <div className="bg-gradient-to-br from-[#1C0409] via-[#2A060E] to-[#120205] text-white rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl border border-[#C9A15B]/30 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl space-y-5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#C9A15B] text-xs font-bold uppercase tracking-wider backdrop-blur-xs border border-white/10">
-            <Icon className="w-4 h-4 text-[#C9A15B]" />
-            <span>Solución Especializada</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            {sol.titulo}
-          </h1>
-
-          <p className="text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
-            {sol.subtitulo}
-          </p>
-
-          {/* Problema y Riesgos Prioritarios */}
-          <div className="pt-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B] flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5" />
-                <span>Problema Crítico</span>
-              </span>
-              <p className="text-xs text-gray-200 leading-snug">
-                {sol.problema}
-              </p>
+        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div className="lg:col-span-7 space-y-5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-[#C9A15B] text-xs font-bold uppercase tracking-wider backdrop-blur-xs border border-white/10">
+              <Icon className="w-4 h-4 text-[#C9A15B]" />
+              <span>Solución Especializada</span>
             </div>
 
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                <Check className="w-3.5 h-3.5" />
-                <span>Riesgos Protegidos</span>
-              </span>
-              <ul className="space-y-1 text-xs text-gray-200">
-                {sol.amenazas.map((amenaza, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-[#C9A15B] font-black">•</span>
-                    <span className="leading-tight">{amenaza}</span>
-                  </li>
-                ))}
-              </ul>
+            <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+              {sol.titulo}
+            </h1>
+
+            <p className="text-sm sm:text-base text-gray-200 leading-relaxed font-medium">
+              {sol.subtitulo}
+            </p>
+
+            {/* Problema y Riesgos Prioritarios */}
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B] flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  <span>Problema Crítico</span>
+                </span>
+                <p className="text-xs text-gray-200 leading-snug">
+                  {sol.problema}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-1.5 backdrop-blur-xs">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Riesgos Protegidos</span>
+                </span>
+                <ul className="space-y-1 text-xs text-gray-200">
+                  {sol.amenazas.map((amenaza, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-[#C9A15B] font-black">•</span>
+                      <span className="leading-tight">{amenaza}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
+
+          {/* Tarjeta Visual 3:4 Horizontal de la Solución con Logo CosoTec */}
+          {sol.imagenUrl && (
+            <div className="lg:col-span-5 flex justify-center">
+              <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-2xl border border-white/15 bg-black/40">
+                <img
+                  src={sol.imagenUrl}
+                  alt={`Solución CosoTec para ${sol.titulo}`}
+                  className="w-full h-auto object-cover"
+                  fetchPriority="high"
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 3. Tres Opciones: Básico / Recomendado / Completo */}
+      {/* 3. Niveles de Equipamiento */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
@@ -166,23 +183,29 @@ export default async function SolucionPage({
               <span>Niveles de Equipamiento</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              Configuraciones Listas para Instalar
+              {sol.tiers.length === 1 ? "Configuración Recomendada" : "Configuraciones Acumulativas Listas para Instalar"}
             </h2>
           </div>
           <p className="text-xs text-gray-500 max-w-sm leading-relaxed">
-            Todas las opciones incluyen equipo nuevo de grado automotriz, mano de obra de instalación profesional oculta y primer año de servicio.
+            Cada nivel integra y suma sobre el equipamiento previo, con precios sumados de catálogo oficial y mano de obra oculta incluida.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {sol.tiers.map((tier) => (
-            <SolutionTierCard
-              key={tier.id}
-              tier={tier}
-              product={productMap.get(tier.productoSlug)}
-              solucionTitulo={sol.titulo}
-            />
-          ))}
+        <div className={`grid grid-cols-1 ${sol.tiers.length === 1 ? "max-w-lg mx-auto" : "md:grid-cols-3"} gap-6`}>
+          {sol.tiers.map((tier) => {
+            const tierProducts = (tier.productosSlugs || [])
+              .map((slug) => productMap.get(slug))
+              .filter(Boolean) as Product[];
+
+            return (
+              <SolutionTierCard
+                key={tier.id}
+                tier={tier}
+                products={tierProducts}
+                solucionTitulo={sol.titulo}
+              />
+            );
+          })}
         </div>
       </section>
 
@@ -216,7 +239,7 @@ export default async function SolucionPage({
             ¿Requieres equipar flotillas o una configuración especial?
           </h3>
           <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
-            Te armamos una cotización formal inmediata con descuentos por volumen a partir de 5 unidades y logística de instalación consolidada.
+            Te armamos una cotización formal inmediata con 10% de descuento al equipar más de 5 unidades y logística de instalación consolidada.
           </p>
         </div>
 

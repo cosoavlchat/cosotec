@@ -53,23 +53,36 @@ export default async function SolucionesHubPage() {
           return (
             <div
               key={sol.slug}
-              className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/80 hover:border-[#7A1428]/60 shadow-xs hover:shadow-lg transition-all p-6 sm:p-7 flex flex-col justify-between group space-y-6"
+              className="bg-white rounded-2xl sm:rounded-3xl border border-gray-200/80 hover:border-[#7A1428]/60 shadow-xs hover:shadow-lg transition-all overflow-hidden flex flex-col justify-between group"
             >
-              <div className="space-y-4">
-                {/* Header de tarjeta */}
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center shrink-0 group-hover:bg-[#7A1428] group-hover:text-white transition-colors shadow-xs">
-                    <Icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-black text-gray-900 group-hover:text-[#7A1428] transition-colors leading-tight">
-                      {sol.titulo}
-                    </h2>
-                    <span className="text-[11px] text-gray-400 font-semibold block mt-0.5">
-                      {sol.tiers.length} configuraciones disponibles
-                    </span>
-                  </div>
+              {/* Tarjeta Visual 3:4 Horizontal con Logo Oficial */}
+              {sol.imagenUrl && (
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-black/5">
+                  <img
+                    src={sol.imagenUrl}
+                    alt={`Solución de rastreo para ${sol.titulo}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
                 </div>
+              )}
+
+              <div className="p-6 sm:p-7 flex flex-col justify-between flex-1 space-y-6">
+                <div className="space-y-4">
+                  {/* Header de tarjeta */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center shrink-0 group-hover:bg-[#7A1428] group-hover:text-white transition-colors shadow-xs">
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-lg font-black text-gray-900 group-hover:text-[#7A1428] transition-colors leading-tight">
+                        {sol.titulo}
+                      </h2>
+                      <span className="text-[11px] text-gray-400 font-semibold block mt-0.5">
+                        {sol.tiers.length} {sol.tiers.length === 1 ? "configuración disponible" : "configuraciones disponibles"}
+                      </span>
+                    </div>
+                  </div>
 
                 {/* Subtítulo */}
                 <p className="text-xs text-gray-600 leading-relaxed font-medium">
@@ -122,9 +135,11 @@ export default async function SolucionesHubPage() {
                 </Link>
               </div>
             </div>
-          );
-        })}
+          </div>
+        );
+      })}
       </div>
     </div>
   );
 }
+

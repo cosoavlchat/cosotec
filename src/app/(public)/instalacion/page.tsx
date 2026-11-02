@@ -1,4 +1,4 @@
-import { getTravelFees } from "@/lib/services/pricing-service";
+import { getTravelFees, getZonasSinCosto } from "@/lib/services/pricing-service";
 import { precioConIva, formatMxn } from "@/lib/pricing";
 import { Clock, ShieldCheck, MapPin, CheckCircle2, MessageCircle, Info } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
@@ -20,15 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function InstalacionPage() {
-  const travelFees = await getTravelFees();
-
-  const ciudadesSinCosto = [
-    "Toluca, Metepec y Valle de Toluca (Estado de México)",
-    "Ciudad de México (CDMX) y Zona Metropolitana",
-    "Monterrey y Zona Metropolitana (Nuevo León)",
-    "Guadalajara y Zona Metropolitana (Jalisco)",
-    "Santiago de Querétaro y Zona Metropolitana (Querétaro)",
-  ];
+  const [travelFees, zonasSinCosto] = await Promise.all([
+    getTravelFees(),
+    getZonasSinCosto(),
+  ]);
 
   const whatsappUrl = buildWhatsAppLink({
     pagina: "/instalacion",
@@ -86,23 +81,35 @@ export default async function InstalacionPage() {
 
       {/* Ciudades Sin Costo */}
       <div className="bg-gradient-to-r from-[#4A0C18] to-[#7A1428] text-white rounded-3xl p-8 sm:p-10 shadow-md space-y-6">
-        <div className="space-y-1">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B]">
-            Beneficio de Cobertura Directa
-          </span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#C9A15B]">
+              Beneficio de Cobertura Directa
+            </span>
+            <span className="px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 text-[10px] font-bold uppercase">
+              Delimitación por validar
+            </span>
+          </div>
           <h2 className="text-2xl font-black tracking-tight">
-            Ciudades y Zonas Metropolitanas Sin Costo de Viáticos
+            Zonas Metropolitanas Sin Costo de Viáticos
           </h2>
-          <p className="text-xs text-gray-200">
-            Sin costo en zona metropolitana; resto del estado se cotiza para Estado de México, Ciudad de México, Jalisco, Nuevo León y Querétaro.
+          <p className="text-xs text-gray-200 max-w-3xl">
+            Municipios metropolitanos delimitados con base en el marco oficial INEGI / CONAPO con viáticos de instalación incluidos. Para cualquier municipio foráneo o resto de cada entidad, los viáticos se cotizan según kilometraje y casetas.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs">
-          {ciudadesSinCosto.map((ciudad, idx) => (
-            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-black/20 border border-white/10">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span className="font-semibold text-gray-100">{ciudad}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-2 text-xs">
+          {zonasSinCosto.map((zona) => (
+            <div key={zona.id} className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <span className="font-bold text-gray-100 block leading-snug">{zona.nombreZona}</span>
+                <span className="shrink-0 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">
+                  Sin Costo
+                </span>
+              </div>
+              <p className="text-[11px] text-gray-300 leading-relaxed line-clamp-3">
+                {zona.municipios.join(", ")}
+              </p>
             </div>
           ))}
         </div>

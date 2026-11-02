@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | CosoTec by CoSoAVL",
   },
   description:
-    "Rastreo satelital GPS automotriz e industrial, DashCams inteligentes con IA y protección anti-jammer. Instalación profesional en 48–72 horas hábiles. CoSoAVL Metepec, Estado de México.",
+    "Rastreo satelital GPS automotriz e industrial, DashCams vehiculares y protección anti-jammer. Instalación profesional en 48–72 horas hábiles. CoSoAVL Metepec, Estado de México.",
   openGraph: {
     title: "CosoTec by CoSoAVL — GPS, DashCams y Seguridad Vehicular",
     description:

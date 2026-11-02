@@ -2,14 +2,28 @@ import { adminDb } from "@/lib/firebase/admin";
 import { Cart, CartItem, CartContacto, CartInstalacion, CartUnidadVehiculo, CartFactura, CartPago, CartStep } from "@/types/cart";
 import { calcularCotizacion, ViaticosInput, CotizacionItemInput } from "@/lib/pricing";
 import { initialTravelFees } from "../../../scripts/seed-data";
+import { esMunicipioSinCosto } from "@/lib/pricing/zonas-sin-costo";
 import { generarCartId } from "./session";
 
 export { generarCartId };
 
 /**
- * Obtiene la configuración de viáticos para un estado dado desde Firestore o seed fallback.
+ * Obtiene la configuración de viáticos para un estado y municipio dados desde Firestore o seed fallback.
+ * Aplica viáticos sin costo exclusivamente si el municipio pertenece a la zona metropolitana oficial.
  */
-export async function getViaticosPorEstado(estadoClave: string): Promise<ViaticosInput> {
+export async function getViaticosPorEstado(estadoClave: string, municipio?: string): Promise<ViaticosInput> {
+  const estadosConZona = ["MEX", "CDMX", "NLE", "JAL", "QRO"];
+
+  if (estadosConZona.includes(estadoClave)) {
+    const esSinCosto = municipio ? esMunicipioSinCosto(estadoClave, municipio) : false;
+    return {
+      estadoId: estadoClave,
+      sinCosto: esSinCosto,
+      montoPorVisitaCentavos: 0,
+      montoPorUnidadCentavos: 0,
+    };
+  }
+
   try {
     const docRef = adminDb.collection("travelFees").doc(estadoClave);
     const snap = await docRef.get();
@@ -73,7 +87,7 @@ export async function recalcularCarrito(
   // Obtener viáticos si hay estado seleccionado
   let viaticosInput: ViaticosInput | undefined = undefined;
   if (instalacion?.estadoClave) {
-    viaticosInput = await getViaticosPorEstado(instalacion.estadoClave);
+    viaticosInput = await getViaticosPorEstado(instalacion.estadoClave, instalacion.municipio);
   }
 
   // Obtener settings de pricing

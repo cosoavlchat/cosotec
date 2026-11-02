@@ -60,7 +60,7 @@ export default async function HomePage() {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     name: "CoSoAVL - CosoTec",
-    image: "https://cosotec.com/logo.png",
+    image: "/logo-cosotec.png",
     telephone: "+52-722-134-0127",
     email: "ventas@cosoavl.com",
     address: {
@@ -70,7 +70,7 @@ export default async function HomePage() {
       addressCountry: "MX",
     },
     description:
-      "Venta e instalación de rastreo satelital GPS, DashCams inteligentes con IA y seguridad contra jammers. Más de 48,000 dispositivos vendidos.",
+      "Venta e instalación de rastreo satelital GPS, DashCams vehiculares con video en vivo y seguridad contra jammers. Más de 48,000 dispositivos vendidos.",
     areaServed: "México",
   };
 

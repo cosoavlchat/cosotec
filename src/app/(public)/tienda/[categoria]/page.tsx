@@ -11,7 +11,7 @@ const categoryTitles: Record<string, { title: string; desc: string }> = {
     desc: "Dispositivos de grado automotriz e industrial 4G LTE con paro de motor y geocercas.",
   },
   dashcam: {
-    title: "DashCams Inteligentes con IA",
+    title: "DashCams Vehiculares con Video en Vivo",
     desc: "Cámaras JC181 y JC450 de doble lente con video en vivo 4G y detección de incidentes.",
   },
   seguridad: {

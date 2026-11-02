@@ -39,12 +39,18 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-white/20 relative z-10 space-y-6">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-[#7A1428] text-white font-black text-2xl flex items-center justify-center mx-auto shadow-md border border-[#C9A15B]/50">
-            C
+        <div className="text-center space-y-3">
+          <div className="inline-block bg-white rounded-2xl p-3 shadow-md mx-auto border border-gray-100">
+            <img
+              src="/logo-cosotec.png"
+              alt="CosoTec by CoSoAVL"
+              className="h-12 w-auto object-contain mx-auto"
+              width={180}
+              height={48}
+            />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-            Coso<span className="text-[#C9A15B]">Tec</span> Admin
+            Panel de Administración
           </h1>
           <p className="text-xs text-gray-500 font-medium">
             Acceso administrativo y cotizador • CoSoAVL
