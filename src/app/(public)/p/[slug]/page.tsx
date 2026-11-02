@@ -4,6 +4,7 @@ import { getProductBySlug, getProducts } from "@/lib/services/catalog-service";
 import { precioConIva, formatMxn, getQueIncluyeComputed } from "@/lib/pricing";
 import { DevicePlaceholder } from "@/components/public/DevicePlaceholder";
 import { ProductCard } from "@/components/public/ProductCard";
+import { getProductImage } from "@/lib/catalog/product-image";
 import {
   Check,
   ShieldCheck,
@@ -116,20 +117,12 @@ export default async function ProductDetailPage({
         {/* Imagen / Visual */}
         <div className="space-y-4">
           <div className="bg-white rounded-3xl p-6 border border-gray-200/80 shadow-xs flex items-center justify-center">
-            {product.imagenes && product.imagenes.length > 0 ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={product.imagenes[0]}
-                alt={product.nombreComercial}
-                className="w-full max-h-[420px] object-contain rounded-2xl"
-              />
-            ) : (
-              <DevicePlaceholder
-                category={product.categoria}
-                title={product.nombreComercial}
-                size="lg"
-              />
-            )}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getProductImage(product)}
+              alt={product.nombreComercial}
+              className="w-full max-h-[420px] object-contain rounded-2xl"
+            />
           </div>
         </div>
 
@@ -280,7 +273,7 @@ export default async function ProductDetailPage({
       {relatedProducts.length > 0 && (
         <div className="space-y-6">
           <h2 className="text-xl font-black text-gray-900 tracking-tight">Otros equipos en esta categoría</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-6">
             {relatedProducts.map((rel) => (
               <ProductCard key={rel.slug} product={rel} />
             ))}

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Product, Package, ProductCategory } from "@/types/catalog";
 import { formatMxn, precioConIva } from "@/lib/pricing";
 import { ProductModal } from "@/components/admin/ProductModal";
+import { getProductImage } from "@/lib/catalog/product-image";
 import {
   Plus,
   Search,
@@ -243,18 +244,12 @@ export default function AdminCatalogoPage() {
                         <td className="px-5 py-3.5">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 shrink-0 overflow-hidden">
-                              {p.imagenes?.[0] ? (
-                                // eslint-disable-next-line @next/next/no-img-element
-                                <img
-                                  src={p.imagenes[0]}
-                                  alt={p.nombreComercial}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[10px] text-gray-400">
-                                  Sin foto
-                                </div>
-                              )}
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={getProductImage(p)}
+                                alt={p.nombreComercial}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             <div>
                               <div className="font-bold text-gray-900 flex items-center gap-2">

@@ -15,7 +15,7 @@ export const ProductSchema = z.object({
   descripcion: z.string().default(""),
   queIncluye: z.array(z.string()).default([]),
   precioSinIvaCentavos: z.number().int().nonnegative("El precio sin IVA debe ser un entero no negativo en centavos"),
-  imagenes: z.array(z.string().url("URL de imagen inválida")).default([]),
+  imagenes: z.array(z.string().min(1, "URL de imagen inválida")).default([]),
   fichaTecnica: z.record(z.string(), z.string()).optional(),
   tiposUnidad: z.array(z.string()).default([]),
   objetivos: z.array(z.string()).default([]),

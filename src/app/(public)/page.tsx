@@ -83,18 +83,18 @@ export default async function HomePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-[#140306] text-white py-20 px-6 sm:py-28">
+      <section className="relative overflow-hidden bg-[#0A0204] text-white py-16 px-4 sm:py-28 sm:px-6">
         <div className="absolute inset-0 z-0">
           <img
             src="/hero-fleet-protection.jpg"
             alt="Rastreo Satelital y Telemetría de Flotillas CosoTec"
             fetchPriority="high"
-            className="w-full h-full object-cover object-center"
+            className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000"
           />
-          {/* Overlay equilibrado: viñeta oscura que protege la legibilidad sin apagar la imagen */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#1C0409]/75 via-[#1C0409]/45 to-[#120205]/90" />
+          {/* Overlay fotográfico de alto contraste: permite ver claramente el tractocamión y la telemetría satelital */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/20 to-[#0A0204]/85" />
         </div>
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 border border-[#C9A15B]/50 text-[#C9A15B] text-xs font-bold uppercase tracking-wider backdrop-blur-xs animate-in fade-in zoom-in duration-300">
@@ -158,24 +158,28 @@ export default async function HomePage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {vehicleSolutions.map((sol) => (
             <Link
               key={sol.name}
               href={sol.href}
-              className="p-5 rounded-2xl bg-white border border-gray-200/80 hover:border-[#7A1428] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
+              className="p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-gray-200/80 hover:border-[#7A1428] shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
             >
-              <div className="space-y-3">
-                <div className="w-10 h-10 rounded-xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center group-hover:bg-[#7A1428] group-hover:text-white transition-colors">
-                  <sol.icon className="w-5 h-5" />
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center shrink-0 group-hover:bg-[#7A1428] group-hover:text-white transition-colors">
+                    <sol.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-[#7A1428] transition-colors leading-snug">
+                    {sol.name}
+                  </h3>
                 </div>
-                <h3 className="font-bold text-gray-900 text-sm group-hover:text-[#7A1428] transition-colors">
-                  {sol.name}
-                </h3>
-                <p className="text-xs text-gray-500 leading-relaxed">{sol.desc}</p>
+                <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-2 sm:line-clamp-none">
+                  {sol.desc}
+                </p>
               </div>
 
-              <div className="pt-4 mt-2 border-t border-gray-100 flex items-center justify-between text-xs font-semibold text-[#7A1428]">
+              <div className="pt-2 sm:pt-4 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px] sm:text-xs font-semibold text-[#7A1428]">
                 <span>Ver solución</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
               </div>
@@ -219,15 +223,15 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {pasos.map((paso) => (
               <div
                 key={paso.num}
-                className="p-6 rounded-2xl bg-gray-50/70 border border-gray-200/80 space-y-3 relative overflow-hidden"
+                className="p-3.5 sm:p-6 rounded-xl sm:rounded-2xl bg-gray-50/70 border border-gray-200/80 space-y-1.5 sm:space-y-3 relative overflow-hidden"
               >
-                <span className="text-4xl font-black text-[#7A1428]/20 block">{paso.num}</span>
-                <h3 className="font-bold text-gray-900 text-sm">{paso.titulo}</h3>
-                <p className="text-xs text-gray-600 leading-relaxed">{paso.desc}</p>
+                <span className="text-2xl sm:text-4xl font-black text-[#7A1428]/25 block">{paso.num}</span>
+                <h3 className="font-bold text-gray-900 text-xs sm:text-sm leading-snug">{paso.titulo}</h3>
+                <p className="text-[11px] sm:text-xs text-gray-600 leading-relaxed">{paso.desc}</p>
               </div>
             ))}
           </div>
