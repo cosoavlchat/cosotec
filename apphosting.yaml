@@ -16,6 +16,36 @@ env:
     availability:
       - BUILD
       - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_API_KEY
+    value: AIzaSyAfcGa9tvdWG4Eti0WdK69rCUMO0WQeCGE
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+    value: cosotec7.firebaseapp.com
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    value: cosotec7
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+    value: cosotec7.firebasestorage.app
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    value: "358372577691"
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_FIREBASE_APP_ID
+    value: 1:358372577691:web:20f877c0c34e2bfbebd13e
+    availability:
+      - BUILD
+      - RUNTIME
   - variable: MP_ENV
     value: sandbox
     availability:

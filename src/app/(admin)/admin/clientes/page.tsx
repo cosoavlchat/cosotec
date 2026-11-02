@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { adminFetch } from "@/lib/auth/admin-fetch";
+import { useAdminAuth } from "@/lib/auth/admin-auth-context";
 import {
   Users,
   Search,
@@ -20,11 +22,11 @@ import { formatearWhatsapp } from "@/lib/utils/whatsapp";
 import { CustomerSelectModal } from "@/components/admin/CustomerSelectModal";
 
 export default function AdminClientesPage() {
+  const { role: currentRole } = useAdminAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentRole, setCurrentRole] = useState<"admin" | "vendedor">("admin");
 
   // Reasignación (Admin)
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
@@ -39,10 +41,7 @@ export default function AdminClientesPage() {
   const loadCustomers = async () => {
     try {
       setLoading(true);
-      const token = currentRole === "admin" ? "test-token-admin" : "test-token-vendedor";
-      const res = await fetch(`/api/admin/customers${query ? `?q=${encodeURIComponent(query)}` : ""}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await adminFetch(`/api/admin/customers${query ? `?q=${encodeURIComponent(query)}` : ""}`);
       const data = await res.json();
       if (data.success) {
         setCustomers(data.customers || []);
@@ -60,12 +59,10 @@ export default function AdminClientesPage() {
 
     try {
       setReassigning(true);
-      const token = "test-token-admin";
-      const res = await fetch(`/api/admin/customers/${selectedCustomer.id}/reasignar`, {
+      const res = await adminFetch(`/api/admin/customers/${selectedCustomer.id}/reasignar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           nuevoVendedor: {
@@ -105,16 +102,6 @@ export default function AdminClientesPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Selector de rol para prueba rápida */}
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value as any)}
-            className="text-xs border border-gray-200 rounded-xl px-3 py-2 bg-white text-gray-700 font-semibold focus:outline-none"
-          >
-            <option value="admin">Vista Admin (Ver todos)</option>
-            <option value="vendedor">Vista Vendedor (Solo mis clientes)</option>
-          </select>
-
           <button
             onClick={() => setIsModalOpen(true)}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
@@ -268,7 +255,6 @@ export default function AdminClientesPage() {
         onSelectCustomer={(c) => {
           loadCustomers();
         }}
-        authToken={currentRole === "admin" ? "test-token-admin" : "test-token-vendedor"}
       />
 
       {/* Modal Reasignar (Solo Admin) */}

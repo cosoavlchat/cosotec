@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Order, OrderEstado } from "@/types/order";
 import { formatMxn } from "@/lib/pricing";
-import { auth } from "@/lib/firebase/client";
+import { adminFetch } from "@/lib/auth/admin-fetch";
 import {
   DollarSign,
   Search,
@@ -44,27 +44,10 @@ export default function AdminPedidosPage() {
     setTimeout(() => setToastMsg(null), 4000);
   };
 
-  const getAuthHeaders = async (): Promise<Record<string, string>> => {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    try {
-      const user = auth.currentUser;
-      if (user) {
-        const token = await user.getIdToken();
-        headers["Authorization"] = `Bearer ${token}`;
-      } else {
-        headers["Authorization"] = "Bearer test-token-admin";
-      }
-    } catch {
-      headers["Authorization"] = "Bearer test-token-admin";
-    }
-    return headers;
-  };
-
   const fetchOrders = async () => {
     try {
       setLoading(true);
-      const headers = await getAuthHeaders();
-      const res = await fetch("/api/admin/pedidos", { headers });
+      const res = await adminFetch("/api/admin/pedidos");
       const data = await res.json();
       if (res.ok) {
         setOrders(data.orders || []);
@@ -89,10 +72,9 @@ export default function AdminPedidosPage() {
 
     setProcessingAction(true);
     try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`/api/admin/pedidos/${folio}/validar-spei`, {
+      const res = await adminFetch(`/api/admin/pedidos/${folio}/validar-spei`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ accion: "aprobar" }),
       });
       const data = await res.json();
@@ -122,10 +104,9 @@ export default function AdminPedidosPage() {
 
     setProcessingAction(true);
     try {
-      const headers = await getAuthHeaders();
-      const res = await fetch(`/api/admin/pedidos/${selectedOrder.folio}/validar-spei`, {
+      const res = await adminFetch(`/api/admin/pedidos/${selectedOrder.folio}/validar-spei`, {
         method: "POST",
-        headers,
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           accion: "rechazar",
           motivoRechazo: motivoRechazo.trim(),

@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/auth/admin-fetch";
+import { useAdminAuth } from "@/lib/auth/admin-auth-context";
 import {
   FileText,
   Plus,
@@ -19,16 +21,20 @@ import {
   DollarSign,
   User,
   Filter,
+  Calendar,
 } from "lucide-react";
 import { Quote, QuoteStatus } from "@/types/quote";
 import { formatMxn } from "@/lib/pricing";
 import { buildEnvioCotizacionWhatsAppLink } from "@/lib/utils/whatsapp";
 
 export default function AdminCotizacionesPage() {
+  const { user, role: currentRole } = useAdminAuth();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentRole, setCurrentRole] = useState<"admin" | "vendedor">("admin");
   const [filtroEstado, setFiltroEstado] = useState<string>("todos");
+  const [filtroVendedor, setFiltroVendedor] = useState<string>("todos");
+  const [fechaInicio, setFechaInicio] = useState<string>("");
+  const [fechaFin, setFechaFin] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [copiedFolio, setCopiedFolio] = useState<string | null>(null);
 
@@ -39,20 +45,20 @@ export default function AdminCotizacionesPage() {
 
   useEffect(() => {
     cargarCotizaciones();
-  }, [currentRole, filtroEstado]);
+  }, [filtroEstado, filtroVendedor, fechaInicio, fechaFin]);
 
   const cargarCotizaciones = async () => {
     try {
       setLoading(true);
-      const token = currentRole === "admin" ? "test-token-admin" : "test-token-vendedor";
       let url = `/api/admin/cotizaciones`;
       const params = new URLSearchParams();
       if (filtroEstado !== "todos") params.append("estado", filtroEstado);
+      if (filtroVendedor !== "todos") params.append("vendedorId", filtroVendedor);
+      if (fechaInicio) params.append("fechaInicio", fechaInicio);
+      if (fechaFin) params.append("fechaFin", fechaFin);
       if (params.toString()) url += `?${params.toString()}`;
 
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await adminFetch(url);
       const data = await res.json();
       if (data.success) {
         setQuotes(data.quotes || []);
@@ -75,11 +81,10 @@ export default function AdminCotizacionesPage() {
     if (!autorizarModal) return;
     try {
       setAutorizando(true);
-      const res = await fetch(`/api/admin/cotizaciones/${autorizarModal.folio}/autorizar`, {
+      const res = await adminFetch(`/api/admin/cotizaciones/${autorizarModal.folio}/autorizar`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer test-token-admin",
         },
         body: JSON.stringify({
           accion,
@@ -107,13 +112,22 @@ export default function AdminCotizacionesPage() {
       q.folio.toLowerCase().includes(s) ||
       (q.cliente.nombre && q.cliente.nombre.toLowerCase().includes(s)) ||
       q.cliente.empresa?.toLowerCase().includes(s) ||
-      q.cliente.telefono.includes(s)
+      q.cliente.telefono.includes(s) ||
+      (q.vendedorNombre && q.vendedorNombre.toLowerCase().includes(s))
     );
   });
 
-  // Métricas
+  // Métricas del periodo
+  const totalCotizaciones = quotes.length;
   const totalMontoCentavos = quotes.reduce((acc, q) => acc + (q.calculo?.totalCentavos || 0), 0);
+  const cotizacionesPagadas = quotes.filter((q) => q.estado === "pagada" || q.estado === "pagada_parcial");
+  const montoPagadoCentavos = cotizacionesPagadas.reduce((acc, q) => acc + (q.calculo?.totalCentavos || 0), 0);
   const pendientesAutorizacionCount = quotes.filter((q) => q.estado === "pendiente_autorizacion").length;
+
+  // Lista única de vendedores para filtro
+  const vendedoresUnicos = Array.from(
+    new Set(quotes.map((q) => q.vendedorNombre).filter(Boolean))
+  );
 
   return (
     <div className="space-y-6 pb-20">
@@ -123,7 +137,7 @@ export default function AdminCotizacionesPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Cotizador de Vendedores</h1>
             <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-[#7A1428]/10 text-[#7A1428]">
-              CoSoAVL
+              {currentRole === "admin" ? "Vista Administrador" : "Mis Cotizaciones"}
             </span>
           </div>
           <p className="text-xs text-gray-500 mt-1">
@@ -131,43 +145,43 @@ export default function AdminCotizacionesPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {/* Selector de rol para simulación y pruebas */}
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value as any)}
-            className="text-xs border border-gray-200 rounded-xl px-3 py-2 bg-white text-gray-700 font-semibold focus:outline-none"
-          >
-            <option value="admin">Vista Admin (Ver todas)</option>
-            <option value="vendedor">Vista Vendedor (Solo mis cotizaciones)</option>
-          </select>
-
-          <Link
-            href="/admin/cotizaciones/nueva"
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            <span>+ Nueva Cotización</span>
-          </Link>
-        </div>
+        <Link
+          href="/admin/cotizaciones/nueva"
+          className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl shadow-xs transition-colors self-start"
+        >
+          <Plus className="w-4 h-4" />
+          <span>+ Nueva Cotización</span>
+        </Link>
       </div>
 
-      {/* Tarjetas de Métricas */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {/* Tarjetas de Métricas del Periodo */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-xs space-y-1">
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
-            Cotizaciones Registradas
+            Cotizaciones Periodo
           </span>
-          <span className="text-2xl font-black text-gray-900">{quotes.length}</span>
+          <span className="text-2xl font-black text-gray-900">{totalCotizaciones}</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-xs space-y-1">
           <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
-            Monto Total del Periodo
+            Monto Total Cotizado
           </span>
           <span className="text-2xl font-black text-[#7A1428] font-mono">
             {formatMxn(totalMontoCentavos)}
           </span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-xs space-y-1">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">
+            Pagadas / En Proceso
+          </span>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-emerald-700 font-mono">
+              {formatMxn(montoPagadoCentavos)}
+            </span>
+            <span className="text-xs text-gray-400">({cotizacionesPagadas.length})</span>
+          </div>
         </div>
 
         <div className="p-4 rounded-2xl bg-white border border-gray-200 shadow-xs space-y-1">
@@ -182,6 +196,85 @@ export default function AdminCotizacionesPage() {
             {pendientesAutorizacionCount}
           </span>
         </div>
+      </div>
+
+      {/* Barra de Filtros Avanzada */}
+      <div className="bg-white rounded-2xl border border-gray-200/80 p-4 shadow-xs space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          {/* Búsqueda */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              placeholder="Buscar folio, cliente, empresa o teléfono..."
+              className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
+            />
+          </div>
+
+          {/* Filtro Estado */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <select
+              value={filtroEstado}
+              onChange={(e) => setFiltroEstado(e.target.value)}
+              className="w-full py-2 px-3 border border-gray-300 rounded-xl bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
+            >
+              <option value="todos">Todos los Estados</option>
+              <option value="borrador">Borradores</option>
+              <option value="pendiente_autorizacion">Pendientes de Autorización</option>
+              <option value="enviada">Enviadas</option>
+              <option value="vista">Vistas por Cliente</option>
+              <option value="pagada_parcial">Pagada Parcial (Anticipo)</option>
+              <option value="pagada">Pagadas Totalmente</option>
+              <option value="vencida">Vencidas</option>
+              <option value="rechazada">Rechazadas</option>
+            </select>
+          </div>
+
+          {/* Filtro Fecha Inicio */}
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="w-full py-2 px-2.5 border border-gray-300 rounded-xl text-gray-700 text-xs focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
+              title="Fecha inicial"
+            />
+          </div>
+
+          {/* Filtro Fecha Fin */}
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="w-full py-2 px-2.5 border border-gray-300 rounded-xl text-gray-700 text-xs focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
+              title="Fecha final"
+            />
+          </div>
+        </div>
+
+        {(filtroEstado !== "todos" || busqueda || fechaInicio || fechaFin) && (
+          <div className="flex items-center justify-between pt-2 border-t border-gray-100 text-[11px] text-gray-500">
+            <span>Mostrando {cotizacionesFiltradas.length} de {quotes.length} cotizaciones encontradas</span>
+            <button
+              onClick={() => {
+                setFiltroEstado("todos");
+                setFiltroVendedor("todos");
+                setBusqueda("");
+                setFechaInicio("");
+                setFechaFin("");
+              }}
+              className="text-[#7A1428] font-bold hover:underline"
+            >
+              Limpiar Filtros
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Barra de Filtros y Buscador */}

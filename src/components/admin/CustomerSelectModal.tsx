@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { adminFetch } from "@/lib/auth/admin-fetch";
 import {
   Search,
   UserPlus,
@@ -21,7 +22,6 @@ interface CustomerSelectModalProps {
   onClose: () => void;
   onSelectCustomer: (customer: Customer) => void;
   selectedCustomerId?: string;
-  authToken?: string; // Para llamadas a API autenticadas
 }
 
 export function CustomerSelectModal({
@@ -29,7 +29,6 @@ export function CustomerSelectModal({
   onClose,
   onSelectCustomer,
   selectedCustomerId,
-  authToken = "test-token-vendedor",
 }: CustomerSelectModalProps) {
   const [query, setQuery] = useState("");
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -56,9 +55,7 @@ export function CustomerSelectModal({
   const loadCustomers = async (search: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/admin/customers${search ? `?q=${encodeURIComponent(search)}` : ""}`, {
-        headers: { Authorization: `Bearer ${authToken}` },
-      });
+      const res = await adminFetch(`/api/admin/customers${search ? `?q=${encodeURIComponent(search)}` : ""}`);
       const data = await res.json();
       if (data.success) {
         setCustomers(data.customers || []);
@@ -84,11 +81,10 @@ export function CustomerSelectModal({
 
     try {
       setSubmitting(true);
-      const res = await fetch("/api/admin/customers", {
+      const res = await adminFetch("/api/admin/customers", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({
           nombre,
@@ -106,11 +102,10 @@ export function CustomerSelectModal({
           // Cliente asignado a otro asesor
           setFormError("Este número pertenece a un cliente asignado a otro asesor.");
           // Checamos ID para reasignación
-          const checkRes = await fetch("/api/admin/customers/check-whatsapp", {
+          const checkRes = await adminFetch("/api/admin/customers/check-whatsapp", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${authToken}`,
             },
             body: JSON.stringify({ whatsapp: norm }),
           });
@@ -138,11 +133,10 @@ export function CustomerSelectModal({
     if (!conflictCustomerId) return;
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/admin/customers/${conflictCustomerId}/solicitar-reasignacion`, {
+      const res = await adminFetch(`/api/admin/customers/${conflictCustomerId}/solicitar-reasignacion`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ motivo: `El vendedor desea cotizar con el contacto ${whatsapp}` }),
       });

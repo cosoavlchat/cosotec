@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Product, Package, ProductCategory } from "@/types/catalog";
 import { formatMxn, precioConIva } from "@/lib/pricing";
+import { adminFetch } from "@/lib/auth/admin-fetch";
 import { ProductModal } from "@/components/admin/ProductModal";
 import { getProductImage } from "@/lib/catalog/product-image";
 import {
@@ -34,7 +35,7 @@ export default function AdminCatalogoPage() {
   const fetchCatalog = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/catalogo");
+      const res = await adminFetch("/api/admin/catalogo");
       const data = await res.json();
       if (res.ok) {
         setProducts(data.products || []);
@@ -59,7 +60,7 @@ export default function AdminCatalogoPage() {
   // Toggle de visibilidad (Activo / Oculto)
   const handleToggleStatus = async (slug: string, currentStatus: boolean, isPackage: boolean = false) => {
     try {
-      const res = await fetch("/api/admin/catalogo", {
+      const res = await adminFetch("/api/admin/catalogo", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -88,7 +89,7 @@ export default function AdminCatalogoPage() {
 
   // Guardar o actualizar producto
   const handleSaveProduct = async (productData: Partial<Product>) => {
-    const res = await fetch("/api/admin/catalogo", {
+    const res = await adminFetch("/api/admin/catalogo", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ entity: "product", data: productData }),

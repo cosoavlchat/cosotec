@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PricingSettings, TravelFee } from "@/types/pricing";
 import { formatMxn, parseToCentavos } from "@/lib/pricing";
+import { adminFetch } from "@/lib/auth/admin-fetch";
 import { Sliders, MapPin, CheckCircle2, Save, AlertTriangle, ShieldCheck } from "lucide-react";
 
 export default function AdminPreciosPage() {
@@ -18,7 +19,7 @@ export default function AdminPreciosPage() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/precios");
+      const res = await adminFetch("/api/admin/precios");
       const data = await res.json();
       if (res.ok) {
         setPricing(data.pricing);
@@ -45,7 +46,7 @@ export default function AdminPreciosPage() {
     if (!pricing) return;
     setIsSavingPricing(true);
     try {
-      const res = await fetch("/api/admin/precios", {
+      const res = await adminFetch("/api/admin/precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: "pricing", data: pricing }),
@@ -63,7 +64,7 @@ export default function AdminPreciosPage() {
   const handleToggleFeeSinCosto = async (fee: TravelFee) => {
     try {
       const updated = { ...fee, sinCosto: !fee.sinCosto };
-      const res = await fetch("/api/admin/precios", {
+      const res = await adminFetch("/api/admin/precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: "travelFee", id: fee.id, data: updated }),
@@ -83,7 +84,7 @@ export default function AdminPreciosPage() {
         montoPorVisitaCentavos: parseToCentavos(tempVisitaPesos),
         montoPorUnidadCentavos: parseToCentavos(tempUnidadPesos),
       };
-      const res = await fetch("/api/admin/precios", {
+      const res = await adminFetch("/api/admin/precios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ target: "travelFee", id: fee.id, data: updated }),

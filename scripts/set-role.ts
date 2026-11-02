@@ -37,7 +37,18 @@ async function setRole() {
     process.exit(1);
   }
 
-  const isProd = process.env.USE_FIREBASE_PROD === "true";
+  const isProd = process.argv.includes("--prod") || process.env.USE_FIREBASE_PROD === "true";
+
+  // Parse optional CLI arguments
+  const getArg = (name: string): string | undefined => {
+    const idx = process.argv.indexOf(name);
+    return idx !== -1 && process.argv[idx + 1] ? process.argv[idx + 1] : undefined;
+  };
+
+  const customPassword = getArg("--password") || getArg("--pass");
+  const customWhatsapp = getArg("--whatsapp") || getArg("--tel");
+  const customNombre = getArg("--nombre") || getArg("--name");
+  const customTope = getArg("--tope");
 
   if (!isProd) {
     process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR = "true";
@@ -50,23 +61,29 @@ async function setRole() {
     const { adminAuth, adminDb, recordAuditLog } = await import("@/lib/firebase/admin");
 
     let userRecord;
-    let tempPassword = "";
+    let tempPassword = customPassword || "";
 
     try {
       userRecord = await adminAuth.getUserByEmail(email);
       console.log(`👤 Usuario existente encontrado: ${userRecord.uid} (${userRecord.email})`);
+      if (customPassword) {
+        await adminAuth.updateUser(userRecord.uid, { password: customPassword });
+        console.log(`🔑 Contraseña actualizada exitosamente para ${email}.`);
+      }
     } catch (err: any) {
       if (err.code === "auth/user-not-found") {
-        tempPassword = generateSecurePassword();
-        console.log(`🆕 Creando nuevo usuario en Firebase Auth...`);
+        if (!tempPassword) {
+          tempPassword = generateSecurePassword();
+        }
+        console.log(`🆕 Creando nuevo usuario en Firebase Auth (${isProd ? "PRODUCCIÓN cosotec7" : "EMULADOR"})...`);
         userRecord = await adminAuth.createUser({
           email,
           password: tempPassword,
-          displayName: email.split("@")[0],
+          displayName: customNombre || email.split("@")[0],
           emailVerified: true,
         });
         console.log("\n╔══════════════════════════════════════════════════════════════════╗");
-        console.log("║ 🔑 CONTRASEÑA TEMPORAL GENERADA (Guardar ahora - un solo uso):  ║");
+        console.log("║ 🔑 CONTRASEÑA ASIGNADA:                                          ║");
         console.log(`║    ${tempPassword.padEnd(58)}║`);
         console.log("╚══════════════════════════════════════════════════════════════════╝\n");
       } else {
@@ -84,19 +101,23 @@ async function setRole() {
     const beforeData = existingSnap.exists ? existingSnap.data() : null;
     const now = new Date().toISOString();
 
-    const userData = {
+    const userData: any = {
       uid: userRecord.uid,
       email: userRecord.email,
-      nombre: userRecord.displayName || email.split("@")[0],
+      nombre: customNombre || userRecord.displayName || email.split("@")[0],
       role,
       activo: true,
-      topeDescuento: role === "vendedor" ? 5 : 0,
+      topeDescuento: customTope ? Number(customTope) : (role === "vendedor" ? 5 : 0),
       updatedAt: now,
       ...(beforeData ? {} : { createdAt: now }),
     };
 
+    if (customWhatsapp || !beforeData?.whatsapp) {
+      userData.whatsapp = (customWhatsapp || beforeData?.whatsapp || "7224322053").replace(/\D/g, "").slice(-10);
+    }
+
     await userDocRef.set(userData, { merge: true });
-    console.log(`📄 Documento sincronizado en colección 'users/${userRecord.uid}'`);
+    console.log(`📄 Documento sincronizado en colección 'users/${userRecord.uid}' (whatsapp: ${userData.whatsapp || "N/A"})`);
 
     // Registrar en AuditLog
     await recordAuditLog({

@@ -4,12 +4,12 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "demo-api-key-cosotec7",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY || "AIzaSyAfcGa9tvdWG4Eti0WdK69rCUMO0WQeCGE",
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN || "cosotec7.firebaseapp.com",
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "cosotec7",
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "cosotec7.appspot.com",
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:1234567890:web:abcdef123456",
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || "cosotec7.firebasestorage.app",
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "358372577691",
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID || "1:358372577691:web:20f877c0c34e2bfbebd13e",
 };
 
 export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();

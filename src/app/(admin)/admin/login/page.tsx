@@ -1,31 +1,69 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Lock, Mail, ArrowRight, ShieldCheck } from "lucide-react";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/client";
+import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle } from "lucide-react";
+import { UserRole } from "@/types/user";
 
-export default function AdminLoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpiredNotice, setSessionExpiredNotice] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("expired") === "1") {
+      setSessionExpiredNotice(true);
+    }
+  }, [searchParams]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSessionExpiredNotice(false);
 
     try {
-      // Para pruebas locales directas o Firebase Auth Client
-      if (email && password) {
-        // Redirige al dashboard
-        router.push("/admin");
-      } else {
-        setError("Por favor completa los campos.");
+      if (!email.trim() || !password) {
+        setError("Por favor completa tu correo y contraseña.");
+        setIsLoading(false);
+        return;
       }
+
+      // 1. Iniciar sesión en Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+
+      // 2. Forzar lectura del ID Token para validar Custom Claim de Rol
+      const tokenResult = await userCredential.user.getIdTokenResult(true);
+      const role = (tokenResult.claims.role as UserRole) || null;
+
+      if (!role || !["admin", "vendedor", "soporte"].includes(role)) {
+        await signOut(auth);
+        setError("Acceso denegado: tu usuario no cuenta con un rol asignado (admin, vendedor o soporte).");
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Redirección exitosa
+      router.replace("/admin");
     } catch (err: any) {
-      setError(err.message || "Error al iniciar sesión.");
+      console.error("[Login] Error de autenticación:", err);
+      if (
+        err.code === "auth/invalid-credential" ||
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Correo electrónico o contraseña incorrectos.");
+      } else if (err.code === "auth/too-many-requests") {
+        setError("Demasiados intentos fallidos. Intenta más tarde.");
+      } else {
+        setError(err.message || "Error al iniciar sesión.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -57,9 +95,20 @@ export default function AdminLoginPage() {
           </p>
         </div>
 
+        {sessionExpiredNotice && (
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold">Tu sesión expiró o no fue encontrada.</p>
+              <p className="text-[11px] text-amber-700 mt-0.5">Por favor inicia sesión con tus credenciales.</p>
+            </div>
+          </div>
+        )}
+
         {error && (
-          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700">
-            {error}
+          <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <span>{error}</span>
           </div>
         )}
 
@@ -71,6 +120,7 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 required
+                autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@cosoavl.com"
@@ -86,6 +136,7 @@ export default function AdminLoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -97,9 +148,9 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 bg-[#7A1428] hover:bg-[#4A0C18] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 group text-sm"
+            className="w-full py-3 bg-[#7A1428] hover:bg-[#4A0C18] text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2 group text-sm disabled:opacity-60"
           >
-            <span>{isLoading ? "Iniciando..." : "Entrar al Panel"}</span>
+            <span>{isLoading ? "Iniciando sesión..." : "Entrar al Panel"}</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
@@ -115,3 +166,10 @@ export default function AdminLoginPage() {
   );
 }
 
+export default function AdminLoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#4A0C18]" />}>
+      <LoginForm />
+    </Suspense>
+  );
+}

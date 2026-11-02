@@ -2,6 +2,7 @@ import React from "react";
 import fs from "fs";
 import path from "path";
 import QRCode from "qrcode";
+import sharp from "sharp";
 import {
   Document,
   Page,
@@ -14,6 +15,19 @@ import {
 import { Quote } from "@/types/quote";
 import { formatMxn } from "@/lib/pricing";
 import { adminDb } from "@/lib/firebase/admin";
+import { getProductImage } from "@/lib/catalog/product-image";
+
+function formatearWhatsapp(tel?: string) {
+  if (!tel) return "";
+  const clean = tel.replace(/\D/g, "");
+  if (clean.length === 10) {
+    return `${clean.slice(0, 3)} ${clean.slice(3, 6)} ${clean.slice(6)}`;
+  }
+  if (clean.length === 12 && clean.startsWith("52")) {
+    return `+52 ${clean.slice(2, 5)} ${clean.slice(5, 8)} ${clean.slice(8)}`;
+  }
+  return tel;
+}
 
 const styles = StyleSheet.create({
   page: {
@@ -148,6 +162,23 @@ const styles = StyleSheet.create({
   },
   colConcepto: {
     flex: 5,
+  },
+  itemConceptoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  itemThumb: {
+    width: 26,
+    height: 26,
+    objectFit: "contain",
+    borderRadius: 3,
+    borderWidth: 0.5,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    marginRight: 6,
+  },
+  itemDetails: {
+    flex: 1,
   },
   colCant: {
     flex: 1,
@@ -311,6 +342,26 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     marginBottom: 8,
   },
+  notasBox: {
+    backgroundColor: "#FEFCE8",
+    borderRadius: 6,
+    padding: 7,
+    borderWidth: 0.5,
+    borderColor: "#FEF08A",
+    marginBottom: 8,
+  },
+  notasTitle: {
+    fontSize: 7,
+    fontFamily: "Helvetica-Bold",
+    color: "#854D0E",
+    textTransform: "uppercase",
+    marginBottom: 2,
+  },
+  notasText: {
+    fontSize: 6.8,
+    color: "#713F12",
+    lineHeight: 1.25,
+  },
   termsTitle: {
     fontSize: 7,
     fontFamily: "Helvetica-Bold",
@@ -348,6 +399,7 @@ interface QuotePdfDocumentProps {
   quote: Quote;
   qrDataUrl?: string;
   logoDataUrl?: string;
+  itemThumbs?: Record<string, string>;
   esPrueba?: boolean;
 }
 
@@ -355,6 +407,7 @@ export function QuotePdfDocument({
   quote,
   qrDataUrl,
   logoDataUrl,
+  itemThumbs = {},
   esPrueba = false,
 }: QuotePdfDocumentProps) {
   const vencida = quote.venceAt ? new Date(quote.venceAt).getTime() < Date.now() : false;
@@ -363,13 +416,14 @@ export function QuotePdfDocument({
     month: "long",
     day: "numeric",
   });
+  const vigenciaDias = quote.condiciones?.vigenciaDias || 15;
   const fechaVigencia = quote.venceAt
     ? new Date(quote.venceAt).toLocaleDateString("es-MX", {
         year: "numeric",
         month: "long",
         day: "numeric",
       })
-    : "15 días naturales";
+    : `${vigenciaDias} días naturales`;
 
   const planSeleccionadoKey = quote.condiciones?.planSeleccionado || "contado";
   const planInfo =
@@ -450,7 +504,12 @@ export function QuotePdfDocument({
             </Text>
             {Boolean(quote.vendedorWhatsapp) && (
               <Text style={styles.infoText}>
-                WhatsApp: {quote.vendedorWhatsapp}
+                WhatsApp: {formatearWhatsapp(quote.vendedorWhatsapp)}
+              </Text>
+            )}
+            {Boolean(quote.vendedorEmail) && (
+              <Text style={styles.infoText}>
+                Correo: {quote.vendedorEmail}
               </Text>
             )}
             <Text style={styles.infoText}>CosoTec by CoSoAVL</Text>
@@ -484,31 +543,37 @@ export function QuotePdfDocument({
           {quote.items.map((it, idx) => {
             const rowTotal = it.precioSinIvaCentavos * it.cantidad;
             const isAlt = idx % 2 === 1;
+            const thumb = (it.id && itemThumbs[it.id]) || itemThumbs[it.nombre];
             return (
               <View
                 key={idx}
                 style={[styles.tableRow, isAlt ? styles.tableRowAlt : {}]}
               >
                 <View style={styles.colConcepto}>
-                  <Text style={styles.itemTitle}>{it.nombre}</Text>
-                  {it.modeloConfirmado && it.modelo ? (
-                    <Text style={styles.itemModel}>Modelo: {it.modelo}</Text>
-                  ) : null}
-                  {it.incluyeInstalacion && (
-                    <Text style={styles.itemBullet}>
-                      ✓ Instalación profesional incluida
-                    </Text>
-                  )}
-                  {it.incluyePlanPrimerAnio && (
-                    <Text style={styles.itemBullet}>
-                      ✓ 1er año de plataforma y datos SIM 4G incluido
-                    </Text>
-                  )}
-                  {it.incluyeInstalacion === false && (
-                    <Text style={styles.itemBulletWarn}>
-                      + Requiere instalación por separado
-                    </Text>
-                  )}
+                  <View style={styles.itemConceptoRow}>
+                    {thumb ? <Image src={thumb} style={styles.itemThumb} /> : null}
+                    <View style={styles.itemDetails}>
+                      <Text style={styles.itemTitle}>{it.nombre}</Text>
+                      {it.modeloConfirmado && it.modelo ? (
+                        <Text style={styles.itemModel}>Modelo: {it.modelo}</Text>
+                      ) : null}
+                      {it.incluyeInstalacion && (
+                        <Text style={styles.itemBullet}>
+                          ✓ Instalación profesional incluida
+                        </Text>
+                      )}
+                      {it.incluyePlanPrimerAnio && (
+                        <Text style={styles.itemBullet}>
+                          ✓ 1er año de plataforma y datos SIM 4G incluido
+                        </Text>
+                      )}
+                      {it.incluyeInstalacion === false && (
+                        <Text style={styles.itemBulletWarn}>
+                          + Requiere instalación por separado
+                        </Text>
+                      )}
+                    </View>
+                  </View>
                 </View>
                 <Text style={styles.colCant}>{it.cantidad}</Text>
                 <Text style={styles.colPrecio}>
@@ -641,6 +706,14 @@ export function QuotePdfDocument({
           </View>
         )}
 
+        {/* Notas para el Cliente si existen */}
+        {Boolean(quote.condiciones?.notasCliente) && (
+          <View style={styles.notasBox}>
+            <Text style={styles.notasTitle}>Notas e Instrucciones para el Cliente</Text>
+            <Text style={styles.notasText}>{quote.condiciones?.notasCliente}</Text>
+          </View>
+        )}
+
         {/* Términos Comerciales Oficiales */}
         <View style={styles.termsBox}>
           <Text style={styles.termsTitle}>Condiciones Comerciales y de Servicio</Text>
@@ -648,13 +721,16 @@ export function QuotePdfDocument({
             1. Precios expresados en Pesos Mexicanos (MXN). Los conceptos desglosan el 16% de Impuesto al Valor Agregado (IVA).
           </Text>
           <Text style={styles.termItem}>
-            2. Cotización válida por 15 días naturales a partir de la fecha de emisión indicada en el encabezado.
+            2. Cotización válida por {vigenciaDias} días naturales a partir de la fecha de emisión indicada en el encabezado.
           </Text>
           <Text style={styles.termItem}>
             3. Instalación profesional sin costo de viáticos en las zonas metropolitanas de Toluca, Metepec, CDMX, Monterrey, Guadalajara y Querétaro capital. Fuera de las zonas metropolitanas indicadas, los viáticos se cotizan por separado.
           </Text>
           <Text style={styles.termItem}>
             4. Para confirmar el pedido y programar la visita técnica de instalación se requiere el cumplimiento del esquema de pago acordado.
+          </Text>
+          <Text style={styles.termItem}>
+            5. Los precios y condiciones quedan congelados durante la vigencia de la cotización; posterior a su vencimiento, se requiere actualización de propuesta comercial.
           </Text>
         </View>
 
@@ -702,7 +778,40 @@ export async function generarCotizacionPdfBuffer(
     esPrueba = false;
   }
 
-  // 3. Generar Código QR apuntando a la URL pública de la cotización
+  // 3. Cargar miniaturas de productos para la tabla
+  const itemThumbs: Record<string, string> = {};
+  for (const it of quote.items || []) {
+    try {
+      let imgRel = it.fotoUrl;
+      if (!imgRel) {
+        imgRel = getProductImage({ slug: it.nombre, categoria: it.categoria });
+      }
+      const filename = path.basename(imgRel);
+      let absPath = path.join(process.cwd(), "public", "products", filename);
+      if (!fs.existsSync(absPath) && filename.endsWith(".webp")) {
+        const pngCandidate = path.join(process.cwd(), "public", "products", filename.replace(/\.webp$/, ".png"));
+        if (fs.existsSync(pngCandidate)) {
+          absPath = pngCandidate;
+        }
+      }
+      if (fs.existsSync(absPath)) {
+        const thumbBuf = await sharp(absPath)
+          .resize(56, 56, {
+            fit: "contain",
+            background: { r: 255, g: 255, b: 255, alpha: 1 },
+          })
+          .png()
+          .toBuffer();
+        const dataUrl = `data:image/png;base64,${thumbBuf.toString("base64")}`;
+        if (it.id) itemThumbs[it.id] = dataUrl;
+        itemThumbs[it.nombre] = dataUrl;
+      }
+    } catch (err) {
+      console.warn(`[PDF] No se pudo cargar miniatura para ${it.nombre}:`, err);
+    }
+  }
+
+  // 4. Generar Código QR apuntando a la URL pública de la cotización
   let qrDataUrl: string | undefined;
   try {
     const baseUrl =
@@ -721,12 +830,13 @@ export async function generarCotizacionPdfBuffer(
     console.warn("[PDF] No se pudo generar el QR:", err);
   }
 
-  // 4. Renderizar a Buffer
+  // 5. Renderizar a Buffer
   const doc = (
     <QuotePdfDocument
       quote={quote}
       qrDataUrl={qrDataUrl}
       logoDataUrl={logoDataUrl}
+      itemThumbs={itemThumbs}
       esPrueba={esPrueba}
     />
   );

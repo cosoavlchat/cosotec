@@ -415,9 +415,9 @@ export async function crearCotizacionVendedor(
     },
     origen: user.role === "admin" ? "admin" : "vendedor",
     vendedorId: user.uid,
-    vendedorNombre: user.nombre || user.email.split("@")[0],
+    vendedorNombre: userData?.nombre || user.nombre || user.email.split("@")[0],
     vendedorEmail: user.email,
-    vendedorWhatsapp: user.whatsapp || "7224322053",
+    vendedorWhatsapp: userData?.whatsapp || user.whatsapp || "7224322053",
     estado: estadoInicial,
     vecesVista: 0,
     createdAt: now,
@@ -457,10 +457,10 @@ export async function crearCotizacionVendedor(
       },
     });
 
-    // Encolar aviso a dirección
+    // Encolar aviso al administrador
     await adminDb.collection("emailQueue").add({
       tipo: "alerta_autorizacion_cotizacion",
-      destinatario: "direccion@cosoavl.com",
+      destinatario: "admin@cosoavl.com",
       asunto: `[Autorización Requerida] Cotización ${folio} con ${descuentoSolicitado}% de descuento`,
       datos: {
         folio,
@@ -606,7 +606,7 @@ export async function autorizarDescuentoCotizacion(
       aprobadoPorAdminId: adminUser.uid,
       aprobadoPorAdminEmail: adminUser.email,
       aprobadoFecha: now,
-      motivoRechazo: accion === "rechazar" ? motivo || "Descuento no autorizado por dirección." : undefined,
+      motivoRechazo: accion === "rechazar" ? motivo || "Descuento no autorizado por administración." : undefined,
     },
     updatedAt: now,
   };

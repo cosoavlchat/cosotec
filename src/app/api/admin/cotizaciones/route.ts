@@ -11,11 +11,15 @@ export async function GET(req: NextRequest) {
     const estado = searchParams.get("estado") as any;
     const vendedorId = searchParams.get("vendedorId") || undefined;
     const clienteId = searchParams.get("clienteId") || undefined;
+    const fechaInicio = searchParams.get("fechaInicio") || undefined;
+    const fechaFin = searchParams.get("fechaFin") || undefined;
 
     const quotes = await getQuotes(auth.user, {
       estado,
       vendedorId,
       clienteId,
+      fechaInicio,
+      fechaFin,
     });
 
     return NextResponse.json({ success: true, quotes });

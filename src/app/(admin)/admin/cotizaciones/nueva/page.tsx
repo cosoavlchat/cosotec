@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { adminFetch } from "@/lib/auth/admin-fetch";
+import { useAdminAuth } from "@/lib/auth/admin-auth-context";
 import {
   FileText,
   User,
@@ -43,6 +45,7 @@ interface RenglonCotizacion {
 
 export default function NuevaCotizacionPage() {
   const router = useRouter();
+  const { user, claims } = useAdminAuth();
 
   // 1. Estado Cliente
   const [customerModalOpen, setCustomerModalOpen] = useState(false);
@@ -83,6 +86,12 @@ export default function NuevaCotizacionPage() {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
   useEffect(() => {
+    if (claims?.topeDescuento !== undefined) {
+      setTopeDescuento(Number(claims.topeDescuento));
+    }
+  }, [claims]);
+
+  useEffect(() => {
     cargarCatalogo();
     actualizarMunicipios(estadoClave);
   }, []);
@@ -90,12 +99,20 @@ export default function NuevaCotizacionPage() {
   const cargarCatalogo = async () => {
     try {
       setCatalogLoading(true);
-      const res = await fetch("/api/admin/catalogo?type=all", {
-        headers: { Authorization: "Bearer test-token-vendedor" },
-      });
-      const data = await res.json();
-      if (data.products) setProducts(data.products);
-      if (data.packages) setPackages(data.packages);
+      const [resCat, resPricing] = await Promise.all([
+        adminFetch("/api/admin/catalogo?type=all"),
+        adminFetch("/api/admin/precios"),
+      ]);
+      const dataCat = await resCat.json();
+      if (dataCat.products) setProducts(dataCat.products);
+      if (dataCat.packages) setPackages(dataCat.packages);
+
+      if (resPricing.ok) {
+        const dataPricing = await resPricing.json();
+        if (dataPricing.pricing?.vigenciaDias) {
+          setVigenciaDias(Number(dataPricing.pricing.vigenciaDias));
+        }
+      }
     } catch (e) {
       console.error("Error cargando catálogo:", e);
     } finally {
@@ -271,11 +288,10 @@ export default function NuevaCotizacionPage() {
         },
       };
 
-      const res = await fetch("/api/admin/cotizaciones", {
+      const res = await adminFetch("/api/admin/cotizaciones", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: "Bearer test-token-vendedor",
         },
         body: JSON.stringify(payload),
       });
@@ -804,7 +820,6 @@ export default function NuevaCotizacionPage() {
         onClose={() => setCustomerModalOpen(false)}
         selectedCustomerId={selectedCustomer?.id}
         onSelectCustomer={(c) => setSelectedCustomer(c)}
-        authToken="test-token-vendedor"
       />
     </div>
   );

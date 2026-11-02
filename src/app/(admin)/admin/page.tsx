@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { adminFetch } from "@/lib/auth/admin-fetch";
 import { Layers, Sliders, Users, AlertTriangle, CheckCircle, ArrowRight, ShieldAlert } from "lucide-react";
 import { formatMxn } from "@/lib/pricing";
 
@@ -24,8 +25,8 @@ export default function AdminDashboardPage() {
     async function loadStats() {
       try {
         const [catRes, priceRes] = await Promise.all([
-          fetch("/api/admin/catalogo"),
-          fetch("/api/admin/precios"),
+          adminFetch("/api/admin/catalogo"),
+          adminFetch("/api/admin/precios"),
         ]);
 
         const catData = await catRes.json();

@@ -8,6 +8,7 @@ export const CreateUserSchema = z.object({
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
   role: UserRoleSchema,
   topeDescuento: z.number().min(0).max(100).optional(),
+  whatsapp: z.string().optional(),
 });
 
 export const UpdateRoleSchema = z.object({
@@ -15,5 +16,6 @@ export const UpdateRoleSchema = z.object({
   role: UserRoleSchema,
   activo: z.boolean().optional(),
   topeDescuento: z.number().min(0).max(100).optional(),
+  whatsapp: z.string().optional(),
 });
 

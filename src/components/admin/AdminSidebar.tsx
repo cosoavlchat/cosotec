@@ -18,10 +18,9 @@ import { UserRole } from "@/types/user";
 
 interface AdminSidebarProps {
   currentRole: UserRole;
-  onRoleChange?: (role: UserRole) => void;
 }
 
-export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
+export function AdminSidebar({ currentRole }: AdminSidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -98,35 +97,6 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
           </div>
         </Link>
       </div>
-
-      {/* Role Switcher (SOLO en entorno de desarrollo local NODE_ENV=development) */}
-      {process.env.NODE_ENV === "development" && (
-        <div className="p-4 bg-black/20 mx-3 my-3 rounded-lg border border-white/5">
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-gray-300 font-medium block">
-              Simulador de Rol (Dev)
-            </label>
-            <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/30 text-amber-300 font-mono">
-              DEV ONLY
-            </span>
-          </div>
-          <select
-            value={currentRole}
-            onChange={(e) => onRoleChange?.(e.target.value as UserRole)}
-            className="w-full bg-[#1C1C1E] text-xs text-white border border-white/20 rounded-md px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#C9A15B]"
-          >
-            <option value="admin">Administrador (Total)</option>
-            <option value="vendedor">Vendedor (Catálogo protegido)</option>
-            <option value="soporte">Soporte (Instalaciones)</option>
-          </select>
-          {currentRole === "vendedor" && (
-            <p className="text-[11px] text-amber-300 mt-1.5 flex items-center gap-1">
-              <ShieldAlert className="w-3 h-3 shrink-0" />
-              No puede editar precios ni catálogo
-            </p>
-          )}
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-2 space-y-1">

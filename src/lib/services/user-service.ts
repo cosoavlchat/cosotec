@@ -28,6 +28,7 @@ export async function createUser(
     uid,
     email: validated.email,
     nombre: validated.nombre,
+    whatsapp: validated.whatsapp ? validated.whatsapp.replace(/\D/g, "").slice(-10) : undefined,
     role: validated.role,
     activo: true,
     topeDescuento: validated.topeDescuento || (validated.role === "vendedor" ? 5 : 0),
@@ -68,6 +69,7 @@ export async function updateUserRole(
     role: validated.role,
     ...(validated.activo !== undefined ? { activo: validated.activo } : {}),
     ...(validated.topeDescuento !== undefined ? { topeDescuento: validated.topeDescuento } : {}),
+    ...(validated.whatsapp !== undefined ? { whatsapp: validated.whatsapp.replace(/\D/g, "").slice(-10) } : {}),
   };
 
   await adminDb.collection("users").doc(validated.uid).update(updates);

@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { AppUser, UserRole } from "@/types/user";
-import { Users, UserPlus, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, Key } from "lucide-react";
+import { adminFetch } from "@/lib/auth/admin-fetch";
+import { formatearWhatsapp } from "@/lib/utils/whatsapp";
+import { Users, UserPlus, ShieldCheck, ShieldAlert, CheckCircle2, AlertTriangle, Key, Phone } from "lucide-react";
 
 export default function AdminUsuariosPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -13,6 +15,7 @@ export default function AdminUsuariosPage() {
   // Form state
   const [email, setEmail] = useState("");
   const [nombre, setNombre] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>("vendedor");
   const [topeDescuento, setTopeDescuento] = useState(5);
@@ -22,7 +25,7 @@ export default function AdminUsuariosPage() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/admin/usuarios");
+      const res = await adminFetch("/api/admin/usuarios");
       const data = await res.json();
       if (res.ok) {
         setUsers(data.users || []);
@@ -48,13 +51,14 @@ export default function AdminUsuariosPage() {
     setIsSubmitting(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/usuarios", {
+      const res = await adminFetch("/api/admin/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: {
             email,
             nombre,
+            whatsapp: whatsapp ? whatsapp.replace(/\D/g, "").slice(-10) : undefined,
             password,
             role,
             topeDescuento: role === "vendedor" ? Number(topeDescuento) : 0,
@@ -69,6 +73,7 @@ export default function AdminUsuariosPage() {
       setIsModalOpen(false);
       setEmail("");
       setNombre("");
+      setWhatsapp("");
       setPassword("");
       await fetchUsers();
     } catch (err: any) {
@@ -80,7 +85,7 @@ export default function AdminUsuariosPage() {
 
   const handleRoleChange = async (uid: string, newRole: UserRole) => {
     try {
-      const res = await fetch("/api/admin/usuarios", {
+      const res = await adminFetch("/api/admin/usuarios", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -160,6 +165,7 @@ export default function AdminUsuariosPage() {
             <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-200 uppercase tracking-wider text-[10px]">
               <tr>
                 <th className="px-5 py-3">Nombre / Correo</th>
+                <th className="px-4 py-3">WhatsApp</th>
                 <th className="px-4 py-3">Rol Asignado</th>
                 <th className="px-4 py-3">Tope Descuento</th>
                 <th className="px-4 py-3">Estado</th>
@@ -169,13 +175,13 @@ export default function AdminUsuariosPage() {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-400">
+                  <td colSpan={6} className="text-center py-10 text-gray-400">
                     Cargando usuarios...
                   </td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-10 text-gray-400">
+                  <td colSpan={6} className="text-center py-10 text-gray-400">
                     No hay usuarios registrados aún. Usa &ldquo;Dar de Alta Usuario&rdquo; o el script `set-role.ts`.
                   </td>
                 </tr>
@@ -185,6 +191,17 @@ export default function AdminUsuariosPage() {
                     <td className="px-5 py-3.5">
                       <div className="font-bold text-gray-900">{u.nombre || "Usuario"}</div>
                       <div className="text-[11px] text-gray-500 font-mono">{u.email}</div>
+                    </td>
+
+                    <td className="px-4 py-3.5 text-gray-700 font-mono text-[11px]">
+                      {u.whatsapp ? (
+                        <span className="inline-flex items-center gap-1 text-emerald-800">
+                          <Phone className="w-3 h-3 text-emerald-600" />
+                          {formatearWhatsapp(u.whatsapp)}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
 
                     <td className="px-4 py-3.5">
@@ -278,6 +295,22 @@ export default function AdminUsuariosPage() {
                   placeholder="Ej. Rodrigo Morales"
                   className="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-semibold text-gray-700">WhatsApp Oficial (10 dígitos) *</label>
+                <div className="relative">
+                  <Phone className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="tel"
+                    required
+                    value={whatsapp}
+                    onChange={(e) => setWhatsapp(e.target.value)}
+                    placeholder="7224322053"
+                    className="w-full text-xs pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7A1428]"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-500">Este número saldrá en los PDFs de cotización para contacto del cliente.</p>
               </div>
 
               <div className="space-y-1">
