@@ -16,12 +16,36 @@ export interface MercadoPagoPaymentResponse {
   };
 }
 
-export interface CrearPreferenciaParams {
+export interface MercadoPagoOrderResponse {
+  id: string; // ej: "ORD01K23219YK26BC6GK0HASE8VT6"
+  type?: string; // "online"
+  status: "created" | "processed" | "action_required" | "canceled" | "failed" | string;
+  status_detail?: string;
+  external_reference?: string; // ej: "CT-1124451:P1"
+  total_amount: string | number; // Total de la orden en pesos
+  checkout_url?: string;
+  transactions?: {
+    payments?: Array<{
+      id: string | number;
+      amount: string | number;
+      status: string;
+      status_detail?: string;
+      payment_method?: {
+        id?: string;
+        type?: string;
+        installments?: number;
+      };
+      date_approved?: string;
+    }>;
+  };
+}
+
+export interface CrearOrdenMercadoPagoParams {
   folio: string;
   externalReference: string; // ej: "CT-1124451:P1"
   token: string; // Token de seguridad para las back_urls
   items: Array<{
-    id: string;
+    id?: string;
     title: string;
     quantity: number;
     unit_price: number; // en pesos
@@ -31,11 +55,16 @@ export interface CrearPreferenciaParams {
   notificationUrl?: string;
 }
 
-export interface PreferenciaResultado {
-  id: string;
-  initPoint: string;
-  sandboxInitPoint: string;
+export type CrearPreferenciaParams = CrearOrdenMercadoPagoParams;
+
+export interface OrdenMercadoPagoResultado {
+  id: string; // ID de la orden en Mercado Pago (ORD...)
+  checkoutUrl: string; // URL oficial de redirección Checkout Pro
+  initPoint: string; // Alias para compatibilidad hacia atrás
+  sandboxInitPoint: string; // Alias para compatibilidad hacia atrás
 }
+
+export type PreferenciaResultado = OrdenMercadoPagoResultado;
 
 /**
  * Obtiene el token de acceso de Mercado Pago desde las variables de entorno / Secret Manager.
@@ -59,6 +88,21 @@ export function getMercadoPagoWebhookSecret(): string | undefined {
 }
 
 /**
+ * Determina si la integración está operando en modo sandbox (pruebas).
+ * No depende solo del prefijo del token (TEST- o APP_USR-):
+ * Prioriza la variable de entorno MP_ENV ("sandbox" | "production").
+ * Como respaldo heurístico, evalúa si el token inicia con "TEST-".
+ */
+export function isMercadoPagoSandbox(): boolean {
+  const envVal = (process.env.MP_ENV || "").toLowerCase().trim();
+  if (envVal === "sandbox") return true;
+  if (envVal === "production") return false;
+
+  const token = getMercadoPagoAccessToken() || "";
+  return token.startsWith("TEST-");
+}
+
+/**
  * Valida la cabecera 'x-signature' enviada por el Webhook de Mercado Pago.
  * Especificación oficial MP:
  * - x-signature: "ts=[timestamp],v1=[hash_hmac_sha256]"
@@ -72,7 +116,6 @@ export function validarFirmaWebhook(
 ): boolean {
   const secret = secretOverride || getMercadoPagoWebhookSecret();
   if (!secret) {
-    // Si no está configurado el secreto en entorno de pruebas, advertir pero permitir sólo en DEV
     if (process.env.NODE_ENV !== "production") {
       console.warn("[MP Webhook] MP_WEBHOOK_SECRET no configurado en entorno de desarrollo. Omitiendo validación.");
       return true;
@@ -122,7 +165,42 @@ export function validarFirmaWebhook(
 }
 
 /**
- * Consulta la API de Mercado Pago /v1/payments/{id} para obtener el estado real e inmutable del pago.
+ * Consulta la API de Mercado Pago Orders /v1/orders/{order_id} para obtener el estado inmutable de la orden.
+ * Documentación oficial: developers.mercadopago.com/es/reference/orders/_orders_id/get
+ */
+export async function obtenerOrdenMercadoPago(
+  orderId: string
+): Promise<MercadoPagoOrderResponse> {
+  const accessToken = getMercadoPagoAccessToken();
+
+  if (!accessToken) {
+    throw new Error(
+      "[Mercado Pago] Falta MP_ACCESS_TOKEN en el entorno. No se puede consultar la orden."
+    );
+  }
+
+  const res = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    const errorBody = await res.text();
+    throw new Error(
+      `[Mercado Pago Orders API] Error al consultar orden ${orderId}: Status ${res.status} - ${errorBody}`
+    );
+  }
+
+  return (await res.json()) as MercadoPagoOrderResponse;
+}
+
+/**
+ * Consulta la API de Mercado Pago Payments /v1/payments/{id} (soporte para eventos de pago).
+ * Documentación oficial: developers.mercadopago.com/es/reference/payments/_payments_id/get
  */
 export async function obtenerPagoMercadoPago(
   paymentId: string | number
@@ -155,53 +233,85 @@ export async function obtenerPagoMercadoPago(
 }
 
 /**
- * Crea una preferencia de pago en Mercado Pago Checkout Pro (Sandbox o Producción).
+ * Crea una orden de pago en Mercado Pago Checkout Pro utilizando la API de Orders (/v1/orders).
+ * Documentación oficial: developers.mercadopago.com/es/reference/orders/_orders/post
+ *
+ * Configuración de Calidad:
+ * - type: "online"
+ * - processing_mode: "manual" (específico para redirección Checkout Pro)
+ * - capture_mode: "automatic" (captura inmediata)
+ * - config.payment_method.not_allowed_types: exclusión estricta de efectivo, cheques, transferencias offline y wallets.
+ *   Permite ÚNICAMENTE tarjetas de crédito y débito bancarias.
+ * - config.online: URLs de retorno automáticas.
+ * - X-Idempotency-Key: UUID único por intento para evitar duplicación.
  */
-export async function crearPreferenciaMercadoPago(
-  params: CrearPreferenciaParams
-): Promise<PreferenciaResultado> {
+export async function crearOrdenMercadoPago(
+  params: CrearOrdenMercadoPagoParams
+): Promise<OrdenMercadoPagoResultado> {
   const accessToken = getMercadoPagoAccessToken();
 
   if (!accessToken) {
-    // Si no hay token configurado aún (modo sandbox simulado sin credenciales)
-    console.warn("[Mercado Pago] MP_ACCESS_TOKEN no configurado. Generando preferencia simulada de prueba.");
+    // Si no hay token configurado aún (modo simulado sin credenciales)
+    console.warn("[Mercado Pago Orders] MP_ACCESS_TOKEN no configurado. Generando orden simulada de prueba.");
+    const simulatedUrl = `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing&sandbox=true`;
+    const simulatedId = `ORD_sim_${params.externalReference.replace(":", "_")}`;
     return {
-      id: `pref_simulada_${params.externalReference.replace(":", "_")}`,
-      initPoint: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing`,
-      sandboxInitPoint: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing&sandbox=true`,
+      id: simulatedId,
+      checkoutUrl: simulatedUrl,
+      initPoint: simulatedUrl,
+      sandboxInitPoint: simulatedUrl,
     };
   }
 
-  const notificationUrl =
-    params.notificationUrl || `${params.backUrlBase}/api/webhooks/mercadopago`;
+  // Suma exacta de items para total_amount
+  const totalPesos = params.items.reduce(
+    (sum, item) => sum + item.unit_price * item.quantity,
+    0
+  );
+  const totalAmountStr = totalPesos.toFixed(2);
 
   const body = {
-    items: params.items,
-    payer: params.payerEmail ? { email: params.payerEmail } : undefined,
+    type: "online",
+    processing_mode: "manual",
+    capture_mode: "automatic",
+    total_amount: totalAmountStr,
     external_reference: params.externalReference,
-    notification_url: notificationUrl,
-    binary_mode: true, // REGLA: Sólo veredictos inmediatos approved/rejected (sin estados pendientes)
-    payment_methods: {
-      excluded_payment_types: [
-        { id: "ticket" },
-        { id: "bank_transfer" },
-        { id: "atm" },
-      ],
+    payer: params.payerEmail ? { email: params.payerEmail } : undefined,
+    config: {
+      payment_method: {
+        // Exclusión estricta de medios offline, dinero en cuenta y billeteras.
+        // Habilita únicamente tarjetas de crédito ("credit_card") y débito ("debit_card").
+        not_allowed_types: [
+          "ticket",
+          "bank_transfer",
+          "account_money",
+          "wallet",
+          "atm",
+        ],
+        max_installments: 12,
+      },
+      online: {
+        success_url: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing`,
+        failure_url: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=failure`,
+        pending_url: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing`,
+        auto_return: "approved",
+      },
     },
-    back_urls: {
-      success: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing`,
-      pending: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing`,
-      failure: `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=failure`,
-    },
-    auto_return: "approved",
-    statement_descriptor: "COSOTEC GPS",
+    items: params.items.map((it) => ({
+      title: it.title,
+      quantity: it.quantity,
+      unit_price: Number(it.unit_price).toFixed(2),
+    })),
   };
 
-  const res = await fetch("https://api.mercadopago.com/checkout/preferences", {
+  const idempotencyKey = crypto.randomUUID();
+
+  const res = await fetch("https://api.mercadopago.com/v1/orders", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
+      "X-Idempotency-Key": idempotencyKey,
     },
     body: JSON.stringify(body),
   });
@@ -209,17 +319,26 @@ export async function crearPreferenciaMercadoPago(
   if (!res.ok) {
     const errText = await res.text();
     throw new Error(
-      `[Mercado Pago API] Error al crear preferencia: Status ${res.status} - ${errText}`
+      `[Mercado Pago Orders API] Error al crear orden: Status ${res.status} - ${errText}`
     );
   }
 
   const data = await res.json();
-  const isTestMode = accessToken.startsWith("TEST-");
+  const checkoutUrl = data.checkout_url || data.init_point || "";
 
   return {
     id: data.id,
-    initPoint: isTestMode ? (data.sandbox_init_point || data.init_point) : data.init_point,
-    sandboxInitPoint: data.sandbox_init_point || data.init_point,
+    checkoutUrl,
+    initPoint: checkoutUrl,
+    sandboxInitPoint: checkoutUrl,
   };
 }
 
+/**
+ * Alias de compatibilidad hacia atrás para crearOrdenMercadoPago.
+ */
+export async function crearPreferenciaMercadoPago(
+  params: CrearPreferenciaParams
+): Promise<PreferenciaResultado> {
+  return crearOrdenMercadoPago(params);
+}

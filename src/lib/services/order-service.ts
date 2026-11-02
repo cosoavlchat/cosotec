@@ -1,6 +1,6 @@
 import { adminDb } from "@/lib/firebase/admin";
 import { Order, OrderEstado, OrderPagoProgramado } from "@/types/order";
-import { crearPreferenciaMercadoPago } from "@/lib/mercadopago";
+import { crearOrdenMercadoPago } from "@/lib/mercadopago";
 import { generarTokenAleatorio, hashToken } from "@/lib/quotes";
 import {
   notificarFichaInstalacionASoporte,
@@ -11,14 +11,16 @@ import {
 export interface GenerarLinkPagoResultado {
   pagoId: string;
   externalReference: string;
+  orderMpId?: string;
   preferenceId: string;
+  checkoutUrl: string;
   initPoint: string;
   sandboxInitPoint: string;
   linkPublico: string;
 }
 
 /**
- * Genera la preferencia de Mercado Pago y el link de cobro seguro para una exhibición
+ * Genera la orden de Mercado Pago Checkout Pro y el link de cobro seguro para una exhibición
  * específica del calendario (ej: P2 Finiquito o P3 Mensualidad).
  */
 export async function generarLinkPagoExhibicion(
@@ -53,7 +55,7 @@ export async function generarLinkPagoExhibicion(
   const montoPesos = pago.montoCentavos / 100;
   const externalReference = `${orderFolio}:${pagoId}`;
 
-  const mpPreference = await crearPreferenciaMercadoPago({
+  const mpOrder = await crearOrdenMercadoPago({
     folio: orderFolio,
     externalReference,
     token,
@@ -69,11 +71,12 @@ export async function generarLinkPagoExhibicion(
     backUrlBase: origin,
   });
 
-  // Actualizar orden con token y preferenceId de la cuota
+  // Actualizar orden con token y ID de orden en MP de la cuota
   const updatedPagos = [...pagos];
   updatedPagos[pagoIndex] = {
     ...updatedPagos[pagoIndex],
-    preferenceId: mpPreference.id,
+    orderMpId: mpOrder.id,
+    preferenceId: mpOrder.id,
   };
 
   await orderRef.update({
@@ -92,9 +95,11 @@ export async function generarLinkPagoExhibicion(
   return {
     pagoId,
     externalReference,
-    preferenceId: mpPreference.id,
-    initPoint: mpPreference.initPoint,
-    sandboxInitPoint: mpPreference.sandboxInitPoint,
+    orderMpId: mpOrder.id,
+    preferenceId: mpOrder.id,
+    checkoutUrl: mpOrder.checkoutUrl,
+    initPoint: mpOrder.initPoint,
+    sandboxInitPoint: mpOrder.sandboxInitPoint,
     linkPublico,
   };
 }

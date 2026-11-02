@@ -117,12 +117,12 @@ function CheckoutInner() {
       const data = await res.json();
 
       if (data.success && data.folio) {
-        if (metodoSeleccionado === "mercadopago" && data.mercadoPago?.initPoint) {
-          // Si estamos en entorno de prueba y sandboxInitPoint existe
+        if (metodoSeleccionado === "mercadopago" && (data.mercadoPago?.checkoutUrl || data.mercadoPago?.initPoint)) {
           const redirectUrl =
-            process.env.NODE_ENV === "production"
+            data.mercadoPago.checkoutUrl ||
+            (process.env.NODE_ENV === "production"
               ? data.mercadoPago.initPoint
-              : (data.mercadoPago.sandboxInitPoint || data.mercadoPago.initPoint);
+              : (data.mercadoPago.sandboxInitPoint || data.mercadoPago.initPoint));
           window.location.href = redirectUrl;
           return;
         }

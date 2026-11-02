@@ -1,8 +1,9 @@
-# Documento de Pruebas de Pagos — Mercado Pago Checkout Pro y Webhook
+# Documento de Pruebas de Pagos — Mercado Pago Checkout Pro (Orders API) y Webhook
 
 **Proyecto:** CosoTec (`cosotec7`)  
 **Fecha:** Noviembre 2026  
-**Entorno:** Vitest Mocks (Unitarios) & Mercado Pago Sandbox (E2E en Vivo)
+**Entorno:** Vitest Mocks (Unitarios) & Mercado Pago Sandbox (E2E en Vivo)  
+**API:** Orders API (`/v1/orders`) & Webhooks (`Order (Mercado Pago)`)
 
 ---
 
@@ -10,7 +11,7 @@
 
 > [!IMPORTANT]
 > **Aclaración sobre el estado de verificación:**
-> - **Pruebas Unitarias Automatizadas (con Mocks):** Implementadas y ejecutadas con éxito en Vitest (`test/mercadopago-webhook.test.ts`). Validan matemáticamente la tolerancia cero, reconstrucción HMAC de `x-signature`, idempotencia, desglose granular de cuotas (`:P1`, `:P2`, `:P3`) y mutación de estados en Firestore. **Estado: APROBADAS (100%)**.
+> - **Pruebas Unitarias Automatizadas (con Mocks):** Implementadas y ejecutadas con éxito en Vitest (`test/mercadopago-webhook.test.ts`). Validan matemáticamente la tolerancia cero, reconstrucción HMAC de `x-signature`, idempotencia, desglose granular de cuotas (`:P1`, `:P2`, `:P3`), creación de órdenes en `POST /v1/orders` con exclusión de tickets/efectivo, detección de entorno vía `MP_ENV=sandbox` y mutación de estados en Firestore. **Estado: APROBADAS (100%)**.
 > - **Pruebas E2E en Sandbox Real de Mercado Pago:** Para que los servidores de Mercado Pago puedan emitir eventos webhook reales hacia `/api/webhooks/mercadopago`, se requiere la **URL pública HTTPS de Firebase App Hosting** y el secreto oficial definitivo del webhook (`MP_WEBHOOK_SECRET`). Sin credenciales definitivas ni URL accesible en internet, las pruebas contra la API en vivo de Mercado Pago permanecen como **PENDIENTES DE DESPLIEGUE**.
 
 ### Matriz de Estado de Pruebas
@@ -19,16 +20,19 @@
 | :--- | :--- | :--- | :--- |
 | **1. Reconstrucción y verificación `x-signature`** | Unitaria (HMAC-SHA256) | Vitest | ✅ Aprobada |
 | **2. Firma inválida o timestamp alterado (401)** | Unitaria (HMAC-SHA256) | Vitest | ✅ Aprobada |
-| **3. Tolerancia Cero en centavos (`transaction_amount`)** | Unitaria (Conversión centavos) | Vitest | ✅ Aprobada |
+| **3. Tolerancia Cero en centavos (`total_amount`)** | Unitaria (Conversión centavos) | Vitest | ✅ Aprobada |
 | **4. Monto alterado $\to$ `revision_manual`** | Unitaria (Lógica de servidor) | Vitest | ✅ Aprobada |
 | **5. Referencia granular por cuota (`CT-XXXXXXX:P1`)** | Unitaria (Transición de cuotas) | Vitest | ✅ Aprobada |
 | **6. Idempotencia ante reintentos de red** | Unitaria (Idempotencia Firestore) | Vitest | ✅ Aprobada |
 | **7. Enlace seguro `/pedido/[folio]` con token revocable** | Unitaria (Crypto timing-safe) | Vitest | ✅ Aprobada |
 | **8. Secreto temporal `temporal-pendiente` (503 + audit)** | Unitaria (Fase de arranque) | Vitest | ✅ Aprobada |
-| **9. Pago con tarjeta aprobada en Sandbox real** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
-| **10. Pago declinado / fondos insuficientes en Sandbox** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
-| **11. Webhook real emitido desde servidores de MP** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
-| **12. Finiquito P2 pagado en Checkout Pro real** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
+| **9. Creación de Orden Orders API (`POST /v1/orders`)** | Unitaria (Payload & Exclusiones) | Vitest | ✅ Aprobada |
+| **10. Detección de Sandbox con `MP_ENV` (`APP_USR-` / `TEST-`)** | Unitaria (Variables de Entorno) | Vitest | ✅ Aprobada |
+| **11. Webhook de Orden (`type: "orders"`, `status: "processed"`)** | Unitaria (Integración Endpoint) | Vitest | ✅ Aprobada |
+| **12. Pago con tarjeta aprobada en Sandbox real** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
+| **13. Pago declinado / fondos insuficientes en Sandbox** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
+| **14. Webhook real emitido desde servidores de MP** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
+| **15. Finiquito P2 pagado en Checkout Pro real** | End-to-End en Vivo | App Hosting + MP Sandbox | ⏳ **PENDIENTE** (requiere URL pública) |
 
 ---
 
@@ -43,7 +47,13 @@
 | **Tarjeta Declinada** | `4060 6200 0000 0000` | CALL | `12/28` | `123` | `rejected` (`cc_rejected_call_for_authorize`) |
 | **Código Seguridad Inválido** | `4000 0000 0000 0001` | SECU | `12/28` | `999` | `rejected` (`cc_rejected_bad_filled_security_code`) |
 
-> **Nota de Seguridad:** En `crearPreferenciaMercadoPago` se configuró `binary_mode: true` y `excluded_payment_types: [{ id: "ticket" }, { id: "bank_transfer" }]`, garantizando que únicamente se acepten tarjetas bancarias y que el veredicto sea inmediato (aprobado o rechazado), sin pagos diferidos en tiendas OXXO.
+> **Nota de Seguridad en Orders API:** En `crearOrdenMercadoPago` se configuró `type: "online"`, `processing_mode: "manual"`, `capture_mode: "automatic"` y `not_allowed_types: ["ticket", "bank_transfer", "account_money", "wallet", "atm"]`, garantizando que únicamente se acepten tarjetas bancarias y que el veredicto sea inmediato (aprobado o rechazado), sin pagos diferidos en tiendas OXXO.
+
+### Configuración del Webhook en Mercado Pago Developers
+- **Ruta:** *Tus integraciones > [Tu Aplicación CosoTec] > Webhooks > Configurar notificaciones*
+- **URL del Webhook:** `https://[TU_URL_APP_HOSTING]/api/webhooks/mercadopago`
+- **Evento Obligatorio a Marcar:** **`Order (Mercado Pago)`** (o `Órdenes` / `Orders` según el idioma).
+  *(Opcionalmente también se puede marcar `Pagos` / `Payments`; el endpoint es compatible con ambos).*
 
 ---
 

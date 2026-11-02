@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminDb } from "@/lib/firebase/admin";
 import {
   validarFirmaWebhook,
+  obtenerOrdenMercadoPago,
   obtenerPagoMercadoPago,
   getMercadoPagoWebhookSecret,
 } from "@/lib/mercadopago";
@@ -23,7 +24,13 @@ export async function POST(req: NextRequest) {
       searchParams.get("data.id") ||
       searchParams.get("id");
 
-    const type = json?.type || json?.topic || searchParams.get("topic");
+    const topic =
+      json?.type ||
+      json?.topic ||
+      searchParams.get("type") ||
+      searchParams.get("topic");
+
+    const action = json?.action;
 
     if (!dataId) {
       // Notificación de prueba o ping vacío de Mercado Pago
@@ -55,32 +62,84 @@ export async function POST(req: NextRequest) {
     // 2. Validar firma criptográfica x-signature
     const isValid = validarFirmaWebhook(signatureHeader, requestIdHeader, String(dataId), secret);
     if (!isValid) {
-      console.warn(`[Webhook MP] Firma inválida rechazada para paymentId: ${dataId}`);
+      console.warn(`[Webhook MP] Firma inválida rechazada para recurso: ${dataId}`);
       return NextResponse.json({ error: "Firma de webhook inválida" }, { status: 401 });
     }
 
-    // Solo procesamos eventos de tipo 'payment'
-    if (type && type !== "payment") {
-      return NextResponse.json({ received: true, note: `Evento ignorado: ${type}` }, { status: 200 });
+    // 3. Determinar si el recurso es una Orden (Orders API) o un Pago (Payments API)
+    const isOrder =
+      topic === "orders" ||
+      topic === "order" ||
+      (typeof action === "string" && action.startsWith("order.")) ||
+      String(dataId).startsWith("ORD");
+
+    let externalReference: string | undefined;
+    let montoCentavosCobrado: number = 0;
+    let statusMp: string = "";
+    let statusDetail: string = "";
+    let paymentMethodDetail: string = "mercadopago";
+    let mpResourceId: string = String(dataId);
+    let isApproved = false;
+    let isRejected = false;
+    let subPaymentId: string | undefined;
+
+    if (isOrder) {
+      // Consulta a la API de Orders (/v1/orders/{id})
+      const orderMp = await obtenerOrdenMercadoPago(String(dataId));
+      externalReference = orderMp.external_reference;
+      const totalPesos =
+        typeof orderMp.total_amount === "string"
+          ? parseFloat(orderMp.total_amount)
+          : Number(orderMp.total_amount);
+      montoCentavosCobrado = Math.round(totalPesos * 100);
+      statusMp = orderMp.status;
+      statusDetail = orderMp.status_detail || "";
+      mpResourceId = orderMp.id;
+
+      const firstPayment = orderMp.transactions?.payments?.[0];
+      if (firstPayment) {
+        subPaymentId = String(firstPayment.id);
+        paymentMethodDetail = firstPayment.payment_method?.id || firstPayment.payment_method?.type || "tarjeta";
+      }
+
+      // En Orders API, status "processed" indica orden totalmente pagada
+      isApproved =
+        statusMp === "processed" ||
+        Boolean(orderMp.transactions?.payments?.some((p) => p.status === "processed" || p.status === "approved"));
+
+      isRejected =
+        statusMp === "canceled" ||
+        statusMp === "failed" ||
+        Boolean(orderMp.transactions?.payments?.some((p) => p.status === "rejected" || p.status === "cancelled"));
+    } else {
+      // Respaldo para eventos directos de tipo 'payment'
+      const payment = await obtenerPagoMercadoPago(dataId);
+      externalReference = payment.external_reference;
+      montoCentavosCobrado = Math.round(payment.transaction_amount * 100);
+      statusMp = payment.status;
+      statusDetail = payment.status_detail || "";
+      paymentMethodDetail = payment.payment_method_id || "mercadopago";
+      mpResourceId = String(payment.id);
+      subPaymentId = String(payment.id);
+
+      isApproved = payment.status === "approved";
+      isRejected = payment.status === "rejected" || payment.status === "cancelled";
     }
 
-    // 2. Consultar directamente a la API de Mercado Pago (/v1/payments/{id})
-    const payment = await obtenerPagoMercadoPago(dataId);
-    const externalReference = payment.external_reference;
-
     if (!externalReference) {
-      console.warn(`[Webhook MP] Pago ${payment.id} no incluye external_reference.`);
+      console.warn(`[Webhook MP] Recurso ${mpResourceId} no incluye external_reference.`);
       await adminDb.collection("auditLog").add({
         tipo: "mercadopago_sin_external_reference",
-        paymentId: payment.id,
-        status: payment.status,
-        monto: payment.transaction_amount,
+        resourceId: mpResourceId,
+        isOrder,
+        status: statusMp,
+        montoCentavos: montoCentavosCobrado,
         fecha: new Date().toISOString(),
       });
       return NextResponse.json({ received: true, note: "Sin external_reference" }, { status: 200 });
     }
 
-    // 3. Descomponer external_reference granular (ej: "CT-1124451:P1", "CT-1124451:P2", etc.)
+    // 4. Descomponer external_reference granular (ej: "CT-1124451:P1", "CT-1124451:P2", etc.)
     const [orderFolio, pagoIdRaw] = externalReference.split(":");
     const targetPagoId = pagoIdRaw || "P1";
 
@@ -88,7 +147,7 @@ export async function POST(req: NextRequest) {
     let orderSnap = await orderRef.get();
 
     if (!orderSnap.exists) {
-      // Búsqueda por campo folio
+      // Búsqueda por campo folio si el ID del documento es distinto
       const q = await adminDb
         .collection("orders")
         .where("folio", "==", orderFolio)
@@ -107,8 +166,8 @@ export async function POST(req: NextRequest) {
         tipo: "mercadopago_orden_no_encontrada",
         externalReference,
         folio: orderFolio,
-        paymentId: payment.id,
-        monto: payment.transaction_amount,
+        resourceId: mpResourceId,
+        montoCentavos: montoCentavosCobrado,
         fecha: new Date().toISOString(),
       });
       return NextResponse.json({ received: true, note: "Orden no encontrada" }, { status: 200 });
@@ -117,7 +176,7 @@ export async function POST(req: NextRequest) {
     const orderData = orderSnap.data() as Order;
     const nowIso = new Date().toISOString();
 
-    // 4. Ubicar el pago específico dentro del calendario de exhibiciones
+    // 5. Ubicar el pago específico dentro del calendario de exhibiciones
     const pagosList: OrderPagoProgramado[] = orderData.pagos || [];
     const pagoIndex = pagosList.findIndex((p) => p.id === targetPagoId);
     const pago = pagoIndex >= 0 ? pagosList[pagoIndex] : undefined;
@@ -126,11 +185,11 @@ export async function POST(req: NextRequest) {
       ? pago.montoCentavos
       : orderData.montoPrimerPagoCentavos || orderData.totalCentavos;
 
-    // 5. Idempotencia: Verificar si esta exhibición ya fue aprobada y acreditada
+    // 6. Idempotencia: Verificar si esta exhibición ya fue aprobada y acreditada
     if (
       pago &&
       pago.estado === "aprobado" &&
-      pago.paymentId === String(payment.id)
+      (pago.paymentId === mpResourceId || pago.orderMpId === mpResourceId || (subPaymentId && pago.paymentId === subPaymentId))
     ) {
       return NextResponse.json(
         { received: true, note: `Pago ${targetPagoId} ya procesado previamente (idempotente)` },
@@ -138,21 +197,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 6. Verificación de monto exacto (Tolerancia 0 en centavos enteros)
-    const transactionAmountCentavos = Math.round(payment.transaction_amount * 100);
-
-    if (transactionAmountCentavos !== montoEsperadoCentavos) {
-      // Discrepancia estricta: tolerancia 0
+    // 7. Verificación de monto exacto (Tolerancia Cero en centavos enteros)
+    if (montoCentavosCobrado !== montoEsperadoCentavos) {
       console.error(
-        `[Webhook MP] ALERTA: Discrepancia de monto en orden ${orderData.folio} (${targetPagoId}). Esperado: ${montoEsperadoCentavos} centavos, Cobrado: ${transactionAmountCentavos} centavos`
+        `[Webhook MP] ALERTA: Discrepancia de monto en orden ${orderData.folio} (${targetPagoId}). Esperado: ${montoEsperadoCentavos} centavos, Cobrado: ${montoCentavosCobrado} centavos`
       );
 
       await orderRef.update({
         estado: "revision_manual",
         motivoRevision: "monto_discrepante",
-        mercadoPagoPaymentId: String(payment.id),
-        metodoPagoDetalle: payment.payment_method_id || "desconocido",
-        notas: `Monto cobrado en MP (${transactionAmountCentavos} centavos) difiere del monto exacto de la exhibición ${targetPagoId} (${montoEsperadoCentavos} centavos). Tolerancia 0.`,
+        mercadoPagoOrderId: isOrder ? mpResourceId : orderData.mercadoPagoOrderId,
+        mercadoPagoPaymentId: subPaymentId || orderData.mercadoPagoPaymentId,
+        metodoPagoDetalle: paymentMethodDetail,
+        notas: `Monto cobrado en MP (${montoCentavosCobrado} centavos) difiere del monto exacto de la exhibición ${targetPagoId} (${montoEsperadoCentavos} centavos). Tolerancia 0.`,
         updatedAt: nowIso,
       });
 
@@ -162,30 +219,29 @@ export async function POST(req: NextRequest) {
         pagoId: targetPagoId,
         motivo: "monto_discrepante",
         montoEsperadoCentavos,
-        montoCobradoCentavos: transactionAmountCentavos,
-        paymentId: payment.id,
+        montoCobradoCentavos: montoCentavosCobrado,
+        resourceId: mpResourceId,
         fecha: nowIso,
       });
 
       return NextResponse.json({ received: true, estado: "revision_manual" }, { status: 200 });
     }
 
-    // 7. Transiciones de estado según veredicto de Mercado Pago
+    // 8. Transiciones de estado según veredicto de Mercado Pago
     const updatedPagos = [...pagosList];
 
-    if (payment.status === "approved") {
+    if (isApproved) {
       if (pagoIndex >= 0) {
         updatedPagos[pagoIndex] = {
           ...updatedPagos[pagoIndex],
           estado: "aprobado",
-          paymentId: String(payment.id),
-          pagadoAt: payment.date_approved || nowIso,
+          paymentId: subPaymentId || mpResourceId,
+          orderMpId: isOrder ? mpResourceId : updatedPagos[pagoIndex].orderMpId,
+          pagadoAt: nowIso,
         };
       }
 
-      // Evaluar estado general de la orden:
-      // Si todos los pagos del calendario están aprobados -> "pagado"
-      // Si el primer pago o anticipo está aprobado pero faltan cuotas -> "anticipo_pagado"
+      // Evaluar estado general de la orden
       const todosAprobados =
         updatedPagos.length > 0
           ? updatedPagos.every((p) => p.estado === "aprobado")
@@ -196,9 +252,10 @@ export async function POST(req: NextRequest) {
       await orderRef.update({
         estado: nuevoEstado,
         pagos: updatedPagos,
-        mercadoPagoPaymentId: String(payment.id),
-        metodoPagoDetalle: payment.payment_method_id || "mercadopago",
-        pagadoAt: payment.date_approved || nowIso,
+        mercadoPagoOrderId: isOrder ? mpResourceId : orderData.mercadoPagoOrderId,
+        mercadoPagoPaymentId: subPaymentId || orderData.mercadoPagoPaymentId,
+        metodoPagoDetalle: paymentMethodDetail,
+        pagadoAt: nowIso,
         updatedAt: nowIso,
       });
 
@@ -243,11 +300,11 @@ export async function POST(req: NextRequest) {
 
       // Bitácora de auditoría
       await adminDb.collection("auditLog").add({
-        tipo: "mercadopago_pago_aprobado",
+        tipo: isOrder ? "mercadopago_orden_procesada" : "mercadopago_pago_aprobado",
         folio: orderData.folio,
         pagoId: targetPagoId,
-        paymentId: payment.id,
-        montoCentavos: transactionAmountCentavos,
+        resourceId: mpResourceId,
+        montoCentavos: montoCentavosCobrado,
         nuevoEstado,
         fecha: nowIso,
       });
@@ -256,31 +313,34 @@ export async function POST(req: NextRequest) {
         received: true,
         estado: nuevoEstado,
         pagoId: targetPagoId,
-        paymentId: payment.id,
+        resourceId: mpResourceId,
       });
     }
 
-    if (payment.status === "rejected" || payment.status === "cancelled") {
+    if (isRejected) {
       if (pagoIndex >= 0) {
         updatedPagos[pagoIndex] = {
           ...updatedPagos[pagoIndex],
           estado: "rechazado",
-          paymentId: String(payment.id),
+          paymentId: subPaymentId || mpResourceId,
+          orderMpId: isOrder ? mpResourceId : updatedPagos[pagoIndex].orderMpId,
         };
       }
 
       await orderRef.update({
         estado: "pago_rechazado",
         pagos: updatedPagos,
-        mercadoPagoPaymentId: String(payment.id),
-        motivoRechazo: payment.status_detail || payment.status,
+        mercadoPagoOrderId: isOrder ? mpResourceId : orderData.mercadoPagoOrderId,
+        mercadoPagoPaymentId: subPaymentId || orderData.mercadoPagoPaymentId,
+        motivoRechazo: statusDetail || statusMp,
         updatedAt: nowIso,
       });
 
       return NextResponse.json({ received: true, estado: "pago_rechazado", pagoId: targetPagoId });
     }
 
-    return NextResponse.json({ received: true, status: payment.status, pagoId: targetPagoId });
+    // Otros estados intermedios como 'created' o 'action_required'
+    return NextResponse.json({ received: true, status: statusMp, pagoId: targetPagoId });
   } catch (error: any) {
     console.error("[Webhook Mercado Pago] Error crítico:", error);
     return NextResponse.json(

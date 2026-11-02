@@ -24,4 +24,6 @@ env:
     value: ""
   - variable: NEXT_PUBLIC_SITE_URL
     value: ""
+  - variable: MP_ENV
+    value: "sandbox"
 

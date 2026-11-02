@@ -4,7 +4,7 @@ import { adminDb } from "@/lib/firebase/admin";
 import { getCartFromFirestore } from "@/lib/cart";
 import { verifyCartSession, CART_SESSION_COOKIE_NAME } from "@/lib/cart/session";
 import { generarSiguienteFolio, generarTokenAleatorio, hashToken } from "@/lib/quotes";
-import { crearPreferenciaMercadoPago } from "@/lib/mercadopago";
+import { crearOrdenMercadoPago } from "@/lib/mercadopago";
 import { Order, OrderPagoProgramado } from "@/types/order";
 import { notificarConfirmacionPedidoCliente } from "@/lib/services/email-service";
 
@@ -77,15 +77,15 @@ export async function POST(req: NextRequest) {
       externalReference: `${folio}:P${p.numero}`,
     }));
 
-    let mpPreference = undefined;
+    let mpOrder = undefined;
 
-    // Si el método seleccionado es Mercado Pago, generar la preferencia para el primer pago (P1)
+    // Si el método seleccionado es Mercado Pago, generar la orden Checkout Pro para el primer pago (P1)
     if (metodoPago === "mercadopago") {
       const origin = req.nextUrl.origin || "http://localhost:3000";
       const pago1 = pagosProgramados[0];
       const montoP1Pesos = pago1.montoCentavos / 100;
 
-      mpPreference = await crearPreferenciaMercadoPago({
+      mpOrder = await crearOrdenMercadoPago({
         folio,
         externalReference: pago1.externalReference, // "CT-XXXXXXX:P1"
         token,
@@ -101,7 +101,8 @@ export async function POST(req: NextRequest) {
         backUrlBase: origin,
       });
 
-      pago1.preferenceId = mpPreference.id;
+      pago1.orderMpId = mpOrder.id;
+      pago1.preferenceId = mpOrder.id;
     }
 
     const order: Order = {
@@ -129,7 +130,8 @@ export async function POST(req: NextRequest) {
       unidades: cart.unidades || [],
       factura: cart.factura,
       pagos: pagosProgramados,
-      mercadoPagoPreferenceId: mpPreference?.id,
+      mercadoPagoOrderId: mpOrder?.id,
+      mercadoPagoPreferenceId: mpOrder?.id,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
@@ -154,7 +156,7 @@ export async function POST(req: NextRequest) {
       folio,
       token,
       order,
-      mercadoPago: mpPreference,
+      mercadoPago: mpOrder,
     });
   } catch (error: any) {
     console.error("[API Checkout Crear Orden] Error:", error);

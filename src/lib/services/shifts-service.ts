@@ -53,3 +53,4 @@ export async function getTurnosSettings(): Promise<TurnosSettings> {
   }
   return DEFAULT_TURNOS_SETTINGS;
 }
+

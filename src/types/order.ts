@@ -32,7 +32,8 @@ export interface OrderPagoProgramado {
   fechaEstimada?: string;
   fechaProgramada?: string; // ISO date
   estado: "pendiente" | "aprobado" | "rechazado";
-  preferenceId?: string;
+  preferenceId?: string; // ID en MP (Orden o Preferencia)
+  orderMpId?: string; // ID de orden en Mercado Pago API de Orders (ej: ORD...)
   paymentId?: string;
   pagadoAt?: string;
   externalReference: string; // ej: "CT-1124451:P1"
@@ -70,6 +71,7 @@ export interface Order {
   pagos: OrderPagoProgramado[]; // Calendario granular por cuota
   comprobanteSpei?: OrderComprobanteSpei;
   mercadoPagoPaymentId?: string;
+  mercadoPagoOrderId?: string;
   mercadoPagoPreferenceId?: string;
   metodoPagoDetalle?: string;
   motivoRevision?: string;

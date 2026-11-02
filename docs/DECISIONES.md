@@ -108,40 +108,57 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
 
 ---
 
-### [2026-10-30] — Paso 3.4: Mercado Pago Checkout Pro, Gestión de Secretos en App Hosting y Tolerancia Cero
+### [2026-10-30 / 2026-11-01] — Paso 3.4: Mercado Pago Checkout Pro, Migración a Orders API y Gestión de Secretos
 
-1. **Gestión de Secretos en Firebase App Hosting (`apphosting.yaml` y Secret Manager):**
-   - Los secretos del servidor (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `QUOTES_TOKEN_SECRET`, `CART_SESSION_SECRET`) no se guardan en el repositorio ni en variables de entorno públicas.
-   - Se aprovisionan mediante el comando oficial de Firebase CLI:
-     ```bash
-     firebase apphosting:secrets:set MP_ACCESS_TOKEN
-     firebase apphosting:secrets:set MP_WEBHOOK_SECRET
-     firebase apphosting:secrets:set QUOTES_TOKEN_SECRET
-     firebase apphosting:secrets:set CART_SESSION_SECRET
-     ```
-   - Este comando crea automáticamente el secreto en Google Cloud Secret Manager del proyecto `cosotec7` y otorga permisos de lectura (`roles/secretmanager.secretAccessor`) a la cuenta de servicio de App Hosting (`service-358372577691@gcp-sa-apphosting.iam.gserviceaccount.com`).
-   - En `apphosting.yaml` se referencian bajo la clave `env:` para su inyección segura en tiempo de ejecución.
-   - **Fallo preventivo al arrancar:** En `src/lib/config/secrets.ts`, si alguno de estos secretos obligatorios no está presente al arrancar en producción, la aplicación arroja un error crítico inmediato (`[FATAL - SECRET MANAGER]`), bloqueando la ejecución para evitar procesar transacciones en estados inconsistentes.
-   - **Credenciales Sandbox vs Producción de Mercado Pago:**
-     - **Etapa de Validación / Despliegue Inicial (Sandbox):** Se debe configurar `MP_ACCESS_TOKEN` con el token de prueba que inicia con `TEST-...` obtenido en *Mercado Pago Developers > Tus integraciones > Credenciales de prueba*. El código (`src/lib/mercadopago/index.ts`) detecta el prefijo `TEST-` y redirige automáticamente al `sandbox_init_point` donde operan las tarjetas ficticias de prueba autorizadas.
-     - **Etapa de Lanzamiento (Producción):** Se actualiza `MP_ACCESS_TOKEN` con el token productivo `APP_USR-...`. El código transiciona automáticamente a `init_point` real sin requerir cambios de software.
+> [!IMPORTANT]
+> **Migración Oficial de Preferencias a la API de Orders (`/v1/orders`):**
+> Mercado Pago ha anunciado la discontinuación de la API de Preferencias (`/checkout/preferences`) para nuevas aplicaciones, adoptando la **Orders API (`/v1/orders`)** como el núcleo unificado para Checkout Pro, Point y QR. La integración de CosoTec fue completamente migrada a este estándar consultando la documentación técnica vigente de Mercado Pago México:
+> - **Guía General de Checkout Pro con Orders:** [developers.mercadopago.com/es/docs/checkout-pro/landing](https://www.mercadopago.com.mx/developers/es/docs/checkout-pro/landing)
+> - **Referencia de API - Crear Orden (`POST /v1/orders`):** [developers.mercadopago.com/es/reference/orders/_orders/post](https://www.mercadopago.com.mx/developers/es/reference/orders/_orders/post)
+> - **Referencia de API - Consultar Orden (`GET /v1/orders/{order_id}`):** [developers.mercadopago.com/es/reference/orders/_orders_id/get](https://www.mercadopago.com.mx/developers/es/reference/orders/_orders_id/get)
+> - **Referencia de Webhooks y Notificaciones de Órdenes:** [developers.mercadopago.com/es/docs/your-integrations/notifications/webhooks](https://www.mercadopago.com.mx/developers/es/docs/your-integrations/notifications/webhooks)
 
-2. **Tolerancia Cero en Validación de Montos (`transaction_amount` en Centavos):**
-   - El monto reportado por Mercado Pago se convierte de pesos a centavos mediante:
-     $$\text{montoCentavos} = \text{Math.round}(\text{payment.transaction\_amount} \times 100)$$
-   - Se exige **igualdad estricta (tolerancia cero)** contra el monto esperado del pago en centavos:
-     $$\text{montoCentavos} === \text{pagoEsperado.montoCentavos}$$
+1. **Gestión de Secretos y Configuración de Entornos (`MP_ENV`):**
+   - Los secretos obligatorios (`MP_ACCESS_TOKEN`, `MP_WEBHOOK_SECRET`, `QUOTES_TOKEN_SECRET`, `CART_SESSION_SECRET`) se configuran en Google Cloud Secret Manager mediante `firebase apphosting:secrets:set`.
+   - Si falta algún secreto en tiempo de ejecución en producción, `src/lib/config/secrets.ts` bloquea el arranque con `[FATAL - SECRET MANAGER]`.
+   - **Detección de Sandbox con `MP_ENV`:** Para soportar las nuevas credenciales de prueba de Mercado Pago (que pueden comenzar tanto con `TEST-` como con `APP_USR-`), se incorporó la variable de entorno `MP_ENV=sandbox|production` en `apphosting.yaml`.
+   - La función `isMercadoPagoSandbox()` prioriza el valor explícito de `MP_ENV` y mantiene compatibilidad heurística si el token inicia con `TEST-`. En la API de Orders, la respuesta incluye directamente el `checkout_url` que gestiona de manera transparente el entorno de pruebas (`ORDTST...`) o de producción (`ORD...`).
+
+2. **Creación de Órdenes en Checkout Pro (`POST /v1/orders`):**
+   - Las órdenes se inicializan con:
+     - `type: "online"` y `processing_mode: "manual"` (requerido para redirección a Checkout Pro).
+     - `capture_mode: "automatic"` (captura inmediata y directa).
+     - `total_amount`: Monto total de la exhibición en centavos convertidos a pesos con 2 decimales (`montoPesos.toFixed(2)`), verificado estrictamente igual a la suma de los ítems.
+     - `external_reference`: Referencia granular por exhibición (`CT-XXXXXXX:P1`, `:P2`, `:P3`).
+     - Header obligatorio `X-Idempotency-Key`: UUID único generado por intento (`crypto.randomUUID()`).
+   - **Restricción Estricta de Medios de Pago:** En Orders API, los medios excluidos se definen en `config.payment_method.not_allowed_types`. Se excluyen: `["ticket", "bank_transfer", "account_money", "wallet", "atm"]`. De este modo, únicamente se aceptan tarjetas de crédito y débito bancarias (`credit_card`, `debit_card`), evitando pagos pendientes diferidos en tiendas de conveniencia.
+   - **Retorno Automático:** En `config.online` se configuran `success_url`, `failure_url`, `pending_url` y `auto_return: "approved"`.
+
+3. **Tolerancia Cero en Validación de Montos (`total_amount` en Centavos):**
+   - El monto reportado por la orden o el pago de Mercado Pago se convierte de pesos a centavos mediante:
+     $$\text{montoCentavosCobrado} = \text{Math.round}(\text{total\_amount} \times 100)$$
+   - Se exige **igualdad estricta (tolerancia cero)** contra el monto esperado de la cuota:
+     $$\text{montoCentavosCobrado} === \text{pagoEsperado.montoCentavos}$$
    - Cualquier variación, aunque sea de 1 centavo, traslada inmediatamente la orden al estado `"revision_manual"` con motivo `"monto_discrepante"` y registra una alerta en `auditLog`.
 
-3. **Referencia Granular por Exhibición (`external_reference = CT-XXXXXXX:P1`, `:P2`, `:P3`):**
-   - Para soportar planes diferidos (`credi_contado` 55%/45% y `enganche_mensualidades`), cada exhibición individual genera su propia preferencia de pago en Mercado Pago con `external_reference = "${folio}:${pagoId}"`.
-   - El webhook parsea el folio y el identificador de pago (`:P1`, `:P2`, etc.) y valida el monto exclusivamente contra esa cuota específica.
-   - La orden en Firestore mantiene el estado granular de cada cuota: `estado` ("pendiente" | "aprobado" | "rechazado"), `preferenceId`, `paymentId` y `pagadoAt`.
+4. **Referencia Granular por Exhibición (`external_reference = CT-XXXXXXX:P1`, `:P2`, `:P3`):**
+   - Para esquemas diferidos (`credi_contado` 55%/45% y `enganche_mensualidades`), cada exhibición individual genera su propia orden en Mercado Pago con `external_reference = "${folio}:${pagoId}"`.
+   - El webhook descompone el folio y la cuota objetivo (`:P1`, `:P2`, etc.) y acredita el pago exclusivamente sobre esa exhibición.
+   - La orden en Firestore mantiene el estado granular de cada cuota: `estado` ("pendiente" | "aprobado" | "rechazado"), `orderMpId`, `preferenceId`, `paymentId` y `pagadoAt`.
 
-4. **Protección Criptográfica en `/pedido/[folio]`:**
+5. **Webhook con Orders API y Validación Criptográfica:**
+   - **Evento a registrar en el panel de Mercado Pago Developers:** **`Order (Mercado Pago)`** (tópico `order` / `orders`).
+   - El webhook en `/api/webhooks/mercadopago`:
+     - Valida `MP_WEBHOOK_SECRET === "temporal-pendiente"` (responde `503 Service Unavailable` antes de registrar la URL).
+     - Valida la firma criptográfica `x-signature` reconstruyendo el hash HMAC-SHA256 con la plantilla oficial `id:[data.id];request-id:[x-request-id];ts:[ts];`.
+     - Si la notificación corresponde a una orden (`type === "orders"` o `dataId.startsWith("ORD")`), consulta `GET /v1/orders/{order_id}`. Si corresponde a un evento de pago heredado, consulta `GET /v1/payments/{payment_id}`.
+     - Valida idempotencia (si la cuota ya fue acreditada previamente con ese mismo ID de orden/pago, retorna `200 OK` de inmediato sin reejecutar efectos secundarios).
+     - Al procesarse la orden (`status: "processed"`), actualiza Firestore, crea la cita en `installations` (para P1) y notifica por correo a soporte técnico.
+
+6. **Protección Criptográfica en `/pedido/[folio]`:**
    - Al igual que `/c/[folio]`, la página de seguimiento `/pedido/[folio]?t=token` exige un token criptográfico no adivinable (`crypto.randomBytes(24)` en base64url).
    - En la base de datos solo vive el hash SHA-256 del token. Peticiones sin token o con token erróneo reciben pantalla de acceso denegado.
-   - **Manejo de retornos de Mercado Pago (`back_urls`):** El cliente retornado a `/pedido/[folio]?t=token&mp_status=processing` ve un estado de *"Procesando pago..."*. La acreditación oficial y el cambio a `"pagado"` o `"anticipo_pagado"` es potestad exclusiva del Webhook tras validar la firma criptográfica y consultar a `/v1/payments/{id}`.
+   - **Manejo de retornos de Mercado Pago (`back_urls`):** El cliente retornado a `/pedido/[folio]?t=token&mp_status=processing` ve un estado de *"Procesando pago..."*. La acreditación oficial y el cambio a `"pagado"` o `"anticipo_pagado"` es potestad exclusiva del Webhook tras validar la firma criptográfica y consultar a `/v1/orders/{id}`.
 
 5. **Medios de Pago Permitidos en Checkout Pro:**
    - Se configuran `excluded_payment_types: [{ id: "ticket" }, { id: "bank_transfer" }, { id: "atm" }]`.
