@@ -6,6 +6,7 @@ import { verifyCartSession, CART_SESSION_COOKIE_NAME } from "@/lib/cart/session"
 import { generarSiguienteFolio, generarTokenAleatorio, hashToken } from "@/lib/quotes";
 import { crearPreferenciaMercadoPago } from "@/lib/mercadopago";
 import { Order, OrderPagoProgramado } from "@/types/order";
+import { notificarConfirmacionPedidoCliente } from "@/lib/services/email-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -141,6 +142,12 @@ export async function POST(req: NextRequest) {
       orderFolio: folio,
       updatedAt: nowIso,
     });
+
+    // Enviar confirmación de pedido por correo al cliente
+    const origin = req.nextUrl.origin || "http://localhost:3000";
+    await notificarConfirmacionPedidoCliente(order, token, origin).catch((err) =>
+      console.error("[crear-orden] Error enviando confirmación por correo:", err)
+    );
 
     return NextResponse.json({
       success: true,

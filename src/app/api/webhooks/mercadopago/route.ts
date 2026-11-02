@@ -6,6 +6,7 @@ import {
   getMercadoPagoWebhookSecret,
 } from "@/lib/mercadopago";
 import { Order, OrderPagoProgramado } from "@/types/order";
+import { notificarFichaInstalacionASoporte } from "@/lib/services/email-service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -232,6 +233,11 @@ export async function POST(req: NextRequest) {
             updatedAt: nowIso,
           },
           { merge: true }
+        );
+
+        // Notificar ficha técnica completa a soporte
+        await notificarFichaInstalacionASoporte(orderData).catch((err) =>
+          console.error("[Webhook MP] Error notificando ficha a soporte:", err)
         );
       }
 

@@ -2,6 +2,11 @@ import { adminDb } from "@/lib/firebase/admin";
 import { Order, OrderEstado, OrderPagoProgramado } from "@/types/order";
 import { crearPreferenciaMercadoPago } from "@/lib/mercadopago";
 import { generarTokenAleatorio, hashToken } from "@/lib/quotes";
+import {
+  notificarFichaInstalacionASoporte,
+  notificarResultadoSpeiCliente,
+  notificarCobroDiferidoCliente,
+} from "@/lib/services/email-service";
 
 export interface GenerarLinkPagoResultado {
   pagoId: string;
@@ -78,6 +83,11 @@ export async function generarLinkPagoExhibicion(
   });
 
   const linkPublico = `${origin}/pedido/${orderFolio}?t=${token}&pago=${pagoId}`;
+
+  // Enviar notificación de cobro diferido por correo al cliente
+  await notificarCobroDiferidoCliente(order, pago, token, linkPublico, origin).catch((err) =>
+    console.error("[generarLinkPagoExhibicion] Error notificando cobro diferido:", err)
+  );
 
   return {
     pagoId,
@@ -305,6 +315,19 @@ export async function aprobarPagoSpei(
     fecha: nowIso,
   });
 
+  // Generar token seguro y emitir notificaciones por correo
+  const clientToken = generarTokenAleatorio();
+  const clientTokenHash = hashToken(clientToken);
+  await orderRef.update({ tokenHash: clientTokenHash });
+
+  await notificarFichaInstalacionASoporte(order).catch((err) =>
+    console.error("[aprobarPagoSpei] Error notificando ficha a soporte:", err)
+  );
+
+  await notificarResultadoSpeiCliente(order, clientToken, "aprobado").catch((err) =>
+    console.error("[aprobarPagoSpei] Error notificando acreditación SPEI a cliente:", err)
+  );
+
   return {
     folio: order.folio,
     estado: nuevoEstado,
@@ -366,6 +389,15 @@ export async function rechazarComprobanteSpei(
     motivoRechazo: motivoRechazo.trim(),
     fecha: nowIso,
   });
+
+  // Generar token seguro y notificar al cliente del rechazo con el motivo
+  const clientToken = generarTokenAleatorio();
+  const clientTokenHash = hashToken(clientToken);
+  await orderRef.update({ tokenHash: clientTokenHash });
+
+  await notificarResultadoSpeiCliente(order, clientToken, "rechazado", motivoRechazo.trim()).catch((err) =>
+    console.error("[rechazarComprobanteSpei] Error notificando rechazo SPEI a cliente:", err)
+  );
 
   return {
     folio: order.folio,
