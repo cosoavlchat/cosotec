@@ -130,13 +130,57 @@ async function generateSolutionCards() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const logoBuffer = await sharp(path.resolve(process.cwd(), "public/logo-cosotec-transparent.png"))
-    .resize({ width: 220, height: 53, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+  const logoPath = path.resolve(process.cwd(), "public/logo-cosotec.png");
+  const logoMeta = await sharp(logoPath).metadata();
+
+  const logoWidth = 240;
+  const logoHeight = Math.round(logoWidth * (logoMeta.height! / logoMeta.width!)); // ~58px
+
+  // Redimensionar logo transparente oficial con alta calidad lanczos3
+  const resizedLogo = await sharp(logoPath)
+    .resize(logoWidth, logoHeight, { fit: "contain", kernel: "lanczos3" })
     .png()
     .toBuffer();
 
+  // Generar sombra oscura sutil a partir del canal alfa del logo
+  const shadowBuffer = await sharp(resizedLogo)
+    .ensureAlpha()
+    .linear([0, 0, 0], [0, 0, 0])
+    .blur(2.5)
+    .toBuffer();
+
+  // Halo radial blanco suave para colocar justo detrás de la sombra
+  const haloWidth = logoWidth + 50;
+  const haloHeight = logoHeight + 36;
+  const haloSvg = `
+  <svg width="${haloWidth}" height="${haloHeight}" viewBox="0 0 ${haloWidth} ${haloHeight}" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="halo" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.60"/>
+        <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.35"/>
+        <stop offset="70%" stop-color="#FFFFFF" stop-opacity="0.08"/>
+        <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="${haloWidth / 2}" cy="${haloHeight / 2}" rx="${haloWidth * 0.48}" ry="${haloHeight * 0.46}" fill="url(#halo)"/>
+  </svg>
+  `;
+  const haloBuffer = await sharp(Buffer.from(haloSvg)).png().toBuffer();
+
   const width = 800;
   const height = 600; // 4:3 landscape card ratio
+
+  const centerY = 512;
+  const centerX = 645;
+
+  const haloLeft = Math.round(centerX - haloWidth / 2);
+  const haloTop = Math.round(centerY - haloHeight / 2);
+
+  const logoLeft = Math.round(centerX - logoWidth / 2);
+  const logoTop = Math.round(centerY - logoHeight / 2);
+
+  const shadowLeft = logoLeft;
+  const shadowTop = logoTop + 2;
 
   for (const sol of solutions) {
     const svgBackground = `
@@ -155,12 +199,6 @@ async function generateSolutionCards() {
           <stop offset="0%" stop-color="${sol.accentColor}" stop-opacity="0.8"/>
           <stop offset="100%" stop-color="${sol.accentColor}" stop-opacity="0"/>
         </linearGradient>
-        <radialGradient id="logoRadialGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/>
-          <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.45"/>
-          <stop offset="75%" stop-color="#FFFFFF" stop-opacity="0.12"/>
-          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-        </radialGradient>
       </defs>
 
       <!-- Fondo Degradado -->
@@ -200,39 +238,32 @@ async function generateSolutionCards() {
       </text>
 
       <!-- Tarjeta inferior decorativa con sello telemático -->
-      <rect x="50" y="480" width="400" height="60" rx="14" fill="black" fill-opacity="0.45" stroke="white" stroke-width="0.8" stroke-opacity="0.12"/>
-      <circle cx="80" cy="510" r="12" fill="${sol.accentColor}" fill-opacity="0.2"/>
-      <circle cx="80" cy="510" r="5" fill="${sol.accentColor}"/>
-      <text x="105" y="505" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">
+      <rect x="50" y="485" width="390" height="54" rx="14" fill="black" fill-opacity="0.45" stroke="white" stroke-width="0.8" stroke-opacity="0.12"/>
+      <circle cx="80" cy="512" r="11" fill="${sol.accentColor}" fill-opacity="0.2"/>
+      <circle cx="80" cy="512" r="4.5" fill="${sol.accentColor}"/>
+      <text x="105" y="506" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="700" fill="#FFFFFF">
         TECNOLOGÍA TELEMÁTICA AVANZADA
       </text>
-      <text x="105" y="523" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#9CA3AF">
+      <text x="105" y="524" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="500" fill="#9CA3AF">
         Hardware de alta resistencia • Garantía CoSoAVL
       </text>
-
-      <!-- Resplandor Radial Blanco Suave detrás del Logo (Sin caja sólida) -->
-      <ellipse cx="645" cy="528" rx="140" ry="46" fill="url(#logoRadialGlow)" />
 
       <!-- Borde general de tarjeta -->
       <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="24" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.12"/>
     </svg>
     `;
 
-    // Combinar fondo con el logo oficial CosoTec en la esquina inferior derecha
+    // Combinar fondo con halo blanco suave, sombra y logo oficial nítido
     const baseImage = sharp(Buffer.from(svgBackground));
-    
-    // El logo en la esquina inferior derecha sobre el contenedor blanco
     const compositeImage = await baseImage.composite([
-      {
-        input: logoBuffer,
-        top: 502,
-        left: 538,
-      },
+      { input: haloBuffer, top: haloTop, left: haloLeft },
+      { input: shadowBuffer, top: shadowTop, left: shadowLeft },
+      { input: resizedLogo, top: logoTop, left: logoLeft },
     ]);
 
     const targetWebp = path.join(outputDir, `${sol.slug}.webp`);
-    await compositeImage.webp({ quality: 90 }).toFile(targetWebp);
-    console.log(`✅ Generada tarjeta: public/solutions/${sol.slug}.webp`);
+    await compositeImage.webp({ quality: 92 }).toFile(targetWebp);
+    console.log(`✅ Generada tarjeta con logo oficial: public/solutions/${sol.slug}.webp`);
   }
 }
 
