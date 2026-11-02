@@ -25,3 +25,4 @@ Este documento registra las tareas operativas y configuraciones externas que no 
 ### 4. Terminal Punto de Venta (TPV) Presencial en Taller (Opcional)
 * **Estado actual:** El flujo actual de venta en línea cubre pagos con tarjeta de crédito/débito/prepago (Mercado Pago) y transferencia bancaria directa (SPEI).
 * **Acción futura:** Si CoSoAVL decide habilitar cobro presencial en el taller matriz de Metepec, podrá integrarse el SDK de Mercado Pago Point o terminal bancaria física asociada a la orden del cliente.
+

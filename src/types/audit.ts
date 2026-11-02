@@ -3,9 +3,9 @@ export interface AuditLogEntry {
   timestamp: string; // ISO 8601
   userId: string;
   userEmail: string;
-  entity: "product" | "package" | "pricing" | "travelFee" | "user" | "bank" | "contact" | "zonasSinCosto";
+  entity: "product" | "package" | "pricing" | "travelFee" | "user" | "bank" | "contact" | "zonasSinCosto" | "customer" | "quote";
   entityId: string;
-  action: "create" | "update" | "delete" | "toggle_status" | "set_role";
+  action: "create" | "update" | "delete" | "toggle_status" | "set_role" | "approve" | "reject" | "reassign" | "request_reassign";
   before: any;
   after: any;
   metadata?: Record<string, any>;

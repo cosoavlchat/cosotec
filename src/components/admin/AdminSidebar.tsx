@@ -51,18 +51,16 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
       roles: ["admin"] as UserRole[],
     },
     {
-      title: "Cotizaciones (Fase 4)",
+      title: "Cotizaciones",
       href: "/admin/cotizaciones",
       icon: FileText,
       roles: ["admin", "vendedor"] as UserRole[],
-      disabled: true,
     },
     {
-      title: "Clientes (Fase 4)",
+      title: "Clientes",
       href: "/admin/clientes",
       icon: UserCheck,
       roles: ["admin", "vendedor"] as UserRole[],
-      disabled: true,
     },
     {
       title: "Pedidos y SPEI",

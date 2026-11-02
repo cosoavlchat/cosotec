@@ -97,3 +97,60 @@ export function buildWhatsAppCartFallbackLink({
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
 
+/**
+ * Normaliza un número telefónico a 10 dígitos limpios para México.
+ * Ejemplo: "+52 1 (722) 432-2053" -> "7224322053"
+ */
+export function normalizarWhatsapp(input: string): string {
+  if (!input) return "";
+  let digits = input.replace(/\D/g, "");
+  if (digits.startsWith("521") && digits.length === 13) {
+    digits = digits.slice(3);
+  } else if (digits.startsWith("52") && digits.length === 12) {
+    digits = digits.slice(2);
+  } else if (digits.length === 11 && digits.startsWith("1")) {
+    digits = digits.slice(1);
+  }
+  return digits;
+}
+
+/**
+ * Formatea un número de 10 dígitos para visualización limpia (ej. "722 432 2053").
+ */
+export function formatearWhatsapp(input: string): string {
+  const norm = normalizarWhatsapp(input);
+  if (norm.length !== 10) return input;
+  return `${norm.slice(0, 3)} ${norm.slice(3, 6)} ${norm.slice(6)}`;
+}
+
+/**
+ * Genera el enlace de WhatsApp que el vendedor envía al cliente con la cotización lista.
+ */
+export function buildEnvioCotizacionWhatsAppLink({
+  clienteWhatsapp,
+  clienteNombre,
+  folio,
+  token,
+  totalFormateado,
+  baseUrl = "https://cosotec--cosotec7.us-east4.hosted.app",
+}: {
+  clienteWhatsapp: string;
+  clienteNombre: string;
+  folio: string;
+  token: string;
+  totalFormateado: string;
+  baseUrl?: string;
+}): string {
+  const norm = normalizarWhatsapp(clienteWhatsapp);
+  const linkWeb = `${baseUrl}/c/${folio}?t=${token}`;
+
+  const mensaje =
+    `Hola ${clienteNombre}, te comparto tu cotización oficial de *CoSoAVL - CosoTec* con folio *${folio}*:\n\n` +
+    `💰 *Inversión Total:* ${totalFormateado} (IVA e instalación profesional incluidos)\n\n` +
+    `📄 *Puedes consultar el detalle completo y pagar en línea aquí:*\n` +
+    `${linkWeb}\n\n` +
+    `Quedo a tus órdenes para cualquier duda o para agendar la fecha de instalación de tus unidades.`;
+
+  return `https://wa.me/521${norm}?text=${encodeURIComponent(mensaje)}`;
+}
+
