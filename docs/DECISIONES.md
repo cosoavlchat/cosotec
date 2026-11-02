@@ -122,6 +122,9 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
    - Este comando crea automáticamente el secreto en Google Cloud Secret Manager del proyecto `cosotec7` y otorga permisos de lectura (`roles/secretmanager.secretAccessor`) a la cuenta de servicio de App Hosting (`service-358372577691@gcp-sa-apphosting.iam.gserviceaccount.com`).
    - En `apphosting.yaml` se referencian bajo la clave `env:` para su inyección segura en tiempo de ejecución.
    - **Fallo preventivo al arrancar:** En `src/lib/config/secrets.ts`, si alguno de estos secretos obligatorios no está presente al arrancar en producción, la aplicación arroja un error crítico inmediato (`[FATAL - SECRET MANAGER]`), bloqueando la ejecución para evitar procesar transacciones en estados inconsistentes.
+   - **Credenciales Sandbox vs Producción de Mercado Pago:**
+     - **Etapa de Validación / Despliegue Inicial (Sandbox):** Se debe configurar `MP_ACCESS_TOKEN` con el token de prueba que inicia con `TEST-...` obtenido en *Mercado Pago Developers > Tus integraciones > Credenciales de prueba*. El código (`src/lib/mercadopago/index.ts`) detecta el prefijo `TEST-` y redirige automáticamente al `sandbox_init_point` donde operan las tarjetas ficticias de prueba autorizadas.
+     - **Etapa de Lanzamiento (Producción):** Se actualiza `MP_ACCESS_TOKEN` con el token productivo `APP_USR-...`. El código transiciona automáticamente a `init_point` real sin requerir cambios de software.
 
 2. **Tolerancia Cero en Validación de Montos (`transaction_amount` en Centavos):**
    - El monto reportado por Mercado Pago se convierte de pesos a centavos mediante:

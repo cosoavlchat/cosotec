@@ -10,16 +10,20 @@ import {
   getAppBaseUrl,
 } from "./email-helpers";
 
+import { TurnosSettings } from "@/lib/services/shifts-service";
+
 interface FichaInstalacionEmailProps {
   order: Order;
   siteUrl?: string;
   customFooter?: string;
+  turnosSettings?: TurnosSettings;
 }
 
 export function FichaInstalacionEmail({
   order,
   siteUrl,
   customFooter,
+  turnosSettings,
 }: FichaInstalacionEmailProps) {
   const {
     folio,
@@ -195,7 +199,7 @@ export function FichaInstalacionEmail({
                     <tr>
                       <td style={{ padding: "4px 0", color: "#6B7280" }}>Horario de Atención:</td>
                       <td style={{ padding: "4px 0", fontWeight: "600" }}>
-                        {formatHorarioEspanol(instalacion.horarioTentativo)}
+                        {formatHorarioEspanol(instalacion.horarioTentativo, turnosSettings)}
                       </td>
                     </tr>
                     <tr>

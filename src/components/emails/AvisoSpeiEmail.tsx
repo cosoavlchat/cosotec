@@ -28,7 +28,7 @@ export function AvisoSpeiEmail({
 }: AvisoSpeiEmailProps) {
   const { folio, contacto, totalCentavos, pagos = [], saldoRestanteCentavos, montoPrimerPagoCentavos } = order;
   const baseUrl = getAppBaseUrl(siteUrl);
-  const trackingUrl = `${baseUrl}/pedido/${folio}?t=${token}`;
+  const trackingUrl = baseUrl ? `${baseUrl}/pedido/${folio}?t=${token}` : `/pedido/${folio}?t=${token}`;
   const nombreSaludo = limpiarTituloSaludo(contacto.nombre);
 
   const esAprobado = accion === "aprobado";

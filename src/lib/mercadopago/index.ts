@@ -214,10 +214,11 @@ export async function crearPreferenciaMercadoPago(
   }
 
   const data = await res.json();
+  const isTestMode = accessToken.startsWith("TEST-");
 
   return {
     id: data.id,
-    initPoint: data.init_point,
+    initPoint: isTestMode ? (data.sandbox_init_point || data.init_point) : data.init_point,
     sandboxInitPoint: data.sandbox_init_point || data.init_point,
   };
 }

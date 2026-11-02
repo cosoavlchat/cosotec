@@ -21,7 +21,7 @@ env:
   - variable: RESEND_API_KEY
     secret: RESEND_API_KEY
   - variable: APP_BASE_URL
-    value: https://cosotec7.web.app
+    value: ""
   - variable: NEXT_PUBLIC_SITE_URL
-    value: https://cosotec7.web.app
+    value: ""
 

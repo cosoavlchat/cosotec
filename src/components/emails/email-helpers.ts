@@ -52,15 +52,21 @@ export function formatFechaEspanol(fechaIso?: string): string {
   return `${diaSemana} ${day} de ${mes} de ${year}`;
 }
 
+import { DEFAULT_TURNOS_SETTINGS, TurnosSettings } from "@/lib/services/shifts-service";
+
 /**
- * 7. Formato de horario con 'ñ': "Mañana" / "Tarde" / "Día completo".
+ * 7. Formato de horario con 'ñ': "Mañana (09:00–14:00)" / "Tarde (14:00–18:00)".
+ * 3. Se lee de settings/shifts con fallback configurable.
  */
-export function formatHorarioEspanol(horario?: string): string {
+export function formatHorarioEspanol(
+  horario?: string,
+  turnosConfig: TurnosSettings = DEFAULT_TURNOS_SETTINGS
+): string {
   if (!horario) return "Por coordinar";
   const h = horario.toLowerCase().trim();
-  if (h === "manana" || h === "mañana") return "Mañana (09:00 - 14:00 hrs)";
-  if (h === "tarde") return "Tarde (14:00 - 18:00 hrs)";
-  if (h === "completo" || h === "dia_completo") return "Día completo (09:00 - 18:00 hrs)";
+  if (h === "manana" || h === "mañana") return turnosConfig.manana.etiqueta;
+  if (h === "tarde") return turnosConfig.tarde.etiqueta;
+  if (h === "completo" || h === "dia_completo") return turnosConfig.completo.etiqueta;
   return horario;
 }
 
@@ -79,15 +85,17 @@ export function formatTelefonoLocal(tel?: string): string {
 }
 
 /**
- * 8. Dominio y base URL: Lee APP_BASE_URL por defecto, evitando cosotec.com fijo.
+ * 8. Dominio y base URL: Lee APP_BASE_URL de entorno sin valor por defecto fijo.
+ * Si falta, retorna string vacío para generar rutas relativas.
  */
 export function getAppBaseUrl(siteUrlOverride?: string): string {
   if (siteUrlOverride && siteUrlOverride.trim() !== "") {
     return siteUrlOverride.replace(/\/+$/, "");
   }
-  return (
-    process.env.APP_BASE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "https://cosotec7.web.app"
-  ).replace(/\/+$/, "");
+  const envUrl = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (envUrl && envUrl.trim() !== "") {
+    return envUrl.trim().replace(/\/+$/, "");
+  }
+  return "";
 }
+

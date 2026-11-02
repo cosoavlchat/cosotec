@@ -84,7 +84,15 @@ export default async function HomePage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#4A0C18] via-[#7A1428] to-[#4A0C18] text-white py-20 px-6 sm:py-28">
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/hero-fleet-protection.jpg"
+            alt="Rastreo Satelital y Telemetría de Flotillas CosoTec"
+            className="w-full h-full object-cover object-center opacity-25 mix-blend-luminosity"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#4A0C18]/85 via-[#7A1428]/80 to-[#4A0C18]" />
+        </div>
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/30 border border-[#C9A15B]/40 text-[#C9A15B] text-xs font-bold uppercase tracking-wider animate-in fade-in zoom-in duration-300">
@@ -220,6 +228,46 @@ export default async function HomePage() {
                 <p className="text-xs text-gray-600 leading-relaxed">{paso.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Centro de Monitoreo & Plataforma de Ingeniería */}
+      <section className="max-w-7xl mx-auto px-6">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#1c1214] via-[#2d1218] to-[#12080a] text-white border border-[#C9A15B]/30 shadow-2xl grid grid-cols-1 lg:grid-cols-12 items-center">
+          <div className="p-8 sm:p-12 lg:col-span-7 space-y-6 relative z-10">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C9A15B]/20 border border-[#C9A15B]/40 text-[#C9A15B] text-xs font-bold uppercase tracking-wider">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Monitoreo 24/7 y Homologación Nacional</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Control total de tu flota con ingeniería satelital de vanguardia
+            </h2>
+            <p className="text-gray-300 text-sm sm:text-base leading-relaxed">
+              Servidores dedicados de alta disponibilidad, geocercas en tiempo real, corte de motor remoto seguro, detección de sabotaje de antenas y tecnología anti-jammer homologada ante corporaciones de seguridad y aseguradoras en todo México.
+            </p>
+            <div className="pt-2 flex flex-wrap gap-3 text-xs font-semibold">
+              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
+                <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
+                <span>Compatibilidad Espejo C4 / C5</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
+                <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
+                <span>99.9% Uptime de Servidores</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-xs border border-white/10">
+                <CheckCircle className="w-4 h-4 text-[#C9A15B]" />
+                <span>Instalación Oculta Certificada</span>
+              </div>
+            </div>
+          </div>
+          <div className="lg:col-span-5 h-64 lg:h-full relative min-h-[320px]">
+            <img
+              src="/monitoring-soc.jpg"
+              alt="Centro de Operaciones y Monitoreo de Flotas CosoTec"
+              className="absolute inset-0 w-full h-full object-cover object-center"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#1c1214] via-transparent to-transparent opacity-80" />
           </div>
         </div>
       </section>

@@ -21,6 +21,8 @@ let mockEmailQueue: any[] = [];
 let mockAuditLog: any[] = [];
 let mockNotificationsDoc: any = null;
 let mockContactDoc: any = null;
+let mockShiftsDoc: any = null;
+let mockBankDoc: any = null;
 
 vi.mock("@/lib/firebase/admin", () => ({
   adminDb: {
@@ -42,6 +44,18 @@ vi.mock("@/lib/firebase/admin", () => ({
             return {
               exists: Boolean(mockContactDoc),
               data: () => mockContactDoc,
+            };
+          }
+          if (col === "settings" && id === "shifts") {
+            return {
+              exists: Boolean(mockShiftsDoc),
+              data: () => mockShiftsDoc,
+            };
+          }
+          if (col === "settings" && id === "bank") {
+            return {
+              exists: Boolean(mockBankDoc),
+              data: () => mockBankDoc,
             };
           }
           return { exists: false, data: () => null };
@@ -134,6 +148,8 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
     mockAuditLog = [];
     mockNotificationsDoc = null;
     mockContactDoc = null;
+    mockShiftsDoc = null;
+    mockBankDoc = null;
     delete process.env.RESEND_API_KEY;
     delete process.env.APP_BASE_URL;
     vi.restoreAllMocks();
@@ -164,10 +180,10 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
     });
 
     it("7. Horario: utiliza 'ñ' para Mañana y formatea rangos", () => {
-      expect(formatHorarioEspanol("manana")).toBe("Mañana (09:00 - 14:00 hrs)");
-      expect(formatHorarioEspanol("mañana")).toBe("Mañana (09:00 - 14:00 hrs)");
-      expect(formatHorarioEspanol("tarde")).toBe("Tarde (14:00 - 18:00 hrs)");
-      expect(formatHorarioEspanol("completo")).toBe("Día completo (09:00 - 18:00 hrs)");
+      expect(formatHorarioEspanol("manana")).toBe("Mañana (09:00–14:00)");
+      expect(formatHorarioEspanol("mañana")).toBe("Mañana (09:00–14:00)");
+      expect(formatHorarioEspanol("tarde")).toBe("Tarde (14:00–18:00)");
+      expect(formatHorarioEspanol("completo")).toBe("Día completo (09:00–18:00)");
     });
 
     it("7. Teléfonos: formatea números a estándar local 10 dígitos (XXX XXX XXXX)", () => {
@@ -219,7 +235,7 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
 
       // 7. Fecha y horario en español
       expect(html).toContain("jueves 12 de noviembre de 2026");
-      expect(html).toContain("Mañana (09:00 - 14:00 hrs)");
+      expect(html).toContain("Mañana (09:00–14:00)");
     });
   });
 
@@ -252,14 +268,64 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
       const html = mockEmailQueue[0].html;
       expect(html).toContain("Pedido Registrado · Pendiente de Pago SPEI");
       expect(html).toContain("Datos de Transferencia Bancaria (SPEI)");
-      expect(html).toContain("012 420 001155998877");
-      expect(html).toContain("BBVA México");
-      expect(html).toContain("CoSoAVL");
+      expect(html).toContain("Banco de prueba");
+      expect(html).toContain("CUENTA DE PRUEBA – NO TRANSFERIR");
+      expect(html).toContain("012180001234567897");
+      expect(html).toContain("DATOS BANCARIOS DE PRUEBA – NO REALIZAR TRANSFERENCIAS");
       expect(html).toContain("Subir Comprobante de Pago");
 
       // No debe decir que ya se inició nada
       expect(html).not.toContain("Nuestro equipo ya inició");
       expect(html).not.toContain("plataforma de ingeniería satelital");
+    });
+
+    it("1. CANDADO ESTRICTO: ningún correo ni plantilla contiene 'BBVA', 'Bancomer' ni 'Beneficiario CoSoAVL'", async () => {
+      // Probar todas las plantillas generadas
+      await notificarFichaInstalacionASoporte(dummyOrder);
+      await notificarConfirmacionPedidoCliente(dummyOrder, "tok1");
+      const speiOrder = { ...dummyOrder, metodoPago: "spei" as const, estado: "pendiente_comprobante" as const };
+      await notificarConfirmacionPedidoCliente(speiOrder, "tok2");
+      await notificarResultadoSpeiCliente(dummyOrder, "tok3", "aprobado");
+      await notificarResultadoSpeiCliente(dummyOrder, "tok4", "rechazado", "Motivo de prueba");
+      await notificarCobroDiferidoCliente(dummyOrder, dummyOrder.pagos[1], "tok5", "/pedido/test");
+
+      expect(mockEmailQueue.length).toBeGreaterThan(0);
+      for (const item of mockEmailQueue) {
+        expect(item.html).not.toMatch(/bbva/i);
+        expect(item.html).not.toMatch(/bancomer/i);
+        expect(item.html).not.toMatch(/beneficiario cosoavl/i);
+      }
+    });
+
+    it("2. APP_BASE_URL: si falta en entorno, los links son relativos y se registra un error en auditLog", async () => {
+      delete process.env.APP_BASE_URL;
+      delete process.env.NEXT_PUBLIC_APP_URL;
+
+      await notificarConfirmacionPedidoCliente(dummyOrder, "token_relativo");
+
+      const html = mockEmailQueue[0].html;
+      // El link debe comenzar directamente con /pedido/
+      expect(html).toContain('href="/pedido/CT-1124451?t=token_relativo"');
+      expect(html).not.toContain("https://cosotec7.web.app");
+
+      // Debe registrar error en auditLog
+      expect(mockAuditLog.some((l) => l.tipo === "error_configuracion_base_url")).toBe(true);
+    });
+
+    it("3. Horarios de turno se leen dinámicamente de settings/shifts", async () => {
+      mockShiftsDoc = {
+        manana: {
+          id: "manana",
+          nombre: "Mañana VIP",
+          horario: "08:00–13:00",
+          etiqueta: "Mañana Especial (08:00–13:00)",
+        },
+      };
+
+      await notificarFichaInstalacionASoporte(dummyOrder);
+
+      const html = mockEmailQueue[0].html;
+      expect(html).toContain("Mañana Especial (08:00–13:00)");
     });
   });
 

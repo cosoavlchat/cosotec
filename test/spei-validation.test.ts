@@ -131,7 +131,7 @@ describe("Paso 3.5: Flujo de Transferencia SPEI, Comprobantes y Validación en A
       const boundary = "----WebKitFormBoundaryTest";
       const fileContent = "%PDF-1.4 Fake PDF test content for receipt verification";
       const blob = new Blob([fileContent], { type: "application/pdf" });
-      const file = new File([blob], "transferencia_spei_bbva.pdf", { type: "application/pdf" });
+      const file = new File([blob], "transferencia_spei_banco.pdf", { type: "application/pdf" });
 
       const formData = new FormData();
       formData.append("file", file);
@@ -246,7 +246,7 @@ describe("Paso 3.5: Flujo de Transferencia SPEI, Comprobantes y Validación en A
         subidoAt: new Date().toISOString(),
       };
 
-      const resultado = await aprobarPagoSpei(folio, "admin@cosoavl.com", "Abono verificado en BBVA");
+      const resultado = await aprobarPagoSpei(folio, "admin@cosoavl.com", "Abono verificado en cuenta bancaria");
 
       expect(resultado.estado).toBe("pagado");
       expect(mockOrdersStore[folio].estado).toBe("pagado");
@@ -320,15 +320,15 @@ describe("Paso 3.5: Flujo de Transferencia SPEI, Comprobantes y Validación en A
 
     it("cuando Firestore tiene datos reales (esPrueba: false), se reflejan", async () => {
       mockSettingsStore["bank"] = {
-        banco: "BBVA Bancomer",
-        titular: "CoSoAVL Telecomunicaciones S.A. de C.V.",
+        banco: "Institución Bancaria Autorizada",
+        titular: "CoSoAVL",
         clabe: "012180001234567890",
         esPrueba: false,
       };
 
       const settings = await getBankSettings();
-      expect(settings.banco).toBe("BBVA Bancomer");
-      expect(settings.titular).toBe("CoSoAVL Telecomunicaciones S.A. de C.V.");
+      expect(settings.banco).toBe("Institución Bancaria Autorizada");
+      expect(settings.titular).toBe("CoSoAVL");
       expect(settings.esPrueba).toBe(false);
     });
   });

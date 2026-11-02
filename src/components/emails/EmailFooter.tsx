@@ -45,3 +45,4 @@ export function EmailFooter({ customText }: EmailFooterProps) {
     </tr>
   );
 }
+

@@ -6,10 +6,31 @@ import { ConfirmacionPedidoEmail } from "@/components/emails/ConfirmacionPedidoE
 import { AvisoSpeiEmail } from "@/components/emails/AvisoSpeiEmail";
 import { CobroDiferidoEmail } from "@/components/emails/CobroDiferidoEmail";
 import { DEFAULT_EMAIL_FOOTER, getAppBaseUrl } from "@/components/emails/email-helpers";
+import { getBankSettings } from "@/lib/services/bank-service";
+import { getTurnosSettings } from "@/lib/services/shifts-service";
 
 async function renderHtml(element: React.ReactElement): Promise<string> {
   const { renderToStaticMarkup } = await import("react-dom/server");
   return renderToStaticMarkup(element);
+}
+
+/**
+ * 2. Valida si APP_BASE_URL está configurada. Si falta, registra un error en auditLog
+ * y los enlaces se generan como rutas relativas.
+ */
+async function checkBaseUrlConfigured(baseUrl: string) {
+  if (!baseUrl || baseUrl.trim() === "") {
+    console.error("[Email Service] APP_BASE_URL no está configurada en el entorno. Los enlaces se generarán relativos.");
+    try {
+      await adminDb.collection("auditLog").add({
+        tipo: "error_configuracion_base_url",
+        mensaje: "APP_BASE_URL no está configurada en el entorno. Los enlaces de correo se generaron como rutas relativas.",
+        fecha: new Date().toISOString(),
+      });
+    } catch {
+      // Ignorar fallas de auditoría
+    }
+  }
 }
 
 // 2. Fallback de soporte: solo ventas@cosoavl.com (eliminado soporte@cosoavl.com)
@@ -172,10 +193,17 @@ export async function notificarFichaInstalacionASoporte(order: Order, siteUrl?: 
   const unidadesCount = order.unidades?.length || 0;
   const subject = `[Nueva Instalación] Pedido #${order.folio} - ${order.contacto.nombre} (${unidadesCount} unidades)`;
   const baseUrl = getAppBaseUrl(siteUrl);
+  await checkBaseUrlConfigured(baseUrl);
   const customFooter = await getContactPie();
+  const turnosSettings = await getTurnosSettings();
 
   const html = await renderHtml(
-    React.createElement(FichaInstalacionEmail, { order, siteUrl: baseUrl, customFooter })
+    React.createElement(FichaInstalacionEmail, {
+      order,
+      siteUrl: baseUrl,
+      customFooter,
+      turnosSettings,
+    })
   );
 
   return enviarEmail({
@@ -190,6 +218,7 @@ export async function notificarFichaInstalacionASoporte(order: Order, siteUrl?: 
 /**
  * 2. Envía la confirmación oficial del pedido al cliente con su enlace protegido.
  * Dos versiones: Pago aprobado vs Pedido SPEI pendiente de validación.
+ * Lee los datos bancarios dinámicamente desde settings/bank vía bank-service.
  */
 export async function notificarConfirmacionPedidoCliente(order: Order, token: string, siteUrl?: string) {
   if (!order.contacto.correo) {
@@ -206,10 +235,18 @@ export async function notificarConfirmacionPedidoCliente(order: Order, token: st
     : `¡Confirmación de tu Pedido #${order.folio} en CosoTec!`;
 
   const baseUrl = getAppBaseUrl(siteUrl);
+  await checkBaseUrlConfigured(baseUrl);
   const customFooter = await getContactPie();
+  const bankSettings = await getBankSettings();
 
   const html = await renderHtml(
-    React.createElement(ConfirmacionPedidoEmail, { order, token, siteUrl: baseUrl, customFooter })
+    React.createElement(ConfirmacionPedidoEmail, {
+      order,
+      token,
+      siteUrl: baseUrl,
+      customFooter,
+      bankSettings,
+    })
   );
 
   return enviarEmail({
@@ -240,6 +277,7 @@ export async function notificarResultadoSpeiCliente(
       : `Acción requerida: Comprobante SPEI de Pedido #${order.folio}`;
 
   const baseUrl = getAppBaseUrl(siteUrl);
+  await checkBaseUrlConfigured(baseUrl);
   const customFooter = await getContactPie();
 
   const html = await renderHtml(
@@ -277,6 +315,7 @@ export async function notificarCobroDiferidoCliente(
 
   const subject = `Recordatorio de Pago ${pago.id} (${pago.concepto}) - Pedido #${order.folio}`;
   const baseUrl = getAppBaseUrl(siteUrl);
+  await checkBaseUrlConfigured(baseUrl);
   const customFooter = await getContactPie();
 
   const html = await renderHtml(

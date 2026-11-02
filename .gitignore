@@ -26,6 +26,7 @@
 serviceAccountKey*.json
 *serviceAccount*.json
 .data/
+temp-previews/
 
 # debug
 npm-debug.log*

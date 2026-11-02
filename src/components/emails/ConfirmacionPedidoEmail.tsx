@@ -1,6 +1,8 @@
 import React from "react";
 import { Order } from "@/types/order";
 import { formatMxn } from "@/lib/pricing";
+import { BankSettings } from "@/types/pricing";
+import { DEFAULT_BANK_SETTINGS } from "@/lib/services/bank-service";
 import { EmailFooter } from "./EmailFooter";
 import {
   limpiarTituloSaludo,
@@ -14,6 +16,7 @@ interface ConfirmacionPedidoEmailProps {
   token: string;
   siteUrl?: string;
   customFooter?: string;
+  bankSettings?: BankSettings;
 }
 
 export function ConfirmacionPedidoEmail({
@@ -21,6 +24,7 @@ export function ConfirmacionPedidoEmail({
   token,
   siteUrl,
   customFooter,
+  bankSettings,
 }: ConfirmacionPedidoEmailProps) {
   const {
     folio,
@@ -36,9 +40,10 @@ export function ConfirmacionPedidoEmail({
   } = order;
 
   const baseUrl = getAppBaseUrl(siteUrl);
-  const trackingUrl = `${baseUrl}/pedido/${folio}?t=${token}`;
+  const trackingUrl = baseUrl ? `${baseUrl}/pedido/${folio}?t=${token}` : `/pedido/${folio}?t=${token}`;
   const nombreSaludo = limpiarTituloSaludo(contacto.nombre);
   const telefonoCliente = formatTelefonoLocal(contacto.telefono);
+  const bank = bankSettings || DEFAULT_BANK_SETTINGS;
 
   // Determinar versión del correo: SPEI pendiente vs Pago con tarjeta acreditado
   const esSpeiPendiente =
@@ -117,7 +122,7 @@ export function ConfirmacionPedidoEmail({
                     Hemos registrado tu pedido <strong>#{folio}</strong>. Para proceder con la asignación de tus equipos y programar la fecha de instalación, realiza tu transferencia bancaria y sube tu comprobante mediante tu enlace seguro:
                   </p>
 
-                  {/* Datos Bancarios Oficiales */}
+                  {/* Datos Bancarios Oficiales Dinámicos (settings/bank) */}
                   <div
                     style={{
                       backgroundColor: "#F8FAFC",
@@ -127,6 +132,22 @@ export function ConfirmacionPedidoEmail({
                       marginBottom: "25px",
                     }}
                   >
+                    {bank.esPrueba && (
+                      <div
+                        style={{
+                          backgroundColor: "#FEF2F2",
+                          border: "1px solid #FCA5A5",
+                          borderRadius: "8px",
+                          padding: "10px 14px",
+                          marginBottom: "14px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <span style={{ color: "#991B1B", fontWeight: "bold", fontSize: "11px", letterSpacing: "0.5px" }}>
+                          ⚠️ DATOS BANCARIOS DE PRUEBA – NO REALIZAR TRANSFERENCIAS
+                        </span>
+                      </div>
+                    )}
                     <span
                       style={{
                         color: "#0F172A",
@@ -142,16 +163,16 @@ export function ConfirmacionPedidoEmail({
                       <tbody>
                         <tr>
                           <td width="38%" style={{ padding: "4px 0", color: "#64748B" }}>Banco Receptor:</td>
-                          <td style={{ padding: "4px 0", fontWeight: "700" }}>BBVA México</td>
+                          <td style={{ padding: "4px 0", fontWeight: "700" }}>{bank.banco}</td>
                         </tr>
                         <tr>
                           <td style={{ padding: "4px 0", color: "#64748B" }}>Beneficiario:</td>
-                          <td style={{ padding: "4px 0", fontWeight: "700" }}>CoSoAVL</td>
+                          <td style={{ padding: "4px 0", fontWeight: "700" }}>{bank.titular}</td>
                         </tr>
                         <tr>
                           <td style={{ padding: "4px 0", color: "#64748B" }}>CLABE Interbancaria:</td>
                           <td style={{ padding: "4px 0", fontWeight: "800", fontFamily: "monospace", fontSize: "14px", color: "#0F172A" }}>
-                            012 420 001155998877
+                            {bank.clabe}
                           </td>
                         </tr>
                         <tr>

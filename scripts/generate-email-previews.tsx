@@ -105,6 +105,9 @@ const sampleOrderSpeiPendiente: Order = {
   estado: "pendiente_comprobante",
 };
 
+import { DEFAULT_BANK_SETTINGS } from "../src/lib/services/bank-service";
+import { DEFAULT_TURNOS_SETTINGS } from "../src/lib/services/shifts-service";
+
 const samplePagoP2: OrderPagoProgramado = {
   id: "P2",
   numero: 2,
@@ -121,19 +124,45 @@ if (!fs.existsSync(outDir)) {
 }
 
 // 1. Ficha de Instalación para Soporte
-const htmlFicha = renderToStaticMarkup(<FichaInstalacionEmail order={sampleOrder} siteUrl="https://cosotec7.web.app" />);
+const htmlFicha = renderToStaticMarkup(
+  <FichaInstalacionEmail
+    order={sampleOrder}
+    siteUrl=""
+    turnosSettings={DEFAULT_TURNOS_SETTINGS}
+  />
+);
 fs.writeFileSync(path.join(outDir, "ficha-instalacion.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlFicha}</body></html>`, "utf-8");
 
 // 2. Confirmación de Pedido - Versión Pago con Tarjeta Aprobado
-const htmlConfirmacionAprobado = renderToStaticMarkup(<ConfirmacionPedidoEmail order={sampleOrder} token="ct_token_demo_98765" siteUrl="https://cosotec7.web.app" />);
+const htmlConfirmacionAprobado = renderToStaticMarkup(
+  <ConfirmacionPedidoEmail
+    order={sampleOrder}
+    token="ct_token_demo_98765"
+    siteUrl=""
+  />
+);
 fs.writeFileSync(path.join(outDir, "confirmacion-pedido.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlConfirmacionAprobado}</body></html>`, "utf-8");
 
-// 3. Confirmación de Pedido - Versión SPEI Pendiente
-const htmlConfirmacionSpei = renderToStaticMarkup(<ConfirmacionPedidoEmail order={sampleOrderSpeiPendiente} token="ct_token_demo_98765" siteUrl="https://cosotec7.web.app" />);
+// 3. Confirmación de Pedido - Versión SPEI Pendiente (con datos bancarios de prueba y aviso)
+const htmlConfirmacionSpei = renderToStaticMarkup(
+  <ConfirmacionPedidoEmail
+    order={sampleOrderSpeiPendiente}
+    token="ct_token_demo_98765"
+    siteUrl=""
+    bankSettings={DEFAULT_BANK_SETTINGS}
+  />
+);
 fs.writeFileSync(path.join(outDir, "confirmacion-spei-pendiente.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlConfirmacionSpei}</body></html>`, "utf-8");
 
 // 4. Aviso SPEI Acreditado con Desglose Exacto
-const htmlSpeiAprobado = renderToStaticMarkup(<AvisoSpeiEmail order={sampleOrder} token="ct_token_demo_98765" accion="aprobado" siteUrl="https://cosotec7.web.app" />);
+const htmlSpeiAprobado = renderToStaticMarkup(
+  <AvisoSpeiEmail
+    order={sampleOrder}
+    token="ct_token_demo_98765"
+    accion="aprobado"
+    siteUrl=""
+  />
+);
 fs.writeFileSync(path.join(outDir, "aviso-spei-aprobado.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlSpeiAprobado}</body></html>`, "utf-8");
 
 // 5. Aviso SPEI Rechazado con Motivo Detallado
@@ -143,7 +172,7 @@ const htmlSpeiRechazado = renderToStaticMarkup(
     token="ct_token_demo_98765"
     accion="rechazado"
     motivoRechazo="El comprobante no muestra la cuenta CLABE receptora ni la clave de rastreo de Banxico. Favor de adjuntar el PDF oficial de su banca en línea."
-    siteUrl="https://cosotec7.web.app"
+    siteUrl=""
   />
 );
 fs.writeFileSync(path.join(outDir, "aviso-spei-rechazado.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlSpeiRechazado}</body></html>`, "utf-8");
@@ -154,8 +183,8 @@ const htmlCobroDiferido = renderToStaticMarkup(
     order={sampleOrder}
     pago={samplePagoP2}
     token="ct_token_demo_98765"
-    linkCobro="https://cosotec7.web.app/pedido/CT-1124451?t=ct_token_demo_98765&pago=P2"
-    siteUrl="https://cosotec7.web.app"
+    linkCobro="/pedido/CT-1124451?t=ct_token_demo_98765&pago=P2"
+    siteUrl=""
   />
 );
 fs.writeFileSync(path.join(outDir, "cobro-diferido.html"), `<!DOCTYPE html><html><body style="margin:0;padding:20px;background:#F5F3F2;">${htmlCobroDiferido}</body></html>`, "utf-8");

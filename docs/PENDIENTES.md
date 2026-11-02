@@ -21,6 +21,8 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
   - *Candado del sistema:* El panel administrativo muestra alerta roja permanente y el despliegue final a producción fallará si `settings/bank.esPrueba === true`. Actualmente está configurado con `esPrueba: true`, titular *"CUENTA DE PRUEBA – NO TRANSFERIR"* y banco *"Banco de prueba"*.
 - [x] **Inclusión de instalación y primer año en precios de lista de GPS (CONFIRMADO POR EL CLIENTE)**:
   - Confirmado: Los 10 GPS de lista, las DashCam JC181 y JC450 y todos los paquetes llevan `incluyeInstalacion: true` e `incluyePlanPrimerAnio: true`. Accesorios y complementos llevan `false`. Configurado en seed, catálogo y reglas de cotización.
+- [ ] **Horarios de turnos de instalación ('Mañana (09:00–14:00)' y 'Tarde (14:00–18:00)')**:
+  - Confirmar con operaciones de CoSoAVL los horarios exactos de los turnos de instalación configurados en `settings/shifts` (editables desde el panel administrativo).
 - [ ] **Tope máximo de descuento de vendedor**:
   - Confirmar tope autorizado de descuento aplicable por el vendedor (actualmente configurado con valor provisional del 5% en `settings/pricing.descuentoVendedorTope`).
 - [ ] **Tabla de viáticos por estado**:
