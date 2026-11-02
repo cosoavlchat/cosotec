@@ -21,8 +21,15 @@ export async function authenticateServerRequest(
   allowedRoles?: UserRole[]
 ): Promise<AuthResult> {
   const authHeader = req.headers.get("authorization");
+  let token: string | undefined;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (authHeader && authHeader.startsWith("Bearer ")) {
+    token = authHeader.split("Bearer ")[1].trim();
+  } else {
+    token = req.nextUrl.searchParams.get("token") || req.nextUrl.searchParams.get("auth") || undefined;
+  }
+
+  if (!token) {
     return {
       success: false,
       response: NextResponse.json(
@@ -31,8 +38,6 @@ export async function authenticateServerRequest(
       ),
     };
   }
-
-  const token = authHeader.split("Bearer ")[1].trim();
 
   // Soporte para tests unitarios y desarrollo local (solo activo cuando NODE_ENV === 'test' o 'development')
   if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {

@@ -10,6 +10,7 @@ export interface PricingSettings {
   comisionMsiAbsorbe: boolean; // true si CosoTec absorbe la comisión bancaria
   vigenciaDias: number; // Días de validez de la cotización (por defecto 15)
   ciudadesSinCosto: string[]; // ["Toluca", "Metepec", "CDMX", "Monterrey", "Guadalajara", "Querétaro"]
+  instalacionAccesorioConEquipo?: boolean; // false por defecto (no cobrar instalación de accesorio si hay equipo principal con instalación)
 }
 
 export interface TravelFee {

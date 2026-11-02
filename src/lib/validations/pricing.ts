@@ -12,6 +12,7 @@ export const PricingSettingsSchema = z.object({
   comisionMsiAbsorbe: z.boolean(),
   vigenciaDias: z.number().int().positive(),
   ciudadesSinCosto: z.array(z.string()),
+  instalacionAccesorioConEquipo: z.boolean().default(false).optional(),
 });
 
 export const TravelFeeSchema = z.object({

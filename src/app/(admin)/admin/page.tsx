@@ -87,7 +87,7 @@ export default function AdminDashboardPage() {
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#C9A15B]/15 via-transparent to-transparent pointer-events-none" />
         <div className="max-w-2xl relative z-10 space-y-2">
           <span className="text-[11px] uppercase tracking-wider font-semibold text-[#C9A15B] px-2.5 py-0.5 rounded-full bg-black/30 border border-[#C9A15B]/40">
-            Fase 1: Base y Catálogo
+            Panel de Control Operativo
           </span>
           <h1 className="text-3xl font-bold tracking-tight">Bienvenido al Panel de CosoTec</h1>
           <p className="text-xs text-gray-200 leading-relaxed">

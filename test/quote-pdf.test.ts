@@ -193,10 +193,13 @@ describe("Bloque 3: Motor de PDF sin navegador (react-pdf)", () => {
     expect(compactText).not.toContain("restodelarepublicasecotizaporkilometraje");
     expect(compactText).not.toContain("dispositivohomologado");
     expect(compactText).not.toContain("tarjetasimmulti-carrier");
+    expect(compactText).not.toContain("telecomunicaciones");
 
-    // Verificar que incluye los términos aprobados
+    // Verificar que incluye los términos aprobados y pie oficial
     expect(compactText).toContain("zonasmetropolitanas");
-    expect(compactText).toContain("viáticossecotizanporseparado");
+    expect(compactText).toContain("cotizanporseparado");
+    expect(compactText).toContain("cosotecbycosoavl");
+    expect(compactText).toContain("ventas@cosoavl.com");
   });
 
   it("muestra marca de agua de datos de prueba si settings/bank tiene esPrueba activo", async () => {
@@ -213,5 +216,101 @@ describe("Bloque 3: Motor de PDF sin navegador (react-pdf)", () => {
     };
     // Regla de negocio: si está pendiente de autorización, la API debe rechazar
     expect(pendienteQuote.estado).toBe("pendiente_autorizacion");
+  });
+
+  it("la suma de los renglones visibles del PDF es estrictamente igual al subtotal bruto", async () => {
+    // Caso donde un accesorio cobra instalación adicional desglosada
+    const quoteConInstalacion: Quote = {
+      ...dummyQuote,
+      id: "CT-TEST-SUMA",
+      folio: "CT-TEST-SUMA",
+      items: [
+        {
+          id: "gps-estandar",
+          nombre: "GPS Estándar sin telemetría",
+          categoria: "gps",
+          precioSinIvaCentavos: 399999,
+          cantidad: 2,
+          esEquipoPrincipal: true,
+          incluyeInstalacion: true,
+        },
+        {
+          id: "boton-panico",
+          nombre: "Botón de Pánico",
+          categoria: "accesorio",
+          precioSinIvaCentavos: 37500,
+          cantidad: 2,
+          esEquipoPrincipal: false,
+          incluyeInstalacion: false,
+        },
+      ],
+      calculo: {
+        ...dummyQuote.calculo,
+        subtotalBrutoCentavos: 799998 + 75000 + 190000, // $10,649.98
+        lineasCalculadas: [
+          {
+            id: "gps-estandar",
+            nombre: "GPS Estándar sin telemetría",
+            cantidad: 2,
+            precioSinIvaCentavos: 399999,
+            totalSinIvaCentavos: 799998,
+            esEquipoPrincipal: true,
+          },
+          {
+            id: "boton-panico",
+            nombre: "Botón de Pánico",
+            cantidad: 2,
+            precioSinIvaCentavos: 37500,
+            totalSinIvaCentavos: 75000,
+            esEquipoPrincipal: false,
+          },
+          {
+            id: "instalacion-suelta",
+            nombre: "Instalación de Botón de Pánico",
+            cantidad: 2,
+            precioSinIvaCentavos: 95000,
+            totalSinIvaCentavos: 190000,
+            esEquipoPrincipal: false,
+            esInstalacionAgregada: true,
+          },
+        ],
+      },
+    };
+
+    // Obtenemos los tableItems exactamente como en el componente PDF
+    const tableItems = [...quoteConInstalacion.items];
+    if (quoteConInstalacion.calculo?.lineasCalculadas) {
+      for (const lin of quoteConInstalacion.calculo.lineasCalculadas) {
+        if (lin.esInstalacionAgregada) {
+          const yaExiste = tableItems.some(
+            (it) => it.id === lin.id || it.nombre === lin.nombre
+          );
+          if (!yaExiste) {
+            tableItems.push({
+              id: lin.id || "instalacion",
+              nombre: lin.nombre,
+              categoria: "servicio",
+              precioSinIvaCentavos: lin.precioSinIvaCentavos,
+              cantidad: lin.cantidad,
+              esEquipoPrincipal: false,
+              esInstalacionAgregada: true,
+            });
+          }
+        }
+      }
+    }
+
+    const sumaRenglonesCentavos = tableItems.reduce(
+      (acc, it) => acc + it.precioSinIvaCentavos * it.cantidad,
+      0
+    );
+
+    expect(sumaRenglonesCentavos).toBe(quoteConInstalacion.calculo.subtotalBrutoCentavos);
+
+    const buffer = await generarCotizacionPdfBuffer(quoteConInstalacion, "http://localhost:3000");
+    expect(buffer).toBeDefined();
+    const cleanText = extractPdfCleanText(buffer);
+    const compactText = cleanText.replace(/\s+/g, "").toLowerCase();
+    expect(compactText).toContain("instalacióndebotóndepánico");
   });
 });

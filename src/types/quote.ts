@@ -27,6 +27,7 @@ export interface ItemSnapshot {
   esConceptoLibre?: boolean; // Servicio especial manual
   descripcionConceptoLibre?: string;
   advertenciaCompatibilidad?: string; // Ej. "JC450 requiere memoria microSD"
+  esInstalacionAgregada?: boolean; // Renglón de mano de obra/instalación agregado automáticamente
 }
 
 export interface QuoteCustomer {
@@ -46,6 +47,7 @@ export interface Quote {
   version?: number; // 1, 2, 3...
   esVersionActiva?: boolean; // Solo la última es true
   versionMasRecienteFolio?: string;
+  esPrueba?: boolean; // REGLA: Cotizaciones de prueba excluídas de métricas oficiales
 
   tokenHash: string; // Hash HMAC-SHA256 del token revocable
   token?: string; // Token plano temporal

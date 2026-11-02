@@ -37,6 +37,7 @@ export default function AdminCotizacionesPage() {
   const [fechaFin, setFechaFin] = useState<string>("");
   const [busqueda, setBusqueda] = useState("");
   const [copiedFolio, setCopiedFolio] = useState<string | null>(null);
+  const [descargandoFolio, setDescargandoFolio] = useState<string | null>(null);
 
   // Modal para autorizar descuento (Admin)
   const [autorizarModal, setAutorizarModal] = useState<Quote | null>(null);
@@ -75,6 +76,30 @@ export default function AdminCotizacionesPage() {
     navigator.clipboard.writeText(url);
     setCopiedFolio(q.folio);
     setTimeout(() => setCopiedFolio(null), 2500);
+  };
+
+  const descargarPdf = async (folio: string) => {
+    try {
+      setDescargandoFolio(folio);
+      const res = await adminFetch(`/api/admin/cotizaciones/${folio}/pdf`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Error al descargar el PDF de la cotización");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `cotizacion-${folio}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    } catch (err: any) {
+      alert(err.message || "Error al generar el PDF");
+    } finally {
+      setDescargandoFolio(null);
+    }
   };
 
   const handleResolverAutorizacion = async (accion: "aprobar" | "rechazar") => {
@@ -117,12 +142,13 @@ export default function AdminCotizacionesPage() {
     );
   });
 
-  // Métricas del periodo
-  const totalCotizaciones = quotes.length;
-  const totalMontoCentavos = quotes.reduce((acc, q) => acc + (q.calculo?.totalCentavos || 0), 0);
-  const cotizacionesPagadas = quotes.filter((q) => q.estado === "pagada" || q.estado === "pagada_parcial");
+  // Métricas del periodo (excluyendo cotizaciones marcadas como prueba)
+  const cotizacionesReales = quotes.filter((q) => !q.esPrueba);
+  const totalCotizaciones = cotizacionesReales.length;
+  const totalMontoCentavos = cotizacionesReales.reduce((acc, q) => acc + (q.calculo?.totalCentavos || 0), 0);
+  const cotizacionesPagadas = cotizacionesReales.filter((q) => q.estado === "pagada" || q.estado === "pagada_parcial");
   const montoPagadoCentavos = cotizacionesPagadas.reduce((acc, q) => acc + (q.calculo?.totalCentavos || 0), 0);
-  const pendientesAutorizacionCount = quotes.filter((q) => q.estado === "pendiente_autorizacion").length;
+  const pendientesAutorizacionCount = cotizacionesReales.filter((q) => q.estado === "pendiente_autorizacion").length;
 
   // Lista única de vendedores para filtro
   const vendedoresUnicos = Array.from(
@@ -150,7 +176,7 @@ export default function AdminCotizacionesPage() {
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl shadow-xs transition-colors self-start"
         >
           <Plus className="w-4 h-4" />
-          <span>+ Nueva Cotización</span>
+          <span>Nueva Cotización</span>
         </Link>
       </div>
 
@@ -277,43 +303,28 @@ export default function AdminCotizacionesPage() {
         )}
       </div>
 
-      {/* Barra de Filtros y Buscador */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        {/* Chips de Estados */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-          {[
-            { id: "todos", label: "Todas" },
-            { id: "enviada", label: "Enviadas" },
-            { id: "vista", label: "Vistas por Cliente" },
-            { id: "pendiente_autorizacion", label: "Por Autorizar" },
-            { id: "pagada", label: "Pagadas" },
-            { id: "vencida", label: "Vencidas" },
-          ].map((chip) => (
-            <button
-              key={chip.id}
-              onClick={() => setFiltroEstado(chip.id)}
-              className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors ${
-                filtroEstado === chip.id
-                  ? "bg-[#7A1428] text-white"
-                  : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-              }`}
-            >
-              {chip.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Buscador */}
-        <div className="relative max-w-xs w-full">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={busqueda}
-            onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por folio, cliente o teléfono..."
-            className="w-full pl-10 pr-4 py-2 rounded-xl border border-gray-200 text-xs bg-white focus:outline-none focus:border-[#7A1428]"
-          />
-        </div>
+      {/* Chips Rápidos de Estado */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        {[
+          { id: "todos", label: "Todas" },
+          { id: "enviada", label: "Enviadas" },
+          { id: "vista", label: "Vistas por Cliente" },
+          { id: "pendiente_autorizacion", label: "Por Autorizar" },
+          { id: "pagada", label: "Pagadas" },
+          { id: "vencida", label: "Vencidas" },
+        ].map((chip) => (
+          <button
+            key={chip.id}
+            onClick={() => setFiltroEstado(chip.id)}
+            className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-colors ${
+              filtroEstado === chip.id
+                ? "bg-[#7A1428] text-white"
+                : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+            }`}
+          >
+            {chip.label}
+          </button>
+        ))}
       </div>
 
       {/* Lista de Cotizaciones */}
@@ -365,22 +376,35 @@ export default function AdminCotizacionesPage() {
                     <tr key={q.id} className="hover:bg-gray-50/60 transition-colors">
                       {/* Folio */}
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="font-mono font-black text-sm text-[#7A1428]">{q.folio}</span>
                           {(q.version || 1) > 1 && (
                             <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.2 rounded font-bold">
                               v{q.version}
                             </span>
                           )}
+                          {q.esPrueba && (
+                            <span className="text-[9px] bg-red-100 text-red-700 px-1.5 py-0.2 rounded font-bold uppercase">
+                              Prueba
+                            </span>
+                          )}
                         </div>
-                        <span className="text-[11px] text-gray-400 block mt-0.5">
+                        <span className="text-[11px] text-gray-500 font-medium block mt-0.5">
                           {new Date(q.createdAt).toLocaleDateString("es-MX", {
                             day: "2-digit",
-                            month: "short",
+                            month: "2-digit",
                             year: "numeric",
                           })}
                         </span>
-                        <span className="text-[10px] text-gray-500 font-medium">Asesor: {q.vendedorNombre}</span>
+                        <div className="flex flex-col gap-0.5 mt-1">
+                          <span className="text-[10px] font-semibold text-gray-700">
+                            {q.origen === "chatbot"
+                              ? "Origen: Chatbot"
+                              : q.vendedorNombre
+                              ? `Origen: Vendedor (${q.vendedorNombre})`
+                              : "Origen: Web"}
+                          </span>
+                        </div>
                       </td>
 
                       {/* Cliente */}
@@ -503,15 +527,18 @@ export default function AdminCotizacionesPage() {
                             </a>
 
                             {/* Descargar PDF */}
-                            <a
-                              href={`/api/admin/cotizaciones/${q.folio}/pdf`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors"
+                            <button
+                              onClick={() => descargarPdf(q.folio)}
+                              disabled={descargandoFolio === q.folio}
+                              className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-600 transition-colors disabled:opacity-50"
                               title="Descargar PDF Carta"
                             >
-                              <Download className="w-3.5 h-3.5" />
-                            </a>
+                              {descargandoFolio === q.folio ? (
+                                <div className="w-3.5 h-3.5 border-2 border-[#7A1428] border-t-transparent rounded-full animate-spin" />
+                              ) : (
+                                <Download className="w-3.5 h-3.5" />
+                              )}
+                            </button>
                           </div>
                         )}
                       </td>

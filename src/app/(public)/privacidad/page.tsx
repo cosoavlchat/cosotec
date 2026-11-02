@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Aviso de Privacidad (Borrador en Revisión) | CosoTec by CoSoAVL",
-  description: "Aviso de Privacidad de CoSoAVL Telecomunicaciones. Documento en proceso de validación.",
+  description: "Aviso de Privacidad de CosoTec by CoSoAVL. Documento en proceso de validación.",
   robots: {
     index: false,
     follow: false,

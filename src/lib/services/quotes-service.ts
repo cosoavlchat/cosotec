@@ -353,12 +353,29 @@ export async function crearCotizacionVendedor(
     descuentoVolumen: pricingData?.descuentoVolumen,
     descuentoVendedorPorcentaje: descuentoSolicitado,
     topeDescuentoVendedor: user.role === "admin" ? 100 : topeVendedor,
+    instalacionAccesorioConEquipo: pricingData?.instalacionAccesorioConEquipo ?? false,
     planesConfig: {
       msiPlazos,
     },
   };
 
   const calculo = calcularCotizacion(itemsParaCalculo, viaticosInput, opcionesCalculo);
+
+  // REGLA: Si el cálculo agregó líneas de instalación por separado, agregarlas a itemsSnapshot
+  for (const lin of calculo.lineasCalculadas) {
+    if (lin.esInstalacionAgregada) {
+      itemsSnapshot.push({
+        id: lin.id || "instalacion",
+        nombre: lin.nombre,
+        categoria: "servicio",
+        precioSinIvaCentavos: lin.precioSinIvaCentavos,
+        cantidad: lin.cantidad,
+        esEquipoPrincipal: false,
+        esInstalacionAgregada: true,
+        queIncluye: ["Mano de obra técnica e integración vehicular profesional"],
+      });
+    }
+  }
 
   // 7. Folio y Token
   const folio = await generarSiguienteFolio();

@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Términos Comerciales (Borrador en Revisión) | CosoTec by CoSoAVL",
-  description: "Términos y condiciones comerciales de venta e instalación de CoSoAVL Telecomunicaciones.",
+  description: "Términos y condiciones comerciales de venta e instalación de CosoTec by CoSoAVL.",
   robots: {
     index: false,
     follow: false,
@@ -63,10 +63,15 @@ export default async function TerminosPage() {
         </section>
 
         <section className="space-y-2">
-          <h3 className="font-bold text-gray-900 text-sm">4. Instalaciones y Viáticos</h3>
-          <p>
-            Los servicios de instalación técnica se coordinan dentro de un lapso de 48 a 72 horas hábiles tras la confirmación del pago. No se generan cargos por viáticos en Toluca, Metepec, CDMX, Monterrey, Guadalajara y Querétaro. Para el resto de la República Mexicana, el costo de viáticos se calcula por estado.
-          </p>
+          <h3 className="font-bold text-gray-900 text-sm">4. Instalaciones, Citas y Viáticos</h3>
+          <ul className="list-disc pl-5 space-y-1.5 text-gray-600">
+            <li>Instalación por cita, con fecha y hora coordinadas en conjunto.</li>
+            <li>Tiempo de entrega e instalación: 48–72 horas después del depósito o confirmación.</li>
+            <li>Se requiere hora y lugar de instalación; tiempo promedio de 1.5 a 2.0 horas por unidad.</li>
+            <li>Se requiere la información de la unidad: marca, modelo, año, placas y color.</li>
+            <li>Incluye el primer año de plataforma y datos para monitoreo (cuando el producto lo incluya).</li>
+            <li>Instalación profesional sin costo de viáticos en las zonas metropolitanas de Toluca, Metepec, CDMX, Monterrey, Guadalajara y Querétaro capital. Fuera de las zonas metropolitanas indicadas, los viáticos se cotizan por separado.</li>
+          </ul>
         </section>
 
         <section className="space-y-2">

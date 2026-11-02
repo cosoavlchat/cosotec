@@ -5,7 +5,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Póliza de Garantía (Borrador en Revisión) | CosoTec by CoSoAVL",
-  description: "Política de garantía de hardware e instalación de CoSoAVL Telecomunicaciones.",
+  description: "Política de garantía de hardware e instalación de CosoTec by CoSoAVL.",
   robots: {
     index: false,
     follow: false,

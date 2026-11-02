@@ -26,3 +26,10 @@ Este documento registra las tareas operativas y configuraciones externas que no 
 * **Estado actual:** El flujo actual de venta en línea cubre pagos con tarjeta de crédito/débito/prepago (Mercado Pago) y transferencia bancaria directa (SPEI).
 * **Acción futura:** Si CoSoAVL decide habilitar cobro presencial en el taller matriz de Metepec, podrá integrarse el SDK de Mercado Pago Point o terminal bancaria física asociada a la orden del cliente.
 
+---
+
+### 5. Regla de Cobro de Instalación de Accesorios (`settings/pricing.instalacionAccesorioConEquipo`)
+* **Estado actual:** Se incorporó el parámetro configurable `instalacionAccesorioConEquipo` en `settings/pricing` y en el formulario de `/admin/precios`.
+* **Comportamiento por defecto (`false`):** Cuando una cotización incluye un equipo principal con instalación técnica incluida (e.g., GPS Estándar), los accesorios agregados a esa unidad (e.g., Botón de Pánico, Sensor de Temperatura) **no cobran mano de obra adicional** ($0 MXN extra), ya que el técnico instalador realiza la integración completa en la misma visita técnica. Si se cotizan accesorios sueltos (sin equipo principal) o excedentes en cantidad a los equipos principales, el motor desglosa automáticamente su mano de obra técnica ($950.00 MXN s/IVA por unidad) como renglón visible.
+* **Confirmación con el cliente:** Pendiente de ratificación formal con la dirección comercial de CoSoAVL si este esquema de instalación incluida para accesorios con equipo principal se mantendrá como estándar o si en casos específicos se activará el cobro separado de instalación para accesorios activando `instalacionAccesorioConEquipo: true`.
+

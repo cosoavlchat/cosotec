@@ -290,7 +290,7 @@ export function Step5Pago({
               <span>DATOS BANCARIOS DE PRUEBA – NO REALIZAR TRANSFERENCIAS</span>
             </div>
             <p className="text-xs text-red-700">
-              Esta plataforma se encuentra en fase de validación técnica de checkout. La cuenta fiscal oficial será suministrada antes del lanzamiento de producción.
+              Esta plataforma se encuentra en periodo de validación técnica de checkout. La cuenta fiscal oficial será suministrada antes del lanzamiento a producción.
             </p>
             <div className="bg-white p-3.5 rounded-xl border border-red-200 text-xs space-y-1.5 font-mono text-gray-800">
               <div>

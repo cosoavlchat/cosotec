@@ -242,6 +242,7 @@ export interface OpcionesCotizacion {
   };
   descuentoVendedorPorcentaje?: number;
   topeDescuentoVendedor?: number; // default 5
+  instalacionAccesorioConEquipo?: boolean; // false por defecto (no cobrar instalación de accesorio si hay equipo principal con instalación)
   planesConfig?: {
     crediContadoPorcentajeCompra?: number; // default 55
     enganchePorcentaje?: number; // default 55
@@ -325,6 +326,13 @@ export function calcularCotizacion(
   const lineasCalculadas: LineaCalculada[] = [];
   let instalacionesAgregadasCount = 0;
 
+  // Unidades principales con instalación incluida para la regla de accesorios
+  const equiposConInstalacionIncluida = items
+    .filter((it) => it.esEquipoPrincipal && it.incluyeInstalacion !== false)
+    .reduce((sum, it) => sum + it.cantidad, 0);
+
+  const cobrarAccesorioConEquipo = opciones?.instalacionAccesorioConEquipo === true;
+
   for (const item of items) {
     if (!Number.isInteger(item.cantidad) || item.cantidad <= 0) {
       throw new TypeError(`Cantidad inválida: ${item.cantidad}. Debe ser un número entero mayor a 0.`);
@@ -359,23 +367,37 @@ export function calcularCotizacion(
       esEquipoPrincipal: item.esEquipoPrincipal,
     });
 
-    // REGLA FASE 3: Si incluyeInstalacion es false, se agrega automáticamente
-    // la instalación técnica por unidad como línea separada y visible.
+    // REGLA: Instalación técnica para equipos o accesorios
+    // REGLA FASE 4: instalacionAccesorioConEquipo (por defecto false)
+    // Si instalacionAccesorioConEquipo === false:
+    // No cobrar instalación de un accesorio cuando en la misma cotización hay un equipo principal con instalación incluida para esa unidad.
     if (item.incluyeInstalacion === false) {
-      const precioInstalacion = item.servicioInstalacionPrecioSinIvaCentavos ?? 95000; // $950.00
-      const totalInstalacion = precioInstalacion * item.cantidad;
-      subtotalBrutoCentavos += totalInstalacion;
-      instalacionesAgregadasCount += item.cantidad;
+      const esAccesorio = !item.esEquipoPrincipal || item.categoria === "accesorio";
+      let cantACobrar = item.cantidad;
 
-      lineasCalculadas.push({
-        id: "instalacion-suelta",
-        nombre: item.servicioInstalacionNombre || `Instalación suelta / Mano de obra (${item.nombre || "GPS"})`,
-        cantidad: item.cantidad,
-        precioSinIvaCentavos: precioInstalacion,
-        totalSinIvaCentavos: totalInstalacion,
-        esEquipoPrincipal: false, // Las instalaciones no cuentan como equipo principal
-        esInstalacionAgregada: true,
-      });
+      if (esAccesorio && !cobrarAccesorioConEquipo && equiposConInstalacionIncluida > 0) {
+        const cantCubierta = Math.min(item.cantidad, equiposConInstalacionIncluida);
+        cantACobrar = item.cantidad - cantCubierta;
+      }
+
+      if (cantACobrar > 0) {
+        const precioInstalacion = item.servicioInstalacionPrecioSinIvaCentavos ?? 95000; // $950.00
+        const totalInstalacion = precioInstalacion * cantACobrar;
+        subtotalBrutoCentavos += totalInstalacion;
+        instalacionesAgregadasCount += cantACobrar;
+
+        lineasCalculadas.push({
+          id: `instalacion-${item.id || "suelta"}`,
+          nombre:
+            item.servicioInstalacionNombre ||
+            `Instalación de ${item.nombre || "Equipo"}`,
+          cantidad: cantACobrar,
+          precioSinIvaCentavos: precioInstalacion,
+          totalSinIvaCentavos: totalInstalacion,
+          esEquipoPrincipal: false, // Las instalaciones no cuentan como equipo principal
+          esInstalacionAgregada: true,
+        });
+      }
     }
 
     if (item.recurrentes && item.recurrentes.length > 0) {

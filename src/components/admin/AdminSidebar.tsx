@@ -76,7 +76,7 @@ export function AdminSidebar({
       badge: "SPEI & MP",
     },
     {
-      title: "Instalaciones (Fase 3)",
+      title: "Instalaciones",
       href: "/admin/instalaciones",
       icon: Truck,
       roles: ["admin", "soporte"] as UserRole[],

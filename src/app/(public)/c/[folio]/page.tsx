@@ -387,45 +387,76 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
-                    {quote.items.map((it, idx) => {
-                      const totalRenglon = it.precioSinIvaCentavos * it.cantidad;
-                      return (
-                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="py-3 px-4">
-                            <p className="font-bold text-gray-900">{it.nombre}</p>
-                            {it.modelo && (
-                              <p className="text-[11px] text-gray-500">Modelo: {it.modelo}</p>
-                            )}
-                            <div className="flex flex-wrap gap-1.5 mt-1">
-                              {it.incluyeInstalacion && (
-                                <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
-                                  ✓ Instalación profesional incluida
-                                </span>
+                    {(() => {
+                      const tableItems = [...(quote.items || [])];
+                      if (quote.calculo?.lineasCalculadas) {
+                        for (const lin of quote.calculo.lineasCalculadas) {
+                          if (lin.esInstalacionAgregada) {
+                            const yaExiste = tableItems.some(
+                              (it) => it.id === lin.id || (it.esInstalacionAgregada && it.nombre === lin.nombre)
+                            );
+                            if (!yaExiste) {
+                              tableItems.push({
+                                id: lin.id || "instalacion",
+                                nombre: lin.nombre,
+                                categoria: "servicio",
+                                precioSinIvaCentavos: lin.precioSinIvaCentavos,
+                                cantidad: lin.cantidad,
+                                esEquipoPrincipal: false,
+                                esInstalacionAgregada: true,
+                              });
+                            }
+                          }
+                        }
+                      }
+                      return tableItems.map((it, idx) => {
+                        const totalRenglon = it.precioSinIvaCentavos * it.cantidad;
+                        return (
+                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                            <td className="py-3 px-4">
+                              <p className="font-bold text-gray-900">{it.nombre}</p>
+                              {it.modelo && (
+                                <p className="text-[11px] text-gray-500">Modelo: {it.modelo}</p>
                               )}
-                              {it.incluyePlanPrimerAnio && (
-                                <span className="inline-flex items-center text-[10px] font-semibold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded">
-                                  ✓ 1er año plataforma y datos incluido
-                                </span>
-                              )}
-                              {it.incluyeInstalacion === false && (
-                                <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded">
-                                  + Requiere instalación por separado
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3 px-3 text-center font-bold text-gray-800">
-                            {it.cantidad}
-                          </td>
-                          <td className="py-3 px-3 text-right font-mono text-gray-600">
-                            {formatMxn(it.precioSinIvaCentavos)}
-                          </td>
-                          <td className="py-3 px-4 text-right font-mono font-bold text-gray-900">
-                            {formatMxn(totalRenglon)}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                              <div className="flex flex-wrap gap-1.5 mt-1">
+                                {it.esInstalacionAgregada ? (
+                                  <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                    ✓ Integración técnica vehicular especializada
+                                  </span>
+                                ) : (
+                                  <>
+                                    {it.incluyeInstalacion && (
+                                      <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                        ✓ Instalación profesional incluida
+                                      </span>
+                                    )}
+                                    {it.incluyePlanPrimerAnio && (
+                                      <span className="inline-flex items-center text-[10px] font-semibold text-sky-800 bg-sky-50 px-1.5 py-0.5 rounded">
+                                        ✓ 1er año plataforma y datos incluido
+                                      </span>
+                                    )}
+                                    {it.incluyeInstalacion === false && (
+                                      <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
+                                        ✓ Instalación incluida con equipo principal
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-3 text-center font-bold text-gray-800">
+                              {it.cantidad}
+                            </td>
+                            <td className="py-3 px-3 text-right font-mono text-gray-600">
+                              {formatMxn(it.precioSinIvaCentavos)}
+                            </td>
+                            <td className="py-3 px-4 text-right font-mono font-bold text-gray-900">
+                              {formatMxn(totalRenglon)}
+                            </td>
+                          </tr>
+                        );
+                      });
+                    })()}
                   </tbody>
                 </table>
               </div>

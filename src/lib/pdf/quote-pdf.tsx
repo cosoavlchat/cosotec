@@ -12,7 +12,7 @@ import {
   Image,
   renderToBuffer,
 } from "@react-pdf/renderer";
-import { Quote } from "@/types/quote";
+import { Quote, ItemSnapshot } from "@/types/quote";
 import { formatMxn } from "@/lib/pricing";
 import { adminDb } from "@/lib/firebase/admin";
 import { getProductImage } from "@/lib/catalog/product-image";
@@ -540,49 +540,82 @@ export function QuotePdfDocument({
             <Text style={styles.colTotal}>Importe</Text>
           </View>
 
-          {quote.items.map((it, idx) => {
-            const rowTotal = it.precioSinIvaCentavos * it.cantidad;
-            const isAlt = idx % 2 === 1;
-            const thumb = (it.id && itemThumbs[it.id]) || itemThumbs[it.nombre];
-            return (
-              <View
-                key={idx}
-                style={[styles.tableRow, isAlt ? styles.tableRowAlt : {}]}
-              >
-                <View style={styles.colConcepto}>
-                  <View style={styles.itemConceptoRow}>
-                    {thumb ? <Image src={thumb} style={styles.itemThumb} /> : null}
-                    <View style={styles.itemDetails}>
-                      <Text style={styles.itemTitle}>{it.nombre}</Text>
-                      {it.modeloConfirmado && it.modelo ? (
-                        <Text style={styles.itemModel}>Modelo: {it.modelo}</Text>
-                      ) : null}
-                      {it.incluyeInstalacion && (
-                        <Text style={styles.itemBullet}>
-                          ✓ Instalación profesional incluida
-                        </Text>
-                      )}
-                      {it.incluyePlanPrimerAnio && (
-                        <Text style={styles.itemBullet}>
-                          ✓ 1er año de plataforma y datos SIM 4G incluido
-                        </Text>
-                      )}
-                      {it.incluyeInstalacion === false && (
-                        <Text style={styles.itemBulletWarn}>
-                          + Requiere instalación por separado
-                        </Text>
-                      )}
+          {(() => {
+            // REGLA: Toda línea que sume al subtotal debe aparecer como renglón visible.
+            const tableItems: ItemSnapshot[] = [...(quote.items || [])];
+            if (quote.calculo?.lineasCalculadas) {
+              for (const lin of quote.calculo.lineasCalculadas) {
+                if (lin.esInstalacionAgregada) {
+                  const yaExiste = tableItems.some(
+                    (it) => it.id === lin.id || (it.esInstalacionAgregada && it.nombre === lin.nombre)
+                  );
+                  if (!yaExiste) {
+                    tableItems.push({
+                      id: lin.id || "instalacion",
+                      nombre: lin.nombre,
+                      categoria: "servicio",
+                      precioSinIvaCentavos: lin.precioSinIvaCentavos,
+                      cantidad: lin.cantidad,
+                      esEquipoPrincipal: false,
+                      esInstalacionAgregada: true,
+                    });
+                  }
+                }
+              }
+            }
+
+            return tableItems.map((it, idx) => {
+              const rowTotal = it.precioSinIvaCentavos * it.cantidad;
+              const isAlt = idx % 2 === 1;
+              const thumb = (it.id && itemThumbs[it.id]) || itemThumbs[it.nombre];
+              return (
+                <View
+                  key={idx}
+                  style={[styles.tableRow, isAlt ? styles.tableRowAlt : {}]}
+                >
+                  <View style={styles.colConcepto}>
+                    <View style={styles.itemConceptoRow}>
+                      {thumb ? <Image src={thumb} style={styles.itemThumb} /> : null}
+                      <View style={styles.itemDetails}>
+                        <Text style={styles.itemTitle}>{it.nombre}</Text>
+                        {it.modeloConfirmado && it.modelo ? (
+                          <Text style={styles.itemModel}>Modelo: {it.modelo}</Text>
+                        ) : null}
+                        {it.esInstalacionAgregada ? (
+                          <Text style={styles.itemBullet}>
+                            ✓ Mano de obra e integración vehicular especializada
+                          </Text>
+                        ) : (
+                          <>
+                            {it.incluyeInstalacion && (
+                              <Text style={styles.itemBullet}>
+                                ✓ Instalación profesional incluida
+                              </Text>
+                            )}
+                            {it.incluyePlanPrimerAnio && (
+                              <Text style={styles.itemBullet}>
+                                ✓ 1er año de plataforma y datos SIM 4G incluido
+                              </Text>
+                            )}
+                            {it.incluyeInstalacion === false && (
+                              <Text style={styles.itemBullet}>
+                                ✓ Instalación incluida con equipo principal
+                              </Text>
+                            )}
+                          </>
+                        )}
+                      </View>
                     </View>
                   </View>
+                  <Text style={styles.colCant}>{it.cantidad}</Text>
+                  <Text style={styles.colPrecio}>
+                    {formatMxn(it.precioSinIvaCentavos)}
+                  </Text>
+                  <Text style={styles.colTotal}>{formatMxn(rowTotal)}</Text>
                 </View>
-                <Text style={styles.colCant}>{it.cantidad}</Text>
-                <Text style={styles.colPrecio}>
-                  {formatMxn(it.precioSinIvaCentavos)}
-                </Text>
-                <Text style={styles.colTotal}>{formatMxn(rowTotal)}</Text>
-              </View>
-            );
-          })}
+              );
+            });
+          })()}
         </View>
 
         {/* Resumen de Plan y Totales */}
@@ -718,29 +751,38 @@ export function QuotePdfDocument({
         <View style={styles.termsBox}>
           <Text style={styles.termsTitle}>Condiciones Comerciales y de Servicio</Text>
           <Text style={styles.termItem}>
-            1. Precios expresados en Pesos Mexicanos (MXN). Los conceptos desglosan el 16% de Impuesto al Valor Agregado (IVA).
+            1. Precios en Pesos Mexicanos (MXN). Los conceptos desglosan el 16% de IVA.
           </Text>
           <Text style={styles.termItem}>
-            2. Cotización válida por {vigenciaDias} días naturales a partir de la fecha de emisión indicada en el encabezado.
+            2. Cotización válida por {vigenciaDias} días naturales a partir de la fecha de emisión.
           </Text>
           <Text style={styles.termItem}>
-            3. Instalación profesional sin costo de viáticos en las zonas metropolitanas de Toluca, Metepec, CDMX, Monterrey, Guadalajara y Querétaro capital. Fuera de las zonas metropolitanas indicadas, los viáticos se cotizan por separado.
+            3. Instalación por cita, con fecha y hora coordinadas en conjunto.
           </Text>
           <Text style={styles.termItem}>
-            4. Para confirmar el pedido y programar la visita técnica de instalación se requiere el cumplimiento del esquema de pago acordado.
+            4. Tiempo de entrega e instalación: 48–72 horas después del depósito o confirmación.
           </Text>
           <Text style={styles.termItem}>
-            5. Los precios y condiciones quedan congelados durante la vigencia de la cotización; posterior a su vencimiento, se requiere actualización de propuesta comercial.
+            5. Se requiere hora y lugar de instalación; tiempo promedio de 1.5 a 2.0 horas por unidad.
+          </Text>
+          <Text style={styles.termItem}>
+            6. Se requiere la información de la unidad: marca, modelo, año, placas y color.
+          </Text>
+          <Text style={styles.termItem}>
+            7. Incluye el primer año de plataforma y datos para monitoreo (en productos que lo incluyan).
+          </Text>
+          <Text style={styles.termItem}>
+            8. Instalación profesional sin costo de viáticos en Toluca, Metepec, CDMX, Monterrey, Guadalajara y Querétaro capital. Fuera de las zonas metropolitanas indicadas, los viáticos se cotizan por separado.
+          </Text>
+          <Text style={styles.termItem}>
+            9. Para confirmar el pedido y programar la visita técnica de instalación se requiere el cumplimiento del esquema de pago acordado.
           </Text>
         </View>
 
         {/* Pie Oficial CoSoAVL */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>
-            CoSoAVL · Consultoría y Soluciones AVL Telecomunicaciones · Metepec, Estado de México
-          </Text>
-          <Text style={styles.footerContact}>
-            Matriz: 722 134 0127 • WhatsApp: 722 432 2053 • ventas@cosoavl.com
+            CosoTec by CoSoAVL · Metepec, Estado de México · Matriz: 722 134 0127 · WhatsApp: 722 432 2053 · ventas@cosoavl.com
           </Text>
         </View>
       </Page>

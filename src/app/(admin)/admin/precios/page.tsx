@@ -232,6 +232,30 @@ export default function AdminPreciosPage() {
             </div>
             <p className="text-[11px] text-gray-500">Expira enlace de pago público</p>
           </div>
+
+          {/* Instalación de Accesorios con Equipo Principal */}
+          <div className="space-y-1.5 p-3.5 rounded-xl bg-gray-50/70 border border-gray-200/70 col-span-1 sm:col-span-2 lg:col-span-4">
+            <label className="text-xs font-bold text-gray-700 block">Regla de Instalación de Accesorios</label>
+            <label className="flex items-center gap-2 cursor-pointer mt-1">
+              <input
+                type="checkbox"
+                checked={pricing.instalacionAccesorioConEquipo ?? false}
+                onChange={(e) =>
+                  setPricing({
+                    ...pricing,
+                    instalacionAccesorioConEquipo: e.target.checked,
+                  })
+                }
+                className="w-4 h-4 text-[#7A1428] rounded border-gray-300 focus:ring-[#7A1428]"
+              />
+              <span className="text-xs font-semibold text-gray-800">
+                Cobrar instalación de accesorios aun cuando la cotización incluya un equipo principal con instalación
+              </span>
+            </label>
+            <p className="text-[11px] text-gray-500">
+              Por defecto desactivado: Si la cotización incluye un equipo principal con instalación incluida, los accesorios no cobran mano de obra por separado ($0). Si se activa, cada accesorio cobrará su mano de obra técnica independiente ($950.00 MXN s/IVA).
+            </p>
+          </div>
         </div>
       </form>
 
