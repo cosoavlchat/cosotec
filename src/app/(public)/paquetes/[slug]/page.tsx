@@ -31,6 +31,19 @@ export async function generateMetadata({
   };
 }
 
+function getPackageImage(pkg: { slug?: string; imagenes?: string[] }): string {
+  if (pkg.imagenes && pkg.imagenes.length > 0 && pkg.imagenes[0]) {
+    return pkg.imagenes[0];
+  }
+  const slug = (pkg.slug || "").toLowerCase();
+  if (slug.includes("jammer")) return "/products/antijammer.webp";
+  if (slug.includes("flotilla") || slug.includes("tracto")) return "/solutions/tractocamion.webp";
+  if (slug.includes("dashcam") || slug.includes("camara")) return "/products/dashcam.webp";
+  if (slug.includes("moto")) return "/products/gps-moto.webp";
+  if (slug.includes("caja")) return "/solutions/caja-refrigerada.webp";
+  return "/products/gps-standard.webp";
+}
+
 export default async function PaqueteDetailPage({
   params,
 }: {
@@ -63,6 +76,16 @@ export default async function PaqueteDetailPage({
       </div>
 
       <div className="bg-white rounded-3xl p-6 sm:p-10 border border-gray-200/80 shadow-md space-y-8">
+        {/* Imagen del Paquete */}
+        <div className="w-full h-48 sm:h-64 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center p-4 overflow-hidden">
+          <img
+            src={getPackageImage(pkg)}
+            alt={`Paquete ${pkg.nombre}`}
+            className="w-full h-full object-contain"
+            fetchPriority="high"
+          />
+        </div>
+
         <div className="space-y-3">
           {pkg.destacado && (
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#7A1428] text-white text-[10px] font-bold uppercase tracking-wider">

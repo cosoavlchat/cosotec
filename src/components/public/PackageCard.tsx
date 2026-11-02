@@ -14,6 +14,19 @@ interface PackageCardProps {
   pkg: Package;
 }
 
+function getPackageImage(pkg: Package): string {
+  if (pkg.imagenes && pkg.imagenes.length > 0 && pkg.imagenes[0]) {
+    return pkg.imagenes[0];
+  }
+  const slug = (pkg.slug || "").toLowerCase();
+  if (slug.includes("jammer")) return "/products/antijammer.webp";
+  if (slug.includes("flotilla") || slug.includes("tracto")) return "/solutions/tractocamion.webp";
+  if (slug.includes("dashcam") || slug.includes("camara")) return "/products/dashcam.webp";
+  if (slug.includes("moto")) return "/products/gps-moto.webp";
+  if (slug.includes("caja")) return "/solutions/caja-refrigerada.webp";
+  return "/products/gps-standard.webp";
+}
+
 export function PackageCard({ pkg }: PackageCardProps) {
   const router = useRouter();
   const { addItem } = useCart();
@@ -88,6 +101,18 @@ export function PackageCard({ pkg }: PackageCardProps) {
           <span>Paquete Recomendado</span>
         </div>
       )}
+
+      {/* Imagen representativa del paquete */}
+      <div className="relative h-36 sm:h-44 w-full overflow-hidden bg-gray-50/80 flex items-center justify-center p-3 border-b border-gray-100">
+        <Link href={`/paquetes/${pkg.slug}`} className="w-full h-full flex items-center justify-center">
+          <img
+            src={getPackageImage(pkg)}
+            alt={`Paquete ${pkg.nombre}`}
+            className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"
+            loading="lazy"
+          />
+        </Link>
+      </div>
 
       <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
         <div className="space-y-2">

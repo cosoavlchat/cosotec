@@ -36,13 +36,13 @@ export default async function HomePage() {
   const featuredPackages = packages.filter((p) => p.activo).slice(0, 3);
 
   const vehicleSolutions = [
-    { name: "Autos y Camionetas", icon: Car, href: "/soluciones/auto-camioneta", desc: "Rastreo personal, paro de motor y botón SOS" },
-    { name: "Taxis y Apps (Uber/Didi)", icon: Car, href: "/soluciones/taxi-apps", desc: "Monitoreo continuo y botón de emergencia silencioso" },
-    { name: "Tractocamiones", icon: Truck, href: "/soluciones/tractocamion", desc: "Telemetría avanzada, anti-jammer y combustible" },
-    { name: "Camiones y Autobuses", icon: Truck, href: "/soluciones/camion-autobus", desc: "Control de velocidad, geocercas y rutas" },
-    { name: "Cajas Secas / Frías", icon: Shield, href: "/soluciones/caja-refrigerada", desc: "GPS autónomo de larga duración y sensor de frío" },
-    { name: "Maquinaria Pesada", icon: Clock, href: "/soluciones/maquinaria", desc: "Horómetros de motor y geocercas en obra" },
-    { name: "Motos de Reparto", icon: MapPin, href: "/soluciones/motos", desc: "Ultra bajo consumo y corte de corriente" },
+    { name: "Autos y Camionetas", icon: Car, href: "/soluciones/auto-camioneta", desc: "Rastreo personal, paro de motor y botón SOS", image: "/solutions/auto-camioneta.webp" },
+    { name: "Taxis y Apps (Uber/Didi)", icon: Car, href: "/soluciones/taxi-apps", desc: "Monitoreo continuo y botón de emergencia silencioso", image: "/solutions/taxi-apps.webp" },
+    { name: "Tractocamiones", icon: Truck, href: "/soluciones/tractocamion", desc: "Telemetría avanzada, anti-jammer y combustible", image: "/solutions/tractocamion.webp" },
+    { name: "Camiones y Autobuses", icon: Truck, href: "/soluciones/camion-autobus", desc: "Control de velocidad, geocercas y rutas", image: "/solutions/camion-autobus.webp" },
+    { name: "Cajas Secas / Frías", icon: Shield, href: "/soluciones/caja-refrigerada", desc: "GPS autónomo de larga duración y sensor de frío", image: "/solutions/caja-refrigerada.webp" },
+    { name: "Maquinaria Pesada", icon: Clock, href: "/soluciones/maquinaria", desc: "Horómetros de motor y geocercas en obra", image: "/solutions/maquinaria.webp" },
+    { name: "Motos de Reparto", icon: MapPin, href: "/soluciones/motos", desc: "Ultra bajo consumo y corte de corriente", image: "/solutions/motos.webp" },
   ];
 
   const pasos = [
@@ -91,10 +91,10 @@ export default async function HomePage() {
             src="/hero-fleet-protection.jpg"
             alt="Rastreo Satelital y Telemetría de Flotillas CosoTec"
             fetchPriority="high"
-            className="w-full h-full object-cover object-center scale-105 transition-transform duration-1000 ease-out hover:scale-110"
+            className="w-full h-full object-cover object-center scale-100 transition-transform duration-1000 ease-out hover:scale-105"
           />
-          {/* Overlay fotográfico de alto contraste */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-[#0A0204]/90" />
+          {/* Overlay fotográfico calibrado: viñeta suave que deja ver claramente el tractocamión, la carretera y la conexión satelital */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/15 to-[#0A0204]/75" />
         </div>
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         
@@ -199,23 +199,33 @@ export default async function HomePage() {
             <ScrollReveal key={sol.name} delay={index * 75} direction="up">
               <Link
                 href={sol.href}
-                className="h-full p-3.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white border border-gray-200/80 hover:border-[#7A1428] shadow-xs hover:shadow-lg transition-all hover:-translate-y-1 flex flex-col justify-between group cursor-pointer"
+                className="h-full p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-white border border-gray-200/80 hover:border-[#7A1428] shadow-xs hover:shadow-lg transition-all hover:-translate-y-1 flex flex-col justify-between group cursor-pointer overflow-hidden"
               >
                 <div className="space-y-2 sm:space-y-3">
-                  <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center shrink-0 group-hover:bg-[#7A1428] group-hover:text-white transition-colors shadow-xs">
-                      <sol.icon className="w-4 h-4 sm:w-5 sm:h-5" />
+                  {/* Tarjeta visual de la unidad */}
+                  <div className="relative aspect-[16/10] w-full rounded-lg sm:rounded-xl overflow-hidden bg-gray-100 border border-gray-100">
+                    <img
+                      src={sol.image}
+                      alt={sol.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 sm:gap-2.5">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#7A1428]/10 text-[#7A1428] flex items-center justify-center shrink-0 group-hover:bg-[#7A1428] group-hover:text-white transition-colors shadow-xs">
+                      <sol.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                     <h3 className="font-bold text-gray-900 text-xs sm:text-sm group-hover:text-[#7A1428] transition-colors leading-snug">
                       {sol.name}
                     </h3>
                   </div>
-                  <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-2 sm:line-clamp-none">
+                  <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed line-clamp-2">
                     {sol.desc}
                   </p>
                 </div>
 
-                <div className="pt-2 sm:pt-4 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px] sm:text-xs font-semibold text-[#7A1428]">
+                <div className="pt-2 sm:pt-3 mt-2 border-t border-gray-100 flex items-center justify-between text-[11px] sm:text-xs font-semibold text-[#7A1428]">
                   <span>Ver solución</span>
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1.5 transition-transform" />
                 </div>
@@ -318,7 +328,7 @@ export default async function HomePage() {
                 alt="Centro de Operaciones y Monitoreo de Flotas CosoTec"
                 className="absolute inset-0 w-full h-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#1c1214] via-transparent to-transparent opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-t lg:bg-gradient-to-r from-[#1c1214] via-transparent to-transparent opacity-50" />
             </div>
           </div>
         </ScrollReveal>

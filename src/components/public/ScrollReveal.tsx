@@ -16,7 +16,7 @@ export function ScrollReveal({
   direction = "up",
   delay = 0,
   duration = 700,
-  threshold = 0.1,
+  threshold = 0.05,
   className = "",
 }: ScrollRevealProps) {
   const [isVisible, setIsVisible] = useState(false);
@@ -24,12 +24,20 @@ export function ScrollReveal({
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el) {
+      setIsVisible(true);
+      return;
+    }
+
+    // Fallback de seguridad: NUNCA dejar el contenido invisible si IntersectionObserver falla o tarda
+    const safetyTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, Math.max(delay + 150, 300));
 
     // Si el navegador no soporta IntersectionObserver, mostrar directamente
     if (typeof IntersectionObserver === "undefined") {
       setIsVisible(true);
-      return;
+      return () => clearTimeout(safetyTimer);
     }
 
     const observer = new IntersectionObserver(
@@ -42,17 +50,18 @@ export function ScrollReveal({
         });
       },
       {
-        threshold,
-        rootMargin: "0px 0px -40px 0px", // Comienza a animarse justo antes de llegar
+        threshold: 0.01,
+        rootMargin: "80px 0px 80px 0px", // Margen amplio positivo para dispararse de inmediato al aproximarse
       }
     );
 
     observer.observe(el);
 
     return () => {
+      clearTimeout(safetyTimer);
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [delay, threshold]);
 
   const getTransformStyle = () => {
     if (isVisible) return "translate-x-0 translate-y-0 opacity-100 scale-100";

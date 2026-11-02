@@ -62,6 +62,7 @@ export interface Package {
   incluyeInstalacion?: boolean; // true en paquetes listos
   incluyePlanPrimerAnio?: boolean; // true en paquetes listos
   revisarPrecio?: boolean;
+  imagenes?: string[];
   createdAt?: string;
   updatedAt?: string;
 }
