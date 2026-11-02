@@ -4,7 +4,7 @@ import {
   sanitizeAnalyticsUrl,
   sanitizeAnalyticsParams,
 } from "./privacy";
-import nextConfig from "../../../next.config";
+import { securityHeaders } from "@/config/security-headers";
 
 describe("Privacidad de Datos y Tokens en Analítica (GA4 y Meta Pixel)", () => {
   it("detecta correctamente rutas sensibles (/c/*, /checkout, /pedido/*)", () => {
@@ -88,8 +88,8 @@ describe("Privacidad de Datos y Tokens en Analítica (GA4 y Meta Pixel)", () => 
     expect(paramsLimpios?.rfc).toBeUndefined();
   });
 
-  it("next.config.ts define Referrer-Policy: strict-origin-when-cross-origin y noindex en rutas sensibles", async () => {
-    const headersList = await nextConfig.headers!();
+  it("security-headers define Referrer-Policy: strict-origin-when-cross-origin y noindex en rutas sensibles", async () => {
+    const headersList = await securityHeaders();
 
     const sensitiveSources = ["/c/:path*", "/checkout", "/checkout/:path*", "/pedido/:path*"];
 

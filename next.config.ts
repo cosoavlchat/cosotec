@@ -1,4 +1,6 @@
 import type { NextConfig } from "next";
+import { securityHeaders } from "./src/config/security-headers";
+import { redirects } from "./src/config/redirects";
 
 const nextConfig: NextConfig = {
   turbopack: {
@@ -10,145 +12,9 @@ const nextConfig: NextConfig = {
     },
   },
   // Redirecciones 301 de URLs históricas de cosoavl.com
-  async redirects() {
-    return [
-      { source: "/index.html", destination: "/", permanent: true },
-      {
-        source: "/soluciones_localizacion_automatica_gps_basico.html",
-        destination: "/plataforma",
-        permanent: true,
-      },
-      {
-        source: "/soluciones_localizacion_automatica_gps_premium.html",
-        destination: "/plataforma",
-        permanent: true,
-      },
-      {
-        source: "/soluciones_localizacion_automatica_gps_next.html",
-        destination: "/plataforma",
-        permanent: true,
-      },
-      {
-        source: "/app_gratuita_localizacion_automatica_gps.html",
-        destination: "/plataforma",
-        permanent: true,
-      },
-      {
-        source: "/rastreo_satelital_via_internet_gps.html",
-        destination: "/plataforma/gps",
-        permanent: true,
-      },
-      { source: "/reporte_gps_avl.html", destination: "/plataforma/gps", permanent: true },
-      { source: "/central_monitoreo_gps.html", destination: "/nosotros", permanent: true },
-      { source: "/servicios_de_postventa_coso_avl.html", destination: "/nosotros", permanent: true },
-      {
-        source: "/beneficios_localizacion_automatica_gps.html",
-        destination: "/nosotros",
-        permanent: true,
-      },
-      {
-        source: "/quienes_localizacion_automatica_gps.html",
-        destination: "/nosotros",
-        permanent: true,
-      },
-      {
-        source: "/productos_cosoavl_localizacion_automatica_gps.html",
-        destination: "/tienda",
-        permanent: true,
-      },
-      { source: "/promociones_cosoavl.html", destination: "/tienda", permanent: true },
-      {
-        source: "/productos_gtx7_:slug(.*)",
-        destination: "/soluciones/auto-camioneta",
-        permanent: true,
-      },
-      {
-        source: "/productos_gtx7plus_:slug(.*)",
-        destination: "/soluciones/auto-camioneta",
-        permanent: true,
-      },
-      {
-        source: "/productos_gtx9_:slug(.*)",
-        destination: "/soluciones/tractocamion",
-        permanent: true,
-      },
-      {
-        source: "/productos_gtx10_:slug(.*)",
-        destination: "/soluciones/tractocamion",
-        permanent: true,
-      },
-      {
-        source: "/productos_gtx8rf_:slug(.*)",
-        destination: "/soluciones/caja-refrigerada",
-        permanent: true,
-      },
-      {
-        source: "/productos_trailer_track_:slug(.*)",
-        destination: "/soluciones/caja-refrigerada",
-        permanent: true,
-      },
-      {
-        source: "/productos_magnet_track_:slug(.*)",
-        destination: "/soluciones/caja-refrigerada",
-        permanent: true,
-      },
-      {
-        source: "/productos_equipo_pesado_:slug(.*)",
-        destination: "/soluciones/maquinaria",
-        permanent: true,
-      },
-      {
-        source: "/productos_m_track_:slug(.*)",
-        destination: "/soluciones/motos",
-        permanent: true,
-      },
-      {
-        source: "/productos_gt_peersonal_localizacion_automatica_gps.html",
-        destination: "/tienda/gps",
-        permanent: true,
-      },
-      {
-        source: "/contacto_localizacion_automatica_gps.html",
-        destination: "/contacto",
-        permanent: true,
-      },
-      { source: "/politica_privacidad_cosoavl.html", destination: "/privacidad", permanent: true },
-      { source: "/equipo_cosoavl.html", destination: "/contacto", permanent: true },
-    ];
-  },
+  redirects,
   // Cabeceras de seguridad y privacidad en rutas sensibles
-  async headers() {
-    return [
-      {
-        source: "/c/:path*",
-        headers: [
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        ],
-      },
-      {
-        source: "/checkout",
-        headers: [
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        ],
-      },
-      {
-        source: "/checkout/:path*",
-        headers: [
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        ],
-      },
-      {
-        source: "/pedido/:path*",
-        headers: [
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "X-Robots-Tag", value: "noindex, nofollow" },
-        ],
-      },
-    ];
-  },
+  headers: securityHeaders,
 };
 
 export default nextConfig;

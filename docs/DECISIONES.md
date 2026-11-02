@@ -228,16 +228,30 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
 
 
 10. **Compatibilidad de Dependencias en App Hosting (
-pm ci) y Versión de Node:**
-    - **Resolución de Peer Dependency ERESOLVE:**
+pm ci) y Versiï¿½n de Node:**
+    - **Resoluciï¿½n de Peer Dependency ERESOLVE:**
       Durante la fase uild con 
 pm ci en Firebase App Hosting, el paquete @firebase/rules-unit-testing@5.0.2 causaba conflicto de dependencias pares al requerir peer firebase@"^12.0.0", mientras el proyecto utiliza irebase@^13.1.0.
-      Se aplicó la **Opción 1** (solución oficial nativa): se actualizó @firebase/rules-unit-testing a la versión ^6.0.0, la cual declara oficialmente "firebase": "^13.0.0" en sus peerDependencies. Esto resolvió el árbol de dependencias limpiamente sin requerir parches artificiales en overrides ni forzar .npmrc con legacy-peer-deps=true.
+      Se aplicï¿½ la **Opciï¿½n 1** (soluciï¿½n oficial nativa): se actualizï¿½ @firebase/rules-unit-testing a la versiï¿½n ^6.0.0, la cual declara oficialmente "firebase": "^13.0.0" en sus peerDependencies. Esto resolviï¿½ el ï¿½rbol de dependencias limpiamente sin requerir parches artificiales en overrides ni forzar .npmrc con legacy-peer-deps=true.
     - **Soporte de Node 22 y Node 24:**
-      El entorno de compilación de Firebase App Hosting opera sobre Node 24. Se configuró "engines": { "node": ">=22 <25" } en package.json, asegurando total compatibilidad tanto en el entorno de desarrollo local (Node 22) como en el builder de producción de App Hosting (Node 24).
-    - **Verificación Local Reproducida:**
-      Se validó el ciclo limpio completo sin banderas de omisión: eliminación de 
-ode_modules, ejecución exitosa de 
+      El entorno de compilaciï¿½n de Firebase App Hosting opera sobre Node 24. Se configurï¿½ "engines": { "node": ">=22 <25" } en package.json, asegurando total compatibilidad tanto en el entorno de desarrollo local (Node 22) como en el builder de producciï¿½n de App Hosting (Node 24).
+    - **Verificaciï¿½n Local Reproducida:**
+      Se validï¿½ el ciclo limpio completo sin banderas de omisiï¿½n: eliminaciï¿½n de 
+ode_modules, ejecuciï¿½n exitosa de 
 pm ci, 
 pm run build (Turbopack) y 
 pm test (105 tests unitarios en verde).
+
+
+11. **Aislamiento de ConfiguraciÃ³n de Next.js (`src/config/`) y SeparaciÃ³n de `tsconfig.json` / `tsconfig.test.json`:**
+    - **Causa del Error en App Hosting:**
+      Durante la fase de build en Firebase App Hosting, el adaptador empaquetador sustituye temporalmente `next.config.ts` por su propia versiÃ³n generada en tiempo de compilaciÃ³n. Como `tsconfig.json` incluÃ­a previamente todo el Ã¡rbol de archivos (incluyendo tests), la verificaciÃ³n de tipos de `next build` evaluaba `src/lib/analytics/analytics-privacy.test.ts` que importaba directamente `next.config.ts`, resultando en `error TS1192: Module '"/workspace/next.config"' has no default export`.
+    - **Aislamiento Modular en `src/config/`:**
+      Se desacoplÃ³ la lÃ³gica de configuraciÃ³n de la app en mÃ³dulos tipados reutilizables:
+      - `src/config/security-headers.ts`: FunciÃ³n `securityHeaders()` con las cabeceras de privacidad y seguridad (`Referrer-Policy: strict-origin-when-cross-origin` y `X-Robots-Tag: noindex, nofollow` en rutas sensibles `/c/*`, `/checkout`, `/checkout/*`, `/pedido/*`).
+      - `src/config/redirects.ts`: FunciÃ³n `redirects()` con las 26 redirecciones 301 para conservar el posicionamiento SEO de rutas histÃ³ricas de cosoavl.com.
+      `next.config.ts` importa estas funciones directamente. Los tests unitarios evalÃºan los mÃ³dulos de `src/config/` sin requerir importar el archivo de configuraciÃ³n raÃ­z de Next.js.
+    - **ExclusiÃ³n de Tests en `tsconfig.json` de ProducciÃ³n y CreaciÃ³n de `tsconfig.test.json`:**
+      - `tsconfig.json`: Se agregÃ³ a `exclude` los patrones `"**/*.test.ts"`, `"**/*.test.tsx"` y `"test/**"`. Esto previene que el compilador de producciÃ³n de Next.js (`next build`) analice archivos de pruebas en la nube.
+      - `tsconfig.test.json`: ConfiguraciÃ³n dedicada que hereda de `tsconfig.json` e incluye explÃ­citamente los archivos de tests (`**/*.test.ts`, `**/*.test.tsx`, `test/**/*.ts`, `test/**/*.tsx`).
+      - `package.json`: Se integrÃ³ el comando `"typecheck": "tsc --noEmit -p tsconfig.test.json"` para ejecutar el typecheck integral en local y en entornos de CI sin depender de `next build`.
