@@ -27,6 +27,9 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
   const [esEquipoPrincipal, setEsEquipoPrincipal] = useState(false);
   const [activo, setActivo] = useState(true);
   const [revisarPrecio, setRevisarPrecio] = useState(false);
+  const [incluyeInstalacion, setIncluyeInstalacion] = useState(true);
+  const [incluyePlanPrimerAnio, setIncluyePlanPrimerAnio] = useState(true);
+  const [servicioInstalacionId, setServicioInstalacionId] = useState("instalacion-suelta");
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,6 +48,9 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       setEsEquipoPrincipal(product.esEquipoPrincipal || false);
       setActivo(product.activo ?? true);
       setRevisarPrecio(product.revisarPrecio || false);
+      setIncluyeInstalacion(product.incluyeInstalacion ?? true);
+      setIncluyePlanPrimerAnio(product.incluyePlanPrimerAnio ?? true);
+      setServicioInstalacionId(product.servicioInstalacionId || "instalacion-suelta");
     } else {
       // Default reset
       setNombreComercial("");
@@ -59,6 +65,9 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
       setEsEquipoPrincipal(true);
       setActivo(true);
       setRevisarPrecio(false);
+      setIncluyeInstalacion(true);
+      setIncluyePlanPrimerAnio(true);
+      setServicioInstalacionId("instalacion-suelta");
     }
     setError(null);
   }, [product, isOpen]);
@@ -150,6 +159,9 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
         esEquipoPrincipal,
         activo,
         revisarPrecio,
+        incluyeInstalacion,
+        incluyePlanPrimerAnio,
+        servicioInstalacionId: incluyeInstalacion ? undefined : servicioInstalacionId,
         orden: product?.orden ?? 0,
       });
 
@@ -393,6 +405,54 @@ export function ProductModal({ isOpen, onClose, onSave, product }: ProductModalP
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Instalación y Plan de Datos (Regla Fase 3) */}
+          <div className="p-4 rounded-xl bg-gray-50 border border-gray-200/80 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-gray-700 block">
+              Instalación Técnica y Conectividad
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-800 font-medium">
+                <input
+                  type="checkbox"
+                  checked={incluyeInstalacion}
+                  onChange={(e) => setIncluyeInstalacion(e.target.checked)}
+                  className="w-4 h-4 text-[#7A1428] rounded border-gray-300 focus:ring-[#7A1428]"
+                />
+                <span>Incluye instalación</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-800 font-medium">
+                <input
+                  type="checkbox"
+                  checked={incluyePlanPrimerAnio}
+                  onChange={(e) => setIncluyePlanPrimerAnio(e.target.checked)}
+                  className="w-4 h-4 text-[#7A1428] rounded border-gray-300 focus:ring-[#7A1428]"
+                />
+                <span>Incluye primer año de plataforma y datos</span>
+              </label>
+            </div>
+
+            {!incluyeInstalacion && (
+              <div className="pt-2 border-t border-gray-200/60 space-y-1">
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600">
+                  Servicio de instalación aplicable (al cotizar por separado):
+                </label>
+                <select
+                  value={servicioInstalacionId}
+                  onChange={(e) => setServicioInstalacionId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-300 text-xs bg-white text-gray-900 focus:outline-none focus:border-[#7A1428]"
+                >
+                  <option value="instalacion-suelta">Instalación auto, camioneta y tracto ($950.00)</option>
+                  <option value="desinstalacion-e-instalacion">Desinstalación e instalación ($1,400.00)</option>
+                  <option value="desinstalacion">Desinstalación ($550.00)</option>
+                </select>
+                <span className="text-[10px] text-gray-400 block">
+                  Se agregará automáticamente como línea separada y visible en el cotizador y checkout por cada unidad.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Opciones y Toggles */}

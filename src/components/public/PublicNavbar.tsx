@@ -13,13 +13,17 @@ import {
   Layers,
   MapPin,
   ExternalLink,
+  ShoppingBag,
 } from "lucide-react";
 import { buildWhatsAppLink, WHATSAPP_DISPLAY, TELEFONO_MATRIZ } from "@/lib/utils/whatsapp";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useCart } from "@/context/CartContext";
 
 export function PublicNavbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const { items } = useCart();
+  const cartCount = items?.reduce((sum, it) => sum + it.cantidad, 0) || 0;
 
   const whatsappQuoteUrl = buildWhatsAppLink({
     pagina: pathname,
@@ -107,7 +111,20 @@ export function PublicNavbar() {
           </nav>
 
           {/* Action CTA & Mobile Trigger */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/checkout"
+              className="relative p-2.5 rounded-xl border border-gray-200 text-gray-700 hover:text-[#7A1428] hover:border-[#7A1428]/30 hover:bg-[#7A1428]/5 transition-all"
+              aria-label="Ver carrito y checkout"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#7A1428] text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
             <a
               href={whatsappQuoteUrl}
               target="_blank"
@@ -116,7 +133,8 @@ export function PublicNavbar() {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#7A1428] hover:bg-[#4A0C18] text-white text-xs font-bold rounded-xl shadow-sm transition-all hover:scale-[1.02] border border-[#C9A15B]/30"
             >
               <MessageCircle className="w-3.5 h-3.5 text-[#C9A15B]" />
-              <span>Cotiza en 1 min</span>
+              <span className="hidden sm:inline">Cotiza en 1 min</span>
+              <span className="sm:hidden">Cotizar</span>
             </a>
 
             <button

@@ -7,14 +7,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://cosotec.com";
 
   let productEntries: MetadataRoute.Sitemap = [];
+  let visibleCategories: string[] = [];
   try {
-    const products = await getProducts(false);
+    const products = await getProducts(false); // Solo productos activos y con visibleEnTienda: true
     productEntries = products.map((product) => ({
       url: `${baseUrl}/p/${product.slug}`,
       lastModified: new Date(),
       changeFrequency: "weekly",
       priority: 0.8,
     }));
+    // Solo categorías que tengan productos visibles activos
+    visibleCategories = Array.from(new Set(products.map((p) => p.categoria)));
   } catch {}
 
   let packageEntries: MetadataRoute.Sitemap = [];
@@ -28,8 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }));
   } catch {}
 
-  const categories = ["gps", "dashcam", "seguridad", "accesorio", "dron", "servicio"];
-  const categoryEntries: MetadataRoute.Sitemap = categories.map((cat) => ({
+  const categoryEntries: MetadataRoute.Sitemap = visibleCategories.map((cat) => ({
     url: `${baseUrl}/tienda/${cat}`,
     lastModified: new Date(),
     changeFrequency: "weekly",
@@ -52,6 +54,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // Páginas estáticas públicas indexables.
+  // NOTA: Se excluyen /privacidad, /terminos y /garantia del sitemap mientras tengan banner de revisión.
   const staticPages: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "daily", priority: 1.0 },
     { url: `${baseUrl}/tienda`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
@@ -62,9 +66,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/nosotros`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.7 },
     { url: `${baseUrl}/contacto`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
     { url: `${baseUrl}/acceso`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.6 },
-    { url: `${baseUrl}/privacidad`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${baseUrl}/terminos`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
-    { url: `${baseUrl}/garantia`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.3 },
   ];
 
   return [...staticPages, ...categoryEntries, ...solucionEntries, ...productEntries, ...packageEntries];

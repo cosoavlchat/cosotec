@@ -5,7 +5,11 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Aviso de Privacidad (Borrador en Revisión) | CosoTec by CoSoAVL",
-  description: "Aviso de Privacidad de CoSoAVL Telecomunicaciones. Documento en proceso de validación jurídica.",
+  description: "Aviso de Privacidad de CoSoAVL Telecomunicaciones. Documento en proceso de validación.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function PrivacidadPage() {
@@ -17,10 +21,9 @@ export default async function PrivacidadPage() {
       <div className="p-5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 flex items-start gap-3">
         <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <h2 className="font-bold text-sm tracking-tight">Documento en Revisión</h2>
+          <h2 className="font-bold text-sm tracking-tight">Documento en revisión</h2>
           <p className="text-xs text-amber-800 leading-relaxed">
-            {legales.avisoRevision ||
-              "Documento en revisión por el área jurídica y comercial de CoSoAVL. Esta versión es un borrador informativo sujeto a validación."}
+            {legales.avisoRevision || "Documento en revisión."}
           </p>
         </div>
       </div>
@@ -33,7 +36,7 @@ export default async function PrivacidadPage() {
           Aviso de Privacidad Integral
         </h1>
         <p className="text-xs text-gray-500">
-          CoSoAVL Telecomunicaciones S.A. de C.V. · Metepec, Estado de México
+          CoSoAVL · Metepec, Estado de México
         </p>
       </div>
 
@@ -41,7 +44,7 @@ export default async function PrivacidadPage() {
         <section className="space-y-2">
           <h3 className="font-bold text-gray-900 text-sm">1. Identidad y Domicilio del Responsable</h3>
           <p>
-            CoSoAVL Telecomunicaciones S.A. de C.V., con domicilio en Metepec, Estado de México, es responsable del uso y protección de sus datos personales en apego a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).
+            CoSoAVL, con domicilio en Metepec, Estado de México, es responsable del uso y protección de sus datos personales en apego a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP).
           </p>
         </section>
 

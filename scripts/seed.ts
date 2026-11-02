@@ -3,9 +3,11 @@
  * Carga el catálogo inicial, paquetes, precios, viáticos, settings y contenido oficial.
  * Uso:
  *   npm run seed:local   # Ejecuta contra Firebase Emulator Suite (localhost:8080)
- *   npm run seed:prod    # Ejecuta contra cosoteco en producción (requiere credenciales)
+ *   npm run seed:prod    # Ejecuta contra cosotec7 en producción (requiere credenciales)
  */
 
+import fs from "fs";
+import path from "path";
 import {
   initialPricingSettings,
   initialContactSettings,
@@ -21,9 +23,14 @@ import {
 const isProd = process.argv.includes("--prod");
 
 async function runSeed() {
-  console.log(`\n🌱 [CosoTec Seed] Iniciando carga de datos... (Modo: ${isProd ? "PRODUCCIÓN (cosoteco)" : "LOCAL (Firebase Emulator)"})`);
+  console.log(`\n🌱 [CosoTec Seed] Iniciando carga de datos... (Modo: ${isProd ? "PRODUCCIÓN (cosotec7)" : "LOCAL (Firebase Emulator)"})`);
 
   if (isProd) {
+    const localKey = path.resolve(process.cwd(), "serviceAccountKey-cosotec7.json");
+    if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY && fs.existsSync(localKey)) {
+      process.env.GOOGLE_APPLICATION_CREDENTIALS = localKey;
+    }
+
     if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY && !process.env.GOOGLE_APPLICATION_CREDENTIALS) {
       console.error(
         "❌ ERROR: Para ejecutar el seed en producción debes definir FIREBASE_SERVICE_ACCOUNT_KEY o GOOGLE_APPLICATION_CREDENTIALS."
@@ -47,6 +54,8 @@ async function runSeed() {
       const ref = adminDb.collection("products").doc(prod.slug);
       batch.set(ref, {
         ...prod,
+        incluyeInstalacion: prod.incluyeInstalacion ?? false,
+        incluyePlanPrimerAnio: prod.incluyePlanPrimerAnio ?? false,
         updatedAt: new Date().toISOString(),
       }, { merge: true });
     }

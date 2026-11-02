@@ -31,6 +31,10 @@ export interface Product {
   recurrentes?: CostRecurrente[];
   esEquipoPrincipal: boolean;
   activo: boolean;
+  visibleEnTienda?: boolean; // false para conceptos internos y servicios que no se muestran en tienda pública
+  incluyeInstalacion?: boolean; // true si incluye instalación; false si se agrega servicio adicional
+  incluyePlanPrimerAnio?: boolean; // true si incluye plataforma y SIM por 12 meses
+  servicioInstalacionId?: string; // ID del producto de instalación (ej. "instalacion-suelta")
   orden: number;
   revisarPrecio?: boolean; // Inconsistencias pendientes de confirmación del cliente
   createdAt?: string;
@@ -54,6 +58,8 @@ export interface Package {
   queIncluye?: string[];
   destacado: boolean;
   activo: boolean;
+  incluyeInstalacion?: boolean; // true en paquetes listos
+  incluyePlanPrimerAnio?: boolean; // true en paquetes listos
   revisarPrecio?: boolean;
   createdAt?: string;
   updatedAt?: string;

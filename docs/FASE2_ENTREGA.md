@@ -55,3 +55,4 @@ La prueba fue ejecutada sobre el viewport móvil de Google Chrome emulando condi
 8. **Tipografía de Marca:** Manrope (títulos) e Inter (cuerpo) integradas mediante `next/font/google`.
 9. **Fotografías y Placeholders:** Componente neutro `DevicePlaceholder` con colores institucionales guinda (`#7A1428`) y dorado (`#C9A15B`) para equipos sin fotografía final.
 10. **Analítica Condicional:** Módulos GA4 y Meta Pixel listos en `CookieConsent`, activándose únicamente tras aceptación expresa del usuario.
+

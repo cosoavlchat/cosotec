@@ -25,7 +25,7 @@ export function ProductCard({ product, msiOptions = [] }: ProductCardProps) {
   const whatsappUrl = buildWhatsAppLink({
     producto: product.nombreComercial,
     modelo: product.modelo,
-    precioConIva: product.revisarPrecio ? "Por confirmar" : formattedPrice,
+    precioConIva: product.revisarPrecio ? undefined : formattedPrice,
     pagina: `/p/${product.slug}`,
     tipoConsulta: product.revisarPrecio ? "cotizacion" : "compra",
   });
@@ -70,6 +70,11 @@ export function ProductCard({ product, msiOptions = [] }: ProductCardProps) {
               Principal
             </span>
           )}
+          {product.incluyeInstalacion && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-700 text-white shadow-xs">
+              Instalación Inc.
+            </span>
+          )}
         </div>
       </div>
 
@@ -88,6 +93,22 @@ export function ProductCard({ product, msiOptions = [] }: ProductCardProps) {
             <p className="text-xs text-gray-600 line-clamp-2 leading-relaxed pt-1">
               {product.descripcionCorta}
             </p>
+          )}
+
+          {/* Características clave de inclusión */}
+          {(product.incluyeInstalacion || product.incluyePlanPrimerAnio) && (
+            <div className="pt-2 flex flex-wrap gap-2 text-[11px] text-gray-600">
+              {product.incluyeInstalacion && (
+                <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-md font-medium">
+                  ✓ Instalación profesional
+                </span>
+              )}
+              {product.incluyePlanPrimerAnio && (
+                <span className="inline-flex items-center gap-1 text-sky-800 bg-sky-50 px-2 py-0.5 rounded-md font-medium">
+                  ✓ Primer año de plataforma y datos
+                </span>
+              )}
+            </div>
           )}
         </div>
 

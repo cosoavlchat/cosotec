@@ -69,8 +69,8 @@ export function PublicFooter() {
               </Link>
             </li>
             <li>
-              <Link href="/tienda/dron" className="hover:text-white transition-colors">
-                Drones DJI Matrice 4E / 4T
+              <Link href="/tienda/accesorio" className="hover:text-white transition-colors">
+                Accesorios Homologados
               </Link>
             </li>
             <li>
@@ -159,7 +159,7 @@ export function PublicFooter() {
       {/* Barra Inferior */}
       <div className="bg-[#1C1C1E] py-4 px-6 border-t border-white/5 text-[11px] text-gray-400">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-          <p>© {new Date().getFullYear()} CoSoAVL Telecomunicaciones S.A. de C.V. — Todos los derechos reservados.</p>
+          <p>© {new Date().getFullYear()} CoSoAVL — Todos los derechos reservados.</p>
           <p className="flex items-center gap-1 justify-center sm:justify-end text-gray-400">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
             <span>Infraestructura protegida • Capital 100% Mexicano</span>

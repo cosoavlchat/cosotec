@@ -41,6 +41,12 @@ export async function generateMetadata({
   const meta = categoryTitles[categoria];
   if (!meta) return { title: "Categoría no encontrada" };
 
+  const allProducts = await getProducts(false);
+  const count = allProducts.filter((p) => p.categoria === (categoria as ProductCategory)).length;
+  if (count === 0) {
+    return { title: "Categoría no disponible | CosoTec", robots: { index: false } };
+  }
+
   return {
     title: `${meta.title} | Catálogo CosoTec`,
     description: meta.desc,
@@ -58,6 +64,11 @@ export default async function CategoriaTiendaPage({
 
   const allProducts = await getProducts(false);
   const products = allProducts.filter((p) => p.categoria === (categoria as ProductCategory));
+
+  // Si no hay productos visibles en esta categoría, no mostrar página vacía (404)
+  if (products.length === 0) {
+    notFound();
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">

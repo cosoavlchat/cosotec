@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Package } from "@/types/catalog";
-import { precioConIva, formatMxn } from "@/lib/pricing";
+import { precioConIva, formatMxn, getQueIncluyeComputed } from "@/lib/pricing";
 import { MessageCircle, Check, AlertTriangle, ArrowRight, Sparkles } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import { trackAnalyticsEvent } from "@/lib/analytics";
@@ -17,7 +17,7 @@ export function PackageCard({ pkg }: PackageCardProps) {
 
   const whatsappUrl = buildWhatsAppLink({
     producto: `Paquete ${pkg.nombre}`,
-    precioConIva: pkg.revisarPrecio ? "Por confirmar" : formattedPrice,
+    precioConIva: pkg.revisarPrecio ? undefined : formattedPrice,
     pagina: `/paquetes/${pkg.slug}`,
     tipoConsulta: pkg.revisarPrecio ? "cotizacion" : "compra",
   });
@@ -48,22 +48,26 @@ export function PackageCard({ pkg }: PackageCardProps) {
           </Link>
           <p className="text-xs text-gray-600 leading-relaxed">{pkg.descripcion}</p>
 
-          {/* Viñetas Qué Incluye */}
-          {pkg.queIncluye && pkg.queIncluye.length > 0 && (
-            <div className="pt-3 space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
-                Incluye:
-              </span>
-              <ul className="space-y-1.5 text-xs text-gray-700">
-                {pkg.queIncluye.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <Check className="w-3.5 h-3.5 text-[#C9A15B] shrink-0 mt-0.5" />
-                    <span className="leading-tight">{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Viñetas Qué Incluye (Dinámico) */}
+          {(() => {
+            const list = getQueIncluyeComputed(pkg);
+            if (list.length === 0) return null;
+            return (
+              <div className="pt-3 space-y-2">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-400 block">
+                  Incluye:
+                </span>
+                <ul className="space-y-1.5 text-xs text-gray-700">
+                  {list.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-[#C9A15B] shrink-0 mt-0.5" />
+                      <span className="leading-tight font-medium text-gray-800">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Precios y Botón */}

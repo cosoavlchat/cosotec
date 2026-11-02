@@ -1,7 +1,7 @@
 import { adminDb, recordAuditLog, isFirestoreReady } from "@/lib/firebase/admin";
-import { PricingSettings, TravelFee } from "@/types/pricing";
+import { PricingSettings, TravelFee, BankSettings } from "@/types/pricing";
 import { PricingSettingsSchema, TravelFeeSchema } from "@/lib/validations/pricing";
-import { initialPricingSettings, initialTravelFees } from "../../../scripts/seed-data";
+import { initialPricingSettings, initialTravelFees, initialBankSettings } from "../../../scripts/seed-data";
 
 export async function getPricingSettings(): Promise<PricingSettings> {
   if (!(await isFirestoreReady())) return initialPricingSettings;
@@ -85,4 +85,40 @@ export async function updateTravelFee(
   });
 
   return feeData;
+}
+
+export async function getBankSettings(): Promise<BankSettings> {
+  if (!(await isFirestoreReady())) return initialBankSettings;
+  try {
+    const snap = await adminDb.collection("settings").doc("bank").get();
+    if (snap.exists && snap.data()) {
+      return snap.data() as BankSettings;
+    }
+  } catch {}
+  return initialBankSettings;
+}
+
+export async function updateBankSettings(
+  data: Partial<BankSettings>,
+  user: { uid: string; email: string }
+): Promise<BankSettings> {
+  const current = await getBankSettings();
+  const updated: BankSettings = {
+    ...current,
+    ...data,
+  };
+
+  await adminDb.collection("settings").doc("bank").set(updated, { merge: true });
+
+  await recordAuditLog({
+    userId: user.uid,
+    userEmail: user.email,
+    entity: "bank",
+    entityId: "bank",
+    action: "update",
+    before: current,
+    after: updated,
+  });
+
+  return updated;
 }

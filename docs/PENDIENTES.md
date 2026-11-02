@@ -4,22 +4,25 @@ Lista viva de requerimientos y datos pendientes de entrega por parte del cliente
 
 ---
 
-### 🔴 Pendientes de Infraestructura & Servicios (Requieren Plan Blaze)
-- [ ] **Activar plan Blaze en el proyecto Firebase `cosoteco`**:
-  - Necesario para Cloud Functions (2ª gen.) y Firebase App Hosting en producción.
-  - *Estrategia actual:* Se desarrollará toda la API y backend en Next.js (App Router API routes) y Cloud Functions compatibles, pudiendo ejecutarse localmente con emuladores o despliegue intermedio.
+### 🔴 Pendientes de Infraestructura & Servicios
+- [x] **Activar plan Blaze en el proyecto Firebase `cosotec7`**: Activado.
 - [ ] **Credenciales de Mercado Pago Checkout Pro**:
   - Public Key y Access Token (Sandbox para desarrollo, Producción para lanzamiento).
 - [ ] **Secret Manager / Variables de producción**:
-  - Claves de correo (Resend o SendGrid / Firebase Trigger Email), webhook signing secret.
+  - Claves de correo (Resend API key), webhook signing secret de MP.
 - [ ] **IDs de Analítica (Opcionales)**:
   - Google Analytics 4 (`G-XXXXXXXXXX`) y Meta Pixel (`XXXXXXXXXXXXXXXX`), configurables en `settings/analytics`.
 
 ---
 
 ### 🟡 Datos de Negocio y Catálogo
-- [ ] **Datos bancarios oficiales para pagos SPEI**:
-  - Banco, nombre del titular y CLABE interbancaria (se cargan valores editables en `settings/bank`).
+- [ ] **Datos bancarios oficiales para pagos SPEI (CANDADO OBLIGATORIO DE SALIDA A PRODUCCIÓN)**:
+  - Reemplazar datos de prueba por cuenta fiscal real (Banco, Titular oficial, CLABE de 18 dígitos).
+  - *Candado del sistema:* El panel administrativo muestra alerta roja permanente y el despliegue final a producción fallará si `settings/bank.esPrueba === true`. Actualmente está configurado con `esPrueba: true`, titular *"CUENTA DE PRUEBA – NO TRANSFERIR"* y banco *"Banco de prueba"*.
+- [x] **Inclusión de instalación y primer año en precios de lista de GPS (CONFIRMADO POR EL CLIENTE)**:
+  - Confirmado: Los 10 GPS de lista, las DashCam JC181 y JC450 y todos los paquetes llevan `incluyeInstalacion: true` e `incluyePlanPrimerAnio: true`. Accesorios y complementos llevan `false`. Configurado en seed, catálogo y reglas de cotización.
+- [ ] **Tope máximo de descuento de vendedor**:
+  - Confirmar tope autorizado de descuento aplicable por el vendedor (actualmente configurado con valor provisional del 5% en `settings/pricing.descuentoVendedorTope`).
 - [ ] **Tabla de viáticos por estado**:
   - Definición de montos fijos por visita y por unidad adicional (estados gratuitos: CDMX, Estado de México/Toluca, Nuevo León/Monterrey, Jalisco/Guadalajara, Querétaro).
 - [ ] **Precios públicos definitivos de inconsistencias detectadas**:

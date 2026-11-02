@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getProductBySlug, getProducts } from "@/lib/services/catalog-service";
-import { precioConIva, formatMxn } from "@/lib/pricing";
+import { precioConIva, formatMxn, getQueIncluyeComputed } from "@/lib/pricing";
 import { DevicePlaceholder } from "@/components/public/DevicePlaceholder";
 import { ProductCard } from "@/components/public/ProductCard";
 import {
@@ -15,6 +15,7 @@ import {
   FileText,
 } from "lucide-react";
 import { buildWhatsAppLink, WHATSAPP_DISPLAY } from "@/lib/utils/whatsapp";
+import { AddToCartButton } from "@/components/public/AddToCartButton";
 import type { Metadata } from "next";
 
 export async function generateMetadata({
@@ -46,7 +47,7 @@ export default async function ProductDetailPage({
   const { slug } = await params;
   const product = await getProductBySlug(slug);
 
-  if (!product || !product.activo) {
+  if (!product || !product.activo || product.visibleEnTienda === false) {
     notFound();
   }
 
@@ -56,7 +57,7 @@ export default async function ProductDetailPage({
   const whatsappUrl = buildWhatsAppLink({
     producto: product.nombreComercial,
     modelo: product.modelo,
-    precioConIva: product.revisarPrecio ? "Por confirmar" : formattedPrice,
+    precioConIva: product.revisarPrecio ? undefined : formattedPrice,
     pagina: `/p/${product.slug}`,
     tipoConsulta: product.revisarPrecio ? "cotizacion" : "compra",
   });
@@ -189,6 +190,8 @@ export default async function ProductDetailPage({
 
             {/* CTAs */}
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              <AddToCartButton product={product} />
+
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -212,38 +215,51 @@ export default async function ProductDetailPage({
             </div>
           </div>
 
-          {/* Qué Incluye */}
-          {product.queIncluye && product.queIncluye.length > 0 && (
-            <div className="p-6 rounded-2xl bg-white border border-gray-200/80 shadow-xs space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#C9A15B]" />
-                <span>¿Qué incluye este equipo?</span>
-              </h3>
-              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-700">
-                {product.queIncluye.map((item, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#7A1428] mt-1.5 shrink-0" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          {/* Qué Incluye (Dinámico según casillas de instalación y plan) */}
+          {(() => {
+            const queIncluyeList = getQueIncluyeComputed(product);
+            if (queIncluyeList.length === 0) return null;
+            return (
+              <div className="p-6 rounded-2xl bg-white border border-gray-200/80 shadow-xs space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-800 flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#C9A15B]" />
+                  <span>¿Qué incluye este equipo?</span>
+                </h3>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-700">
+                  {queIncluyeList.map((item, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#7A1428] mt-1.5 shrink-0" />
+                      <span className="font-medium text-gray-800">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
 
-          {/* Costos Recurrentes (Informativos) */}
-          {product.recurrentes && product.recurrentes.length > 0 && (
+          {/* Costos Recurrentes (Informativos: a partir del 2° año si incluye primer año) */}
+          {product.incluyePlanPrimerAnio && (
             <div className="p-5 rounded-2xl bg-gray-50 border border-gray-200/80 space-y-2 text-xs">
               <span className="font-bold text-gray-800 block">Costos Recurrentes Informativos:</span>
-              {product.recurrentes.map((rec, i) => (
-                <div key={i} className="flex items-center justify-between text-gray-600">
-                  <span>{rec.concepto}</span>
-                  <span className="font-semibold text-gray-900">
-                    {formatMxn(rec.montoCentavos)} + IVA / {rec.periodo}
-                  </span>
+              {product.recurrentes && product.recurrentes.length > 0 ? (
+                product.recurrentes.map((rec, i) => (
+                  <div key={i} className="flex items-center justify-between text-gray-600">
+                    <span>
+                      {rec.concepto} {rec.periodo === "anual" ? "(a partir del 2° año)" : ""}
+                    </span>
+                    <span className="font-semibold text-gray-900">
+                      {formatMxn(rec.montoCentavos)} + IVA / {rec.periodo}
+                    </span>
+                  </div>
+                ))
+              ) : product.esEquipoPrincipal ? (
+                <div className="flex items-center justify-between text-gray-600">
+                  <span>Renovación anual plataforma y datos (a partir del 2° año)</span>
+                  <span className="font-semibold text-gray-900">$2,583.75 + IVA / año</span>
                 </div>
-              ))}
+              ) : null}
               <p className="text-[10px] text-gray-400 pt-1">
-                * El primer año o periodo inicial viene incluido en los paquetes principales.
+                * El primer año de plataforma y transmisión de datos viene 100% incluido en el costo del equipo.
               </p>
             </div>
           )}

@@ -65,11 +65,11 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
       disabled: true,
     },
     {
-      title: "Pedidos (Fase 3)",
+      title: "Pedidos y SPEI",
       href: "/admin/pedidos",
       icon: DollarSign,
       roles: ["admin", "soporte"] as UserRole[],
-      disabled: true,
+      badge: "SPEI & MP",
     },
     {
       title: "Instalaciones (Fase 3)",
@@ -192,7 +192,7 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
 
       {/* Footer Info */}
       <div className="p-4 border-t border-[#7A1428]/40 text-[11px] text-gray-400">
-        <p className="font-semibold text-gray-300">Proyecto Firebase: cosoteco</p>
+        <p className="font-semibold text-gray-300">Proyecto Firebase: cosotec7</p>
         <p className="text-[10px] text-gray-400">Metepec, Edomex</p>
       </div>
     </aside>

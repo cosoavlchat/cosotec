@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 };
 
 export default async function TiendaPage() {
-  const products = await getProducts(false); // Solo productos con activo === true
+  const products = await getProducts(false); // Solo productos con activo === true y visibleEnTienda !== false
 
-  const categories = [
+  const allCategories = [
     { id: "all", name: "Todos los Equipos", href: "/tienda", count: products.length },
     { id: "gps", name: "GPS Vehicular", href: "/tienda/gps", icon: Layers },
     { id: "dashcam", name: "DashCams", href: "/tienda/dashcam", icon: Video },
@@ -22,6 +22,10 @@ export default async function TiendaPage() {
     { id: "dron", name: "Drones Empresariales", href: "/tienda/dron", icon: Plane },
     { id: "servicio", name: "Servicios e Instalación", href: "/tienda/servicio", icon: Wrench },
   ];
+
+  // Solo mostrar categorías que tengan productos activos y visibles
+  const visibleCategoriesSet = new Set(products.map((p) => p.categoria));
+  const categories = allCategories.filter((cat) => cat.id === "all" || visibleCategoriesSet.has(cat.id as any));
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 space-y-10">

@@ -29,6 +29,7 @@ export interface BankSettings {
   clabe: string;
   cuenta?: string;
   convenio?: string;
+  esPrueba: boolean; // Candado: true mientras sean datos de prueba
 }
 
 export interface ContactSettings {

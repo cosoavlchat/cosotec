@@ -97,6 +97,26 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || isVendedor();
     }
 
+    // Carritos de compra (gestionados via servidor y accesibles a admin/vendedor)
+    match /carts/{cartId} {
+      allow read, write: if isAdmin() || isVendedor();
+    }
+
+    // Cotizaciones formales (gestionadas via servidor y accesibles a admin/vendedor)
+    match /quotes/{quoteId} {
+      allow read, write: if isAdmin() || isVendedor();
+    }
+
+    // Pedidos (gestionados via servidor y accesibles a admin/vendedor/soporte)
+    match /orders/{orderId} {
+      allow read, write: if isAdmin() || isVendedor() || isSoporte();
+    }
+
+    // Instalaciones técnicas (gestionadas por admin y soporte)
+    match /installations/{installationId} {
+      allow read, write: if isAdmin() || isSoporte();
+    }
+
     // Directorio de Usuarios
     match /users/{userId} {
       allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == userId);

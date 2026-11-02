@@ -34,8 +34,8 @@ export async function authenticateServerRequest(
 
   const token = authHeader.split("Bearer ")[1].trim();
 
-  // Soporte para tests unitarios automatizados (solo activo cuando NODE_ENV === 'test')
-  if (process.env.NODE_ENV === "test") {
+  // Soporte para tests unitarios y desarrollo local (solo activo cuando NODE_ENV === 'test' o 'development')
+  if (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development") {
     if (token === "test-token-admin") {
       const user: AuthenticatedUser = { uid: "test-admin-uid", email: "admin@cosoavl.com", role: "admin" };
       if (allowedRoles && !allowedRoles.includes(user.role)) {

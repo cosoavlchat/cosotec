@@ -38,7 +38,7 @@ export default async function PaqueteDetailPage({
 
   const whatsappUrl = buildWhatsAppLink({
     producto: `Paquete ${pkg.nombre}`,
-    precioConIva: pkg.revisarPrecio ? "Por confirmar" : formattedPrice,
+    precioConIva: pkg.revisarPrecio ? undefined : formattedPrice,
     pagina: `/paquetes/${pkg.slug}`,
     tipoConsulta: pkg.revisarPrecio ? "cotizacion" : "compra",
   });

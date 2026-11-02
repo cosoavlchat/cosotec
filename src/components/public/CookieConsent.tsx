@@ -47,7 +47,18 @@ export function CookieConsent({ ga4Id, metaPixelId }: CookieConsentProps) {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '${ga4Id}', { page_path: window.location.pathname });
+
+              var isSensitive = ['/c/', '/checkout', '/pedido/'].some(function(p) {
+                return window.location.pathname.indexOf(p) === 0;
+              });
+              var safePath = window.location.pathname;
+              var safeLocation = isSensitive ? (window.location.origin + safePath) : window.location.href;
+
+              gtag('config', '${ga4Id}', {
+                page_path: safePath,
+                page_location: safeLocation,
+                allow_google_signals: false
+              });
             `}
           </Script>
         </>
@@ -65,7 +76,14 @@ export function CookieConsent({ ga4Id, metaPixelId }: CookieConsentProps) {
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '${metaPixelId}');
-            fbq('track', 'PageView');
+            
+            var isSensitive = ['/c/', '/checkout', '/pedido/'].some(function(p) {
+              return window.location.pathname.indexOf(p) === 0;
+            });
+            // En rutas sensibles no se expone la URL con tokens ni parámetros
+            if (!isSensitive) {
+              fbq('track', 'PageView');
+            }
           `}
         </Script>
       )}

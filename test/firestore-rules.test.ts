@@ -31,7 +31,7 @@ function isPortOpen(host: string, port: number, timeoutMs = 1000): Promise<boole
 }
 
 const emulatorPort = 8080;
-const projectId = "demo-cosoteco-rules-test";
+const projectId = "demo-cosotec7-rules-test";
 
 describe("Reglas de Seguridad Firestore (firestore.rules)", () => {
   let testEnv: RulesTestEnvironment | null = null;
@@ -71,8 +71,13 @@ describe("Reglas de Seguridad Firestore (firestore.rules)", () => {
         await setDoc(doc(db, "settings/contact"), { whatsapp: "722 432 2053" });
         await setDoc(doc(db, "travelFees/MEX"), { estadoNombre: "Edomex", sinCosto: true });
         // Settings y colecciones protegidas
-        await setDoc(doc(db, "settings/bank"), { clabe: "012180001234567890", banco: "BBVA" });
+        await setDoc(doc(db, "settings/bank"), { clabe: "012180001234567890", banco: "Banco de prueba", esPrueba: true });
         await setDoc(doc(db, "auditLog/log-1"), { action: "update", entity: "pricing" });
+        // Carrito protegido
+        await setDoc(doc(db, "carts/cart-seguro"), {
+          estado: "activo",
+          items: [],
+        });
       });
     }
   });
@@ -121,6 +126,13 @@ describe("Reglas de Seguridad Firestore (firestore.rules)", () => {
       const unauthedDb = testEnv.unauthenticatedContext().firestore();
       await assertFails(setDoc(doc(unauthedDb, "products/hack"), { activo: true }));
       await assertFails(setDoc(doc(unauthedDb, "settings/pricing"), { ivaPorcentaje: 0 }));
+    });
+
+    it("el público NO puede leer ni escribir directamente en la colección 'carts'", async () => {
+      if (!emulatorRunning || !testEnv) return;
+      const unauthedDb = testEnv.unauthenticatedContext().firestore();
+      await assertFails(getDoc(doc(unauthedDb, "carts/cart-seguro")));
+      await assertFails(setDoc(doc(unauthedDb, "carts/cart-hack"), { estado: "activo" }));
     });
   });
 

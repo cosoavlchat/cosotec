@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { adminDb } from "@/lib/firebase/admin";
+import { checkRateLimit } from "@/lib/services/rate-limit";
 
 const ContactoSchema = z.object({
   nombre: z.string().min(2, "El nombre debe tener al menos 2 caracteres").max(100),
@@ -20,32 +21,13 @@ const ContactoSchema = z.object({
   website_field_hp: z.string().max(0, "Spam detectado").optional().default(""),
 });
 
-// Rate limiter en memoria por IP (máximo 5 envíos cada 15 minutos)
-const ipRateMap = new Map<string, { count: number; expiresAt: number }>();
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = ipRateMap.get(ip);
-
-  if (!entry || now > entry.expiresAt) {
-    ipRateMap.set(ip, { count: 1, expiresAt: now + 15 * 60 * 1000 });
-    return true;
-  }
-
-  if (entry.count >= 5) {
-    return false;
-  }
-
-  entry.count += 1;
-  return true;
-}
-
 export async function POST(req: NextRequest) {
   try {
     const forwarded = req.headers.get("x-forwarded-for");
     const ip = forwarded ? forwarded.split(",")[0].trim() : "127.0.0.1";
 
-    if (!checkRateLimit(ip)) {
+    const rateLimit = await checkRateLimit(ip, "contacto", 5, 15 * 60 * 1000);
+    if (!rateLimit.allowed) {
       return NextResponse.json(
         { error: "Demasiados intentos. Por favor espera unos minutos antes de volver a enviar." },
         { status: 429 }

@@ -33,6 +33,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { CartProvider } from "@/context/CartContext";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +43,9 @@ export default function RootLayout({
   return (
     <html lang="es-MX" className={`${manrope.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans bg-[#F5F3F2] text-[#1C1C1E]">
-        {children}
+        <CartProvider>
+          {children}
+        </CartProvider>
       </body>
     </html>
   );

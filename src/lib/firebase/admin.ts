@@ -4,7 +4,16 @@ import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 import { AuditLogEntry } from "@/types/audit";
 
-const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "cosoteco";
+import fs from "fs";
+import path from "path";
+
+const projectId = process.env.FIREBASE_PROJECT_ID || process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || "cosotec7";
+
+// Si existe la llave local de desarrollo y no se ha forzado el emulador, usarla
+const localKeyPath = path.resolve(process.cwd(), "serviceAccountKey-cosotec7.json");
+if (!process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(localKeyPath) && process.env.USE_FIREBASE_EMULATOR !== "true" && process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR !== "true") {
+  process.env.GOOGLE_APPLICATION_CREDENTIALS = localKeyPath;
+}
 
 // Configuración de emuladores para desarrollo local o cuando no haya credenciales de Google Cloud
 const hasGcpCredentials = Boolean(
@@ -53,6 +62,11 @@ function getAdminApp() {
 
 export const adminApp = getAdminApp();
 export const adminDb = getFirestore(adminApp);
+try {
+  adminDb.settings({ ignoreUndefinedProperties: true });
+} catch (e) {
+  // Ya inicializado en recarga en caliente de Next.js
+}
 export const adminAuth = getAuth(adminApp);
 export const adminStorage = getStorage(adminApp);
 

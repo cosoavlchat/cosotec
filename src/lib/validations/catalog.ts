@@ -24,6 +24,10 @@ export const ProductSchema = z.object({
   recurrentes: z.array(CostRecurrenteSchema).default([]),
   esEquipoPrincipal: z.boolean().default(false),
   activo: z.boolean().default(true),
+  visibleEnTienda: z.boolean().default(true),
+  incluyeInstalacion: z.boolean().default(false),
+  incluyePlanPrimerAnio: z.boolean().default(false),
+  servicioInstalacionId: z.string().optional(),
   orden: z.number().int().default(0),
   revisarPrecio: z.boolean().default(false),
 });
@@ -44,6 +48,8 @@ export const PackageSchema = z.object({
   queIncluye: z.array(z.string()).default([]),
   destacado: z.boolean().default(false),
   activo: z.boolean().default(true),
+  incluyeInstalacion: z.boolean().default(true),
+  incluyePlanPrimerAnio: z.boolean().default(true),
   revisarPrecio: z.boolean().default(false),
 });
 

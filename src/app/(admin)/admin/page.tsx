@@ -17,6 +17,7 @@ export default function AdminDashboardPage() {
     iva: 16,
     volumenDescuento: 10,
   });
+  const [bankEsPrueba, setBankEsPrueba] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,10 @@ export default function AdminDashboardPage() {
         const prods = catData.products || [];
         const pkgs = catData.packages || [];
         const travel = priceData.travelFees || [];
+
+        if (priceData.bank?.esPrueba) {
+          setBankEsPrueba(true);
+        }
 
         setStats({
           totalProducts: prods.length,
@@ -56,6 +61,26 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
+      {/* Candado Rojo: Datos Bancarios de Prueba */}
+      {bankEsPrueba && (
+        <div className="p-4 rounded-2xl bg-red-600 text-white flex items-center justify-between gap-4 shadow-md border-2 border-red-700 animate-pulse">
+          <div className="flex items-center gap-3">
+            <ShieldAlert className="w-6 h-6 text-white shrink-0" />
+            <div>
+              <p className="font-black text-sm uppercase tracking-wide">
+                Candado de Salida a Producción Activo: Datos Bancarios de Prueba
+              </p>
+              <p className="text-xs text-red-100">
+                La configuración bancaria para transferencias SPEI tiene activado <strong>esPrueba = true</strong> (Titular: <em>CUENTA DE PRUEBA – NO TRANSFERIR</em>). No se debe autorizar el lanzamiento a producción hasta sustituirlos por la cuenta fiscal real en <code>settings/bank</code>.
+              </p>
+            </div>
+          </div>
+          <span className="px-3 py-1 bg-white text-red-700 font-black text-xs rounded-lg uppercase tracking-wider shrink-0">
+            esPrueba: true
+          </span>
+        </div>
+      )}
+
       {/* Welcome Banner */}
       <div className="rounded-2xl bg-gradient-to-r from-[#4A0C18] to-[#7A1428] text-white p-8 shadow-md border border-[#C9A15B]/30 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#C9A15B]/15 via-transparent to-transparent pointer-events-none" />

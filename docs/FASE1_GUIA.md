@@ -1,6 +1,6 @@
 # Guía de Operación y Verificación — Fase 1 (Base y Catálogo)
 
-**Proyecto Firebase:** `cosoteco`  
+**Proyecto Firebase:** `cosotec7`  
 **Cliente:** CoSoAVL (Metepec, Edomex)
 
 ---
@@ -40,12 +40,12 @@ npm run seed:local
 - Marca `activo: false` en los drones DJI Matrice 4E y 4T.
 - Carga los 32 estados de México en `travelFees`, con costo $0 y marcando como **sin costo** a Toluca/Edomex, CDMX, Monterrey, Guadalajara y Querétaro.
 
-### En Producción (`cosoteco`) — Comando explícito documentado
+### En Producción (`cosotec7`) — Comando explícito documentado
 > [!CAUTION]
-> El seed a producción sobreescribe datos maestros en el proyecto `cosoteco` en la nube. Requiere credenciales de cuenta de servicio de Firebase.
+> El seed a producción sobreescribe datos maestros en el proyecto `cosotec7` en la nube. Requiere credenciales de cuenta de servicio de Firebase.
 
 ```bash
-# 1. Exporta la credencial de cuenta de servicio de cosoteco:
+# 1. Exporta la credencial de cuenta de servicio de cosotec7:
 # En PowerShell:
 $env:FIREBASE_SERVICE_ACCOUNT_KEY = Get-Content path/to/serviceAccountKey.json -Raw
 # 2. Ejecuta el seed hacia producción:

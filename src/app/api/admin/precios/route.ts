@@ -5,19 +5,25 @@ import {
   updatePricingSettings,
   getTravelFees,
   updateTravelFee,
+  getBankSettings,
+  updateBankSettings,
 } from "@/lib/services/pricing-service";
 
 export async function GET() {
   try {
-    const [pricing, travelFees] = await Promise.all([getPricingSettings(), getTravelFees()]);
-    return NextResponse.json({ pricing, travelFees });
+    const [pricing, travelFees, bank] = await Promise.all([
+      getPricingSettings(),
+      getTravelFees(),
+      getBankSettings(),
+    ]);
+    return NextResponse.json({ pricing, travelFees, bank });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  // REGLA 1: Solo 'admin' puede modificar precios, IVA, descuentos o viáticos
+  // REGLA 1: Solo 'admin' puede modificar precios, IVA, descuentos, viáticos o banco
   const auth = await authenticateServerRequest(req, ["admin"]);
   if (!auth.success) {
     return auth.response;
@@ -33,6 +39,11 @@ export async function POST(req: NextRequest) {
       }
       const updated = await updateTravelFee(id, data, auth.user);
       return NextResponse.json({ success: true, travelFee: updated });
+    }
+
+    if (target === "bank") {
+      const updated = await updateBankSettings(data, auth.user);
+      return NextResponse.json({ success: true, bank: updated });
     }
 
     const updated = await updatePricingSettings(data, auth.user);

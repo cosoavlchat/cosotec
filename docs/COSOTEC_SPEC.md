@@ -5,7 +5,7 @@
 ---
 
 ## 1. Resumen y decisiones
-CosoTec es la nueva tienda en línea de CoSoAVL: vende e instala GPS, DashCams, seguridad para transporte y drones, y reemplaza a `cosoavl.com` cuando esté lista. Es a la vez tienda pública, cotizador para vendedores, CRM ligero e intercambio de datos con el chatbot de Meta. Todo vive en el proyecto Firebase `cosoteco`.
+CosoTec es la nueva tienda en línea de CoSoAVL: vende e instala GPS, DashCams, seguridad para transporte y drones, y reemplaza a `cosoavl.com` cuando esté lista. Es a la vez tienda pública, cotizador para vendedores, CRM ligero e intercambio de datos con el chatbot de Meta. Todo vive en el proyecto Firebase `cosotec7`.
 
 ### Objetivos
 1. Que un cliente pueda armar, pagar y agendar su instalación sin hablar con nadie.
@@ -46,7 +46,7 @@ Una sola aplicación Next.js sirve la tienda, el panel admin y la API; Firebase 
 | **Secretos** | Secret Manager | API key del chatbot, token de Mercado Pago, credenciales de correo y WhatsApp |
 | **Correo** | Extensión Trigger Email de Firebase o Resend | Cotizaciones, confirmaciones, ficha de instalación |
 
-### Requisitos del proyecto `cosoteco`
+### Requisitos del proyecto `cosotec7`
 - Plan Blaze (pago por uso): lo exigen App Hosting y Cloud Functions.
 - Región sugerida: `us-central1`.
 - App Hosting entrega su propio dominio por defecto; `cosotec.com` se conecta después como dominio personalizado.

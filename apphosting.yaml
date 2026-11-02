@@ -1,0 +1,25 @@
+# Settings for Firebase App Hosting
+# Proyecto: cosotec7
+runConfig:
+  minInstances: 0
+  maxInstances: 5
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 1024
+
+env:
+  - variable: MP_ACCESS_TOKEN
+    secret: MP_ACCESS_TOKEN
+  - variable: MP_WEBHOOK_SECRET
+    secret: MP_WEBHOOK_SECRET
+  - variable: QUOTES_TOKEN_SECRET
+    secret: QUOTES_TOKEN_SECRET
+  - variable: CART_SESSION_SECRET
+    secret: CART_SESSION_SECRET
+  - variable: CRON_SECRET
+    secret: CRON_SECRET
+  - variable: RESEND_API_KEY
+    secret: RESEND_API_KEY
+  - variable: NEXT_PUBLIC_SITE_URL
+    value: https://cosotec.com
+

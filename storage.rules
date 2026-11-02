@@ -20,6 +20,11 @@ service firebase.storage {
     match /private/{allPaths=**} {
       allow read, write: if isAdmin();
     }
+
+    // Comprobantes SPEI
+    match /comprobantes-spei/{allPaths=**} {
+      allow read, write: if isAdmin();
+    }
   }
 }
 

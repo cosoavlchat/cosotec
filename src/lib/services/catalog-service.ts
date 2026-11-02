@@ -3,9 +3,23 @@ import { Product, Package } from "@/types/catalog";
 import { ProductSchema, PackageSchema } from "@/lib/validations/catalog";
 import { initialProducts, initialPackages } from "../../../scripts/seed-data";
 
-export async function getProducts(includeInactive: boolean = true): Promise<Product[]> {
+export async function getProducts(
+  includeInactive: boolean = true,
+  onlyVisibleInStore: boolean = !includeInactive
+): Promise<Product[]> {
+  const filterList = (list: Product[]) => {
+    let result = list;
+    if (!includeInactive) {
+      result = result.filter((p) => p.activo);
+    }
+    if (onlyVisibleInStore) {
+      result = result.filter((p) => p.visibleEnTienda !== false);
+    }
+    return result;
+  };
+
   if (!(await isFirestoreReady())) {
-    return includeInactive ? initialProducts : initialProducts.filter((p) => p.activo);
+    return filterList(initialProducts);
   }
   try {
     let query = adminDb.collection("products") as any;
@@ -14,12 +28,13 @@ export async function getProducts(includeInactive: boolean = true): Promise<Prod
     }
     const snap = await query.orderBy("orden", "asc").get();
     if (!snap.empty) {
-      return snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Product));
+      const items = snap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() } as Product));
+      return filterList(items);
     }
   } catch (err) {
     // Si Firestore/emulador no está disponible, usar semilla inicial
   }
-  return includeInactive ? initialProducts : initialProducts.filter((p) => p.activo);
+  return filterList(initialProducts);
 }
 
 export async function getProductBySlug(slug: string): Promise<Product | null> {
