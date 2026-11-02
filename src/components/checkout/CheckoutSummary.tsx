@@ -23,7 +23,7 @@ export function CheckoutSummary() {
 
   return (
     <div className="bg-white rounded-3xl border border-gray-200/80 p-6 shadow-xs space-y-6">
-      {/* Header con indicador de auto-guardado en Firestore */}
+      {/* Header con indicador de auto-guardado */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
           <ShoppingBag className="w-4 h-4 text-[#7A1428]" />
@@ -39,7 +39,7 @@ export function CheckoutSummary() {
           )}
           {saveStatus === "saved" && (
             <span className="text-emerald-700 font-bold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Guardado en Firestore
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Tus datos se guardan automáticamente
             </span>
           )}
           {saveStatus === "idle" && (
@@ -170,12 +170,8 @@ export function CheckoutSummary() {
       {/* Garantías y sellos de confianza */}
       <div className="pt-3 border-t border-gray-100 space-y-2 text-[11px] text-gray-500">
         <div className="flex items-center gap-2">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Garantía CoSoAVL por escrito en contrato y factura</span>
-        </div>
-        <div className="flex items-center gap-2">
           <Clock className="w-3.5 h-3.5 text-[#7A1428]" />
-          <span>Agenda técnica garantizada en 48–72 horas</span>
+          <span>Instalación en 48–72 horas después de confirmar tu pago</span>
         </div>
       </div>
     </div>

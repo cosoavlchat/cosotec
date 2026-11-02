@@ -118,7 +118,7 @@ describe("Paso 3.5: Flujo de Transferencia SPEI, Comprobantes y Validación en A
           montoCentavos: 569138,
           momento: "inmediato",
           estado: "pendiente",
-          externalReference: `${folio}:P1`,
+          externalReference: `${folio}-P1`,
         },
       ],
       createdAt: new Date().toISOString(),

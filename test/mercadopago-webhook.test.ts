@@ -5,6 +5,10 @@ import {
   crearOrdenMercadoPago,
   crearPreferenciaMercadoPago,
   isMercadoPagoSandbox,
+  validarExternalReferenceMP,
+  MP_EXTERNAL_REFERENCE_REGEX,
+  MP_OFFICIAL_PAYMENT_METHOD_TYPES,
+  MP_NOT_ALLOWED_PAYMENT_TYPES,
 } from "@/lib/mercadopago";
 import { generarTokenAleatorio, hashToken, validarTokenCotizacion } from "@/lib/quotes";
 import { Order, OrderPagoProgramado } from "@/types/order";
@@ -132,7 +136,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
     expect(centavosC === pagoEsperadoCentavos).toBe(false); // Discrepancia -> 'revision_manual'
   });
 
-  it("4. Referencia por Cuota: external_reference granular ('CT-XXXXXXX:P1', ':P2') y transición completa", () => {
+  it("4. Referencia por Cuota: external_reference granular ('CT-XXXXXXX-P1', '-P2') y transición completa", () => {
     const folio = "CT-1124451";
     const pagos: OrderPagoProgramado[] = [
       {
@@ -142,7 +146,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
         montoCentavos: 313026, // $3,130.26
         momento: "inmediato",
         estado: "pendiente",
-        externalReference: `${folio}:P1`,
+        externalReference: `${folio}-P1`,
       },
       {
         id: "P2",
@@ -151,13 +155,16 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
         montoCentavos: 256112, // $2,561.12
         momento: "al_instalar",
         estado: "pendiente",
-        externalReference: `${folio}:P2`,
+        externalReference: `${folio}-P2`,
       },
     ];
 
-    // Simular recepción de webhook para P1
-    const refP1 = "CT-1124451:P1";
-    const [folioRecibido1, pagoId1] = refP1.split(":");
+    // Simular recepción de webhook para P1 con formato canónico (guión)
+    const refP1 = "CT-1124451-P1";
+    const match1 = refP1.match(/^(CT-[A-Za-z0-9]+)-(P\d+)$/i);
+    expect(match1).not.toBeNull();
+    const folioRecibido1 = match1![1];
+    const pagoId1 = match1![2].toUpperCase();
     expect(folioRecibido1).toBe(folio);
     expect(pagoId1).toBe("P1");
 
@@ -173,8 +180,9 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
     expect(estadoTrasP1).toBe("anticipo_pagado");
 
     // Simular recepción de webhook posterior para P2 (Finiquito)
-    const refP2 = "CT-1124451:P2";
-    const [, pagoId2] = refP2.split(":");
+    const refP2 = "CT-1124451-P2";
+    const match2 = refP2.match(/^(CT-[A-Za-z0-9]+)-(P\d+)$/i);
+    const pagoId2 = match2![2].toUpperCase();
     const p2 = pagos.find((p) => p.id === pagoId2);
     expect(p2?.montoCentavos).toBe(256112);
 
@@ -197,7 +205,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
       momento: "inmediato",
       estado: "aprobado",
       paymentId: "ORD01K_EXISTENTE",
-      externalReference: "CT-1124451:P1",
+      externalReference: "CT-1124451-P1",
     };
 
     const incomingResourceId = "ORD01K_EXISTENTE";
@@ -265,7 +273,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
 
     const resultado = await crearOrdenMercadoPago({
       folio: "CT-1124451",
-      externalReference: "CT-1124451:P1",
+      externalReference: "CT-1124451-P1",
       token: "tok_seguro_123",
       items: [
         {
@@ -284,15 +292,15 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
     expect(requestBody.processing_mode).toBe("manual");
     expect(requestBody.capture_mode).toBe("automatic");
     expect(requestBody.total_amount).toBe("3130.26");
-    expect(requestBody.external_reference).toBe("CT-1124451:P1");
+    expect(requestBody.external_reference).toBe("CT-1124451-P1");
 
-    // REGLA: Exclusión estricta de tickets, transferencias offline y efectivo
+    // REGLA: Exclusión estricta de tickets, transferencias offline y efectivo (sin 'wallet')
     expect(requestBody.config.payment_method.not_allowed_types).toEqual([
       "ticket",
+      "atm",
       "bank_transfer",
       "account_money",
-      "wallet",
-      "atm",
+      "digital_currency",
     ]);
 
     // Redirección y retorno automático
@@ -326,7 +334,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
           montoCentavos: 313026,
           momento: "inmediato",
           estado: "pendiente",
-          externalReference: "CT-1124451:P1",
+          externalReference: "CT-1124451-P1",
         },
         {
           id: "P2",
@@ -335,7 +343,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
           montoCentavos: 256112,
           momento: "al_instalar",
           estado: "pendiente",
-          externalReference: "CT-1124451:P2",
+          externalReference: "CT-1124451-P2",
         },
       ],
       contacto: { nombre: "Cliente Prueba", telefono: "5551234567", correo: "cliente@prueba.com" },
@@ -354,7 +362,7 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
             id: orderId,
             status: "processed",
             status_detail: "accredited",
-            external_reference: "CT-1124451:P1",
+            external_reference: "CT-1124451-P1",
             total_amount: "3130.26",
             transactions: {
               payments: [
@@ -436,5 +444,48 @@ describe("Paso 3.4 & Migración a Orders API: Mercado Pago Checkout Pro y Webhoo
     expect(json.code).toBe("WEBHOOK_SECRET_PENDING");
 
     process.env.MP_WEBHOOK_SECRET = originalSecret;
+  });
+
+  it("11. Validación de Catálogo Oficial de Medios de Pago y Exclusión Estricta (sin 'wallet')", () => {
+    // 1. Cada valor de not_allowed_types debe pertenecer a la lista oficial de Mercado Pago Orders API
+    for (const tipo of MP_NOT_ALLOWED_PAYMENT_TYPES) {
+      expect(MP_OFFICIAL_PAYMENT_METHOD_TYPES).toContain(tipo);
+    }
+
+    // 2. 'wallet' no es un tipo válido en la API y debe estar excluido
+    expect((MP_NOT_ALLOWED_PAYMENT_TYPES as readonly string[]).includes("wallet")).toBe(false);
+    expect((MP_OFFICIAL_PAYMENT_METHOD_TYPES as readonly string[]).includes("wallet")).toBe(false);
+
+    // 3. Los tipos permitidos resultantes son exclusivamente credit_card, debit_card y prepaid_card
+    const tiposPermitidos = MP_OFFICIAL_PAYMENT_METHOD_TYPES.filter(
+      (t) => !(MP_NOT_ALLOWED_PAYMENT_TYPES as readonly string[]).includes(t)
+    );
+    expect(tiposPermitidos.sort()).toEqual(["credit_card", "debit_card", "prepaid_card"].sort());
+  });
+
+  it("12. Validación de Expresión Regular para external_reference (patrón oficial ^[a-zA-Z0-9_-]{1,64}$)", async () => {
+    // Casos válidos
+    expect(validarExternalReferenceMP("CT-1124451-P1")).toBe(true);
+    expect(validarExternalReferenceMP("CT-1124451-P2")).toBe(true);
+    expect(validarExternalReferenceMP("CT_1124451_P1")).toBe(true);
+    expect(validarExternalReferenceMP("ORD123456")).toBe(true);
+    expect(validarExternalReferenceMP("a".repeat(64))).toBe(true);
+
+    // Casos inválidos (rechazados antes de enviar a MP)
+    expect(validarExternalReferenceMP("CT-1124451:P1")).toBe(false); // Dos puntos prohibidos
+    expect(validarExternalReferenceMP("CT 1124451 P1")).toBe(false); // Espacios prohibidos
+    expect(validarExternalReferenceMP("a".repeat(65))).toBe(false); // Longitud mayor a 64
+    expect(validarExternalReferenceMP("")).toBe(false); // Vacío
+
+    // Verifica que crearOrdenMercadoPago arroje error si externalReference es inválido
+    await expect(
+      crearOrdenMercadoPago({
+        folio: "CT-1124451",
+        externalReference: "CT-1124451:P1", // inválido con dos puntos
+        token: "tok_123",
+        items: [{ title: "Item", quantity: 1, unit_price: 100 }],
+        backUrlBase: "https://cosotec.mx",
+      })
+    ).rejects.toThrow(/no cumple con el patrón oficial/);
   });
 });

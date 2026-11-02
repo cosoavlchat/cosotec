@@ -82,7 +82,7 @@ const sampleOrder: Order = {
       montoCentavos: 1017865,
       momento: "inmediato",
       estado: "aprobado",
-      externalReference: "CT-1124451:P1",
+      externalReference: "CT-1124451-P1",
     },
     {
       id: "P2",
@@ -91,7 +91,7 @@ const sampleOrder: Order = {
       montoCentavos: 832799,
       momento: "al_instalar",
       estado: "pendiente",
-      externalReference: "CT-1124451:P2",
+      externalReference: "CT-1124451-P2",
     },
   ],
   createdAt: "2026-11-01T18:00:00.000Z",
@@ -115,7 +115,7 @@ const samplePagoP2: OrderPagoProgramado = {
   montoCentavos: 832799,
   momento: "al_instalar",
   estado: "pendiente",
-  externalReference: "CT-1124451:P2",
+  externalReference: "CT-1124451-P2",
 };
 
 const outDir = path.resolve(process.cwd(), "temp-previews");

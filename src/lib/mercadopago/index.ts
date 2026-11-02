@@ -21,7 +21,7 @@ export interface MercadoPagoOrderResponse {
   type?: string; // "online"
   status: "created" | "processed" | "action_required" | "canceled" | "failed" | string;
   status_detail?: string;
-  external_reference?: string; // ej: "CT-1124451:P1"
+  external_reference?: string; // ej: "CT-1124451-P1"
   total_amount: string | number; // Total de la orden en pesos
   checkout_url?: string;
   transactions?: {
@@ -42,7 +42,7 @@ export interface MercadoPagoOrderResponse {
 
 export interface CrearOrdenMercadoPagoParams {
   folio: string;
-  externalReference: string; // ej: "CT-1124451:P1"
+  externalReference: string; // ej: "CT-1124451-P1"
   token: string; // Token de seguridad para las back_urls
   items: Array<{
     id?: string;
@@ -233,6 +233,46 @@ export async function obtenerPagoMercadoPago(
 }
 
 /**
+ * Patrón oficial para external_reference en Mercado Pago Orders API:
+ * Longitud máxima: 64 caracteres.
+ * Caracteres permitidos: Letras [a-zA-Z], números [0-9], guiones [-] y guiones bajos [_].
+ * Enlace: https://www.mercadopago.com.mx/developers/es/reference/orders/_orders/post
+ */
+export const MP_EXTERNAL_REFERENCE_REGEX = /^[a-zA-Z0-9_-]{1,64}$/;
+
+export function validarExternalReferenceMP(ref: string): boolean {
+  return MP_EXTERNAL_REFERENCE_REGEX.test(ref);
+}
+
+/**
+ * Lista oficial exhaustiva de tipos de medio de pago en la API de Orders de Mercado Pago:
+ * 'credit_card', 'debit_card', 'ticket', 'atm', 'bank_transfer', 'account_money', 'digital_currency', 'prepaid_card'
+ */
+export const MP_OFFICIAL_PAYMENT_METHOD_TYPES = [
+  "credit_card",
+  "debit_card",
+  "ticket",
+  "atm",
+  "bank_transfer",
+  "account_money",
+  "digital_currency",
+  "prepaid_card",
+] as const;
+
+/**
+ * Tipos de pago no permitidos en CosoTec.
+ * Excluye métodos en efectivo (ticket/atm), transferencias offline, dinero en cuenta y monedas digitales.
+ * Permite ÚNICAMENTE: credit_card, debit_card y prepaid_card.
+ */
+export const MP_NOT_ALLOWED_PAYMENT_TYPES = [
+  "ticket",
+  "atm",
+  "bank_transfer",
+  "account_money",
+  "digital_currency",
+] as const;
+
+/**
  * Crea una orden de pago en Mercado Pago Checkout Pro utilizando la API de Orders (/v1/orders).
  * Documentación oficial: developers.mercadopago.com/es/reference/orders/_orders/post
  *
@@ -241,20 +281,27 @@ export async function obtenerPagoMercadoPago(
  * - processing_mode: "manual" (específico para redirección Checkout Pro)
  * - capture_mode: "automatic" (captura inmediata)
  * - config.payment_method.not_allowed_types: exclusión estricta de efectivo, cheques, transferencias offline y wallets.
- *   Permite ÚNICAMENTE tarjetas de crédito y débito bancarias.
+ *   Permite ÚNICAMENTE tarjetas de crédito, débito y prepagadas.
  * - config.online: URLs de retorno automáticas.
  * - X-Idempotency-Key: UUID único por intento para evitar duplicación.
  */
 export async function crearOrdenMercadoPago(
   params: CrearOrdenMercadoPagoParams
 ): Promise<OrdenMercadoPagoResultado> {
+  // Validación rigurosa del patrón oficial de external_reference antes de enviar
+  if (!validarExternalReferenceMP(params.externalReference)) {
+    throw new Error(
+      `[Mercado Pago Orders] external_reference '${params.externalReference}' no cumple con el patrón oficial permitido (^[a-zA-Z0-9_-]{1,64}$).`
+    );
+  }
+
   const accessToken = getMercadoPagoAccessToken();
 
   if (!accessToken) {
     // Si no hay token configurado aún (modo simulado sin credenciales)
     console.warn("[Mercado Pago Orders] MP_ACCESS_TOKEN no configurado. Generando orden simulada de prueba.");
     const simulatedUrl = `${params.backUrlBase}/pedido/${params.folio}?t=${params.token}&mp_status=processing&sandbox=true`;
-    const simulatedId = `ORD_sim_${params.externalReference.replace(":", "_")}`;
+    const simulatedId = `ORD_sim_${params.externalReference.replace(/[-:]/g, "_")}`;
     return {
       id: simulatedId,
       checkoutUrl: simulatedUrl,
@@ -279,15 +326,9 @@ export async function crearOrdenMercadoPago(
     payer: params.payerEmail ? { email: params.payerEmail } : undefined,
     config: {
       payment_method: {
-        // Exclusión estricta de medios offline, dinero en cuenta y billeteras.
-        // Habilita únicamente tarjetas de crédito ("credit_card") y débito ("debit_card").
-        not_allowed_types: [
-          "ticket",
-          "bank_transfer",
-          "account_money",
-          "wallet",
-          "atm",
-        ],
+        // Exclusión estricta según especificación oficial de Orders API.
+        // Habilita tarjetas: credit_card, debit_card y prepaid_card.
+        not_allowed_types: [...MP_NOT_ALLOWED_PAYMENT_TYPES],
         max_installments: 12,
       },
       online: {

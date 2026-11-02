@@ -36,7 +36,7 @@ export interface OrderPagoProgramado {
   orderMpId?: string; // ID de orden en Mercado Pago API de Orders (ej: ORD...)
   paymentId?: string;
   pagadoAt?: string;
-  externalReference: string; // ej: "CT-1124451:P1"
+  externalReference: string; // ej: "CT-1124451-P1"
 }
 
 export interface OrderComprobanteSpei {

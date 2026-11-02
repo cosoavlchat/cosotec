@@ -53,7 +53,7 @@ export async function generarLinkPagoExhibicion(
   const tokenHash = hashToken(token);
 
   const montoPesos = pago.montoCentavos / 100;
-  const externalReference = `${orderFolio}:${pagoId}`;
+  const externalReference = `${orderFolio}-${pagoId}`;
 
   const mpOrder = await crearOrdenMercadoPago({
     folio: orderFolio,

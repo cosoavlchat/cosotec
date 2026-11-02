@@ -139,9 +139,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true, note: "Sin external_reference" }, { status: 200 });
     }
 
-    // 4. Descomponer external_reference granular (ej: "CT-1124451:P1", "CT-1124451:P2", etc.)
-    const [orderFolio, pagoIdRaw] = externalReference.split(":");
-    const targetPagoId = pagoIdRaw || "P1";
+    // 4. Descomponer external_reference granular (ej: "CT-1124451-P1", o compatibilidad legacy "CT-1124451:P1")
+    let orderFolio = externalReference;
+    let targetPagoId = "P1";
+
+    if (externalReference.includes(":")) {
+      const [f, p] = externalReference.split(":");
+      orderFolio = f;
+      targetPagoId = p || "P1";
+    } else {
+      const match = externalReference.match(/^(CT-[A-Za-z0-9]+)-(P\d+)$/i);
+      if (match) {
+        orderFolio = match[1];
+        targetPagoId = match[2].toUpperCase();
+      }
+    }
 
     let orderRef = adminDb.collection("orders").doc(orderFolio);
     let orderSnap = await orderRef.get();

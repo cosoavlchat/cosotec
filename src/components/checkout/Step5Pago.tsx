@@ -11,19 +11,35 @@ import {
   Lock,
   Calendar,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import { formatMxn } from "@/lib/pricing";
+import { buildWhatsAppCartFallbackLink } from "@/lib/utils/whatsapp";
 
 interface Step5PagoProps {
   onBack: () => void;
   onConfirmOrder: (planSeleccionado: string, metodoSeleccionado: "mercadopago" | "spei") => void;
   isSubmitting?: boolean;
+  orderError?: { message: string; errorId?: string } | null;
 }
 
-export function Step5Pago({ onBack, onConfirmOrder, isSubmitting = false }: Step5PagoProps) {
+export function Step5Pago({
+  onBack,
+  onConfirmOrder,
+  isSubmitting = false,
+  orderError,
+}: Step5PagoProps) {
   const { cart, updatePago } = useCart();
   const calculo = cart?.calculo;
   const planes = calculo?.planesPago || {};
+
+  const whatsappFallbackUrl = buildWhatsAppCartFallbackLink({
+    errorId: orderError?.errorId,
+    cartId: cart?.id,
+    items: cart?.items?.map((it) => ({ nombre: it.nombre, cantidad: it.cantidad })),
+    totalFormateado: calculo?.formato.total,
+    contactoNombre: cart?.contacto?.nombre,
+  });
 
   const [planSeleccionado, setPlanSeleccionado] = useState<string>(
     cart?.pago?.planSeleccionado || "contado"
@@ -233,7 +249,7 @@ export function Step5Pago({ onBack, onConfirmOrder, isSubmitting = false }: Step
             <div>
               <span className="block font-bold text-sm text-gray-900">Mercado Pago Checkout</span>
               <span className="text-xs text-gray-500 block mt-0.5">
-                Tarjetas de débito, crédito Visa/Mastercard/AMEX y OXXO Pay.
+                Tarjeta de crédito, débito o prepagada.
               </span>
             </div>
           </button>
@@ -260,7 +276,7 @@ export function Step5Pago({ onBack, onConfirmOrder, isSubmitting = false }: Step
             <div>
               <span className="block font-bold text-sm text-gray-900">Transferencia Bancaria (SPEI)</span>
               <span className="text-xs text-gray-500 block mt-0.5">
-                Genera tu ficha de depósito interbancario con confirmación inmediata.
+                Transferencia bancaria. Te mostramos los datos para transferir; validamos tu comprobante y te confirmamos por correo.
               </span>
             </div>
           </button>
@@ -297,6 +313,48 @@ export function Step5Pago({ onBack, onConfirmOrder, isSubmitting = false }: Step
           </div>
         )}
       </div>
+
+      {/* Banner de Error Visible en Página (Sin alerts) con Fallback a WhatsApp */}
+      {orderError && (
+        <div className="p-5 rounded-2xl bg-red-50 border-2 border-red-200 text-red-900 space-y-3 animate-in fade-in">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="font-bold text-sm text-red-900">
+                {orderError.message || "No pudimos generar tu orden"}
+              </h4>
+              <p className="text-xs text-red-700">
+                Ocurrió un inconveniente al conectar con la pasarela de pagos. Puedes terminar tu pedido de inmediato vía WhatsApp con un asesor oficial sin perder los datos de tus vehículos.
+              </p>
+              {orderError.errorId && (
+                <p className="text-[11px] font-mono font-semibold text-red-800">
+                  Código de seguimiento: <span className="bg-red-100 px-1.5 py-0.5 rounded border border-red-200">{orderError.errorId}</span>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+            <a
+              href={whatsappFallbackUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold text-xs rounded-xl shadow-md transition-all hover:scale-105"
+            >
+              <MessageCircle className="w-4 h-4 fill-current text-white" />
+              <span>Terminar compra por WhatsApp (722 432 2053)</span>
+            </a>
+            <button
+              type="button"
+              onClick={() => onConfirmOrder(planSeleccionado, metodoSeleccionado)}
+              disabled={isSubmitting}
+              className="w-full sm:w-auto text-xs font-bold text-red-800 hover:underline px-3 py-2 text-center"
+            >
+              Reintentar generación de orden
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Botones de navegación y confirmación */}
       <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-100">

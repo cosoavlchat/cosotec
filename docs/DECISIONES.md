@@ -131,7 +131,7 @@ Este documento registra las decisiones tomadas durante el desarrollo del proyect
      - `total_amount`: Monto total de la exhibición en centavos convertidos a pesos con 2 decimales (`montoPesos.toFixed(2)`), verificado estrictamente igual a la suma de los ítems.
      - `external_reference`: Referencia granular por exhibición (`CT-XXXXXXX:P1`, `:P2`, `:P3`).
      - Header obligatorio `X-Idempotency-Key`: UUID único generado por intento (`crypto.randomUUID()`).
-   - **Restricción Estricta de Medios de Pago:** En Orders API, los medios excluidos se definen en `config.payment_method.not_allowed_types`. Se excluyen: `["ticket", "bank_transfer", "account_money", "wallet", "atm"]`. De este modo, únicamente se aceptan tarjetas de crédito y débito bancarias (`credit_card`, `debit_card`), evitando pagos pendientes diferidos en tiendas de conveniencia.
+   - **Restricción Estricta de Medios de Pago:** En Orders API, los medios excluidos se definen en `config.payment_method.not_allowed_types`. Se excluyen: `["ticket", "atm", "bank_transfer", "account_money", "digital_currency"]`. De este modo, únicamente se aceptan tarjetas de crédito y débito bancarias (`credit_card`, `debit_card`), evitando pagos pendientes diferidos en tiendas de conveniencia.
    - **Retorno Automático:** En `config.online` se configuran `success_url`, `failure_url`, `pending_url` y `auto_return: "approved"`.
 
 3. **Tolerancia Cero en Validación de Montos (`total_amount` en Centavos):**
@@ -255,3 +255,18 @@ pm test (105 tests unitarios en verde).
       - `tsconfig.json`: Se agregó a `exclude` los patrones `"**/*.test.ts"`, `"**/*.test.tsx"` y `"test/**"`. Esto previene que el compilador de producción de Next.js (`next build`) analice archivos de pruebas en la nube.
       - `tsconfig.test.json`: Configuración dedicada que hereda de `tsconfig.json` e incluye explícitamente los archivos de tests (`**/*.test.ts`, `**/*.test.tsx`, `test/**/*.ts`, `test/**/*.tsx`).
       - `package.json`: Se integró el comando `"typecheck": "tsc --noEmit -p tsconfig.test.json"` para ejecutar el typecheck integral en local y en entornos de CI sin depender de `next build`.
+
+
+12. **Ajustes de Validación en Mercado Pago Orders API y Manejo Resiliente de Errores en Checkout:**
+    - **Corrección de `external_reference` (`CT-XXXXXXX-P1`):**
+      La API de Orders de Mercado Pago exige un patrón estricto para `external_reference` correspondiente a `^[a-zA-Z0-9_-]{1,64}$`. El uso anterior de dos puntos (`:`) provocaba error 400 (*"'$.external_reference' - does not match pattern"*). Se migró el formato a guión medio (`CT-1124451-P1`) y se implementó la función validadora `validarExternalReferenceMP()` con su regex antes de realizar cualquier llamada a `/v1/orders`. El webhook en `/api/webhooks/mercadopago` parsea de forma retrocompatible tanto el formato nuevo como el legacy.
+    - **Corrección de `not_allowed_types` (Exclusión de 'wallet'):**
+      En la API de Orders de Mercado Pago, `wallet` no es un valor reconocido dentro del enum oficial (`credit_card`, `debit_card`, `ticket`, `atm`, `bank_transfer`, `account_money`, `digital_currency`, `prepaid_card`). Se retiró `wallet` y se excluyen exactamente los 5 métodos no deseados: `["ticket", "atm", "bank_transfer", "account_money", "digital_currency"]`, habilitando de manera exclusiva `credit_card`, `debit_card` y `prepaid_card`.
+    - **Protección contra Fuga de Información y Generación de `errorId`:**
+      El endpoint `/api/checkout/crear-orden` nunca expone mensajes técnicos de Mercado Pago ni detalles internos de base de datos al cliente. En caso de fallo, registra en el servidor el error completo asociado al folio y un identificador único (`errorId`), y responde al navegador únicamente: `{ error: "No pudimos generar tu orden", errorId }`.
+    - **Checkout sin `alert()` y Fallback Asistido por WhatsApp:**
+      En `src/app/(public)/checkout/page.tsx` y `Step5Pago.tsx` se eliminaron completamente los `alert()` nativos del navegador. Los errores se presentan dentro de la interfaz con su código de incidencia y un botón destacado para terminar la compra vía WhatsApp (+52 722 432 2053) con el mensaje prellenado detallando los productos del carrito y el ID de incidencia.
+    - **Textos de Transparencia Comercial en Paso 5:**
+      - Mercado Pago: *"Tarjeta de crédito, débito o prepagada"* (eliminada mención de OXXO Pay).
+      - SPEI: *"Transferencia bancaria. Te mostramos los datos para transferir; validamos tu comprobante y te confirmamos por correo."* (eliminada mención de confirmación inmediata).
+      - Resumen: *"Tus datos se guardan automáticamente"* (sustituyendo "Guardado en Firestore") e *"Instalación en 48–72 horas después de confirmar tu pago"*.

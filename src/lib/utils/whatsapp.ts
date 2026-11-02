@@ -54,3 +54,41 @@ export function buildWhatsAppLink({
 
   return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
 }
+
+export interface WhatsAppCartFallbackParams {
+  errorId?: string;
+  cartId?: string;
+  items?: Array<{ nombre: string; cantidad: number }>;
+  totalFormateado?: string;
+  contactoNombre?: string;
+}
+
+export function buildWhatsAppCartFallbackLink({
+  errorId,
+  cartId,
+  items,
+  totalFormateado,
+  contactoNombre,
+}: WhatsAppCartFallbackParams): string {
+  let mensaje = "Hola CosoTec, ";
+  if (contactoNombre) {
+    mensaje = `Hola CosoTec, soy ${contactoNombre}. `;
+  }
+  mensaje += `Tuve un inconveniente al generar mi orden en el sitio web${errorId ? ` (Código de incidencia: ${errorId})` : ""}.\n\n`;
+  mensaje += `*Detalle de mi carrito:*\n`;
+  if (items && items.length > 0) {
+    items.forEach((it) => {
+      mensaje += `• ${it.cantidad}x ${it.nombre}\n`;
+    });
+  }
+  if (totalFormateado) {
+    mensaje += `\n*Total:* ${totalFormateado}\n`;
+  }
+  if (cartId) {
+    mensaje += `*ID Carrito:* ${cartId}\n`;
+  }
+  mensaje += `\n¿Me pueden apoyar para concluir mi compra por este medio?`;
+
+  return `https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(mensaje)}`;
+}
+

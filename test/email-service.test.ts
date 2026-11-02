@@ -127,7 +127,7 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
         montoCentavos: 313026,
         momento: "inmediato",
         estado: "aprobado",
-        externalReference: "CT-1124451:P1",
+        externalReference: "CT-1124451-P1",
       },
       {
         id: "P2",
@@ -136,7 +136,7 @@ describe("Paso 3.6: Notificaciones por Correo con Resend y React Email (Ajustes 
         montoCentavos: 256112,
         momento: "al_instalar",
         estado: "pendiente",
-        externalReference: "CT-1124451:P2",
+        externalReference: "CT-1124451-P2",
       },
     ],
     createdAt: new Date().toISOString(),

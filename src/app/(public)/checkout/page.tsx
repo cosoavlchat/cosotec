@@ -28,6 +28,7 @@ function CheckoutInner() {
     : (ctxStep || 1);
 
   const [currentStep, setCurrentStep] = useState<CartStep>(targetStep);
+  const [orderError, setOrderError] = useState<{ message: string; errorId?: string } | null>(null);
 
   useEffect(() => {
     if (!isNaN(parsedStep) && parsedStep >= 1 && parsedStep <= 5) {
@@ -103,6 +104,7 @@ function CheckoutInner() {
   ) => {
     try {
       setIsSubmitting(true);
+      setOrderError(null);
       await saveCurrentState({
         estado: "activo",
         pago: { planSeleccionado, metodoSeleccionado },
@@ -128,10 +130,17 @@ function CheckoutInner() {
         }
         router.push(`/pedido/${data.folio}?t=${data.token}`);
       } else {
-        alert(data.error || "No se pudo generar el pedido. Intenta nuevamente.");
+        setOrderError({
+          message: data.error || "No pudimos generar tu orden",
+          errorId: data.errorId,
+        });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error al procesar la orden:", e);
+      setOrderError({
+        message: "No pudimos generar tu orden",
+        errorId: `ERR_${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -182,6 +191,7 @@ function CheckoutInner() {
                 onBack={handleBackStep}
                 onConfirmOrder={handleConfirmOrder}
                 isSubmitting={isSubmitting}
+                orderError={orderError}
               />
             )}
           </div>

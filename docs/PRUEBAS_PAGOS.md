@@ -47,7 +47,7 @@
 | **Tarjeta Declinada** | `4060 6200 0000 0000` | CALL | `12/28` | `123` | `rejected` (`cc_rejected_call_for_authorize`) |
 | **Código Seguridad Inválido** | `4000 0000 0000 0001` | SECU | `12/28` | `999` | `rejected` (`cc_rejected_bad_filled_security_code`) |
 
-> **Nota de Seguridad en Orders API:** En `crearOrdenMercadoPago` se configuró `type: "online"`, `processing_mode: "manual"`, `capture_mode: "automatic"` y `not_allowed_types: ["ticket", "bank_transfer", "account_money", "wallet", "atm"]`, garantizando que únicamente se acepten tarjetas bancarias y que el veredicto sea inmediato (aprobado o rechazado), sin pagos diferidos en tiendas OXXO.
+> **Nota de Seguridad en Orders API:** En `crearOrdenMercadoPago` se configuró `type: "online"`, `processing_mode: "manual"`, `capture_mode: "automatic"` y `not_allowed_types: ["ticket", "atm", "bank_transfer", "account_money", "digital_currency"]`, garantizando que únicamente se acepten tarjetas bancarias y prepagadas (`credit_card`, `debit_card`, `prepaid_card`), excluyendo medios offline o efectivo, sin pagos diferidos en tiendas OXXO.
 
 ### Configuración del Webhook en Mercado Pago Developers
 - **Ruta:** *Tus integraciones > [Tu Aplicación CosoTec] > Webhooks > Configurar notificaciones*
@@ -60,8 +60,8 @@
 ## 3. Casos de Prueba Validados con Mocks Unitarios (Vitest)
 
 ### Caso 1: Pago Aprobado (P1 Anticipo o Contado)
-- **Escenario:** Cliente ingresa tarjeta aprobada (`4242...`) para el pago `P1` de una orden (`CT-1124451:P1`).
-- **External Reference:** `CT-1124451:P1`
+- **Escenario:** Cliente ingresa tarjeta aprobada (`4242...`) para el pago `P1` de una orden (`CT-1124451-P1`).
+- **External Reference:** `CT-1124451-P1`
 - **Monto Cobrado:** $3,130.26 MXN (`313026` centavos).
 - **Monto Esperado en Cuota P1:** `313026` centavos.
 - **Resultado en Webhook:**
@@ -130,7 +130,7 @@
 ### Caso 6: Pago P2 de un Plan Diferido (Finiquito tras Instalación Concluida)
 - **Escenario:**
   1. Técnico concluye la instalación y soporte la marca como `"instalada"`.
-  2. `procesarInstalacionCompletada()` activa el cobro de la cuota `P2` (Finiquito del 45% en Credi-Contado) y genera la preferencia con `external_reference = "CT-1124451:P2"`.
+  2. `procesarInstalacionCompletada()` activa el cobro de la cuota `P2` (Finiquito del 45% en Credi-Contado) y genera la preferencia con `external_reference = "CT-1124451-P2"`.
   3. El cliente efectúa el pago de $2,561.12 MXN con tarjeta aprobada.
 - **Resultado en Webhook:**
   - Parsea `orderFolio = "CT-1124451"` y `targetPagoId = "P2"`.
@@ -150,13 +150,18 @@ $ npm test
 
  RUN  v5.0.5 E:/3. Proyectos CreAi Web/CosoAVL/Web Page CosoTec
 
- ✓ test/mercadopago-webhook.test.ts (7 tests)
+ ✓ test/mercadopago-webhook.test.ts (12 tests)
    ✓ 1. Validación x-signature: firma correcta según estándar oficial MP es aprobada
    ✓ 2. Validación x-signature: firma manipulada o timestamp alterado es rechazada (401)
    ✓ 3. Tolerancia Cero: transaction_amount se convierte a centavos y cualquier variación va a 'revision_manual'
-   ✓ 4. Referencia por Cuota: external_reference granular ('CT-XXXXXXX:P1', ':P2') y transición completa
+   ✓ 4. Referencia por Cuota: external_reference granular ('CT-XXXXXXX-P1', '-P2') y transición completa
    ✓ 5. Idempotencia: Webhook duplicado con el mismo paymentId no altera el estado de la cuota
    ✓ 6. Seguridad de /pedido/[folio]: Token aleatorio criptográfico con hash revocable
    ✓ 7. Transición de Pago Rechazado según veredicto oficial
+   ✓ 8. Creación de Orden Checkout Pro (Orders API /v1/orders) con exclusión estricta de medios offline
+   ✓ 9. Webhook: Notificación de Orders API procesa orden pagada y actualiza cuota e instalación
+   ✓ 10. Primer despliegue: Si MP_WEBHOOK_SECRET === 'temporal-pendiente', responde 503 sin procesar
+   ✓ 11. Validación de Catálogo Oficial de Medios de Pago y Exclusión Estricta (sin 'wallet')
+   ✓ 12. Validación de Expresión Regular para external_reference (patrón oficial ^[a-zA-Z0-9_-]{1,64}$)
 ```
 

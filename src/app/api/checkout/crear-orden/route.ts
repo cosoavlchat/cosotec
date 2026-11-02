@@ -9,6 +9,7 @@ import { Order, OrderPagoProgramado } from "@/types/order";
 import { notificarConfirmacionPedidoCliente } from "@/lib/services/email-service";
 
 export async function POST(req: NextRequest) {
+  let folio: string | undefined;
   try {
     const rawCookie = req.cookies.get(CART_SESSION_COOKIE_NAME)?.value;
     const sessionCartId = verifyCartSession(rawCookie);
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Folio consecutivo atómico CT-XXXXXXX
-    const folio = await generarSiguienteFolio();
+    folio = await generarSiguienteFolio();
     const token = generarTokenAleatorio();
     const tokenHash = hashToken(token);
 
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     const nowIso = new Date().toISOString();
 
-    // Construir desglose granular de exhibiciones del calendario
+    // Construir desglose granular de exhibiciones del calendario (ej: CT-1124451-P1)
     const pagosProgramados: OrderPagoProgramado[] = (plan.pagos || []).map((p) => ({
       id: `P${p.numero}`,
       numero: p.numero,
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       momento: p.momento,
       fechaEstimada: p.fechaEstimada,
       estado: "pendiente",
-      externalReference: `${folio}:P${p.numero}`,
+      externalReference: `${folio}-P${p.numero}`,
     }));
 
     let mpOrder = undefined;
@@ -87,7 +88,7 @@ export async function POST(req: NextRequest) {
 
       mpOrder = await crearOrdenMercadoPago({
         folio,
-        externalReference: pago1.externalReference, // "CT-XXXXXXX:P1"
+        externalReference: pago1.externalReference, // "CT-XXXXXXX-P1"
         token,
         items: [
           {
@@ -159,9 +160,14 @@ export async function POST(req: NextRequest) {
       mercadoPago: mpOrder,
     });
   } catch (error: any) {
-    console.error("[API Checkout Crear Orden] Error:", error);
+    const errorId = `ERR_${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    console.error(
+      `[API Checkout Crear Orden] [ErrorId: ${errorId}] [Folio: ${folio || "N/A"}] Error completo:`,
+      error
+    );
+    // Nunca exponer mensajes internos de Mercado Pago ni detalles de infraestructura al cliente
     return NextResponse.json(
-      { error: "Error al generar la orden", message: error.message },
+      { error: "No pudimos generar tu orden", errorId },
       { status: 500 }
     );
   }
