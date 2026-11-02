@@ -486,33 +486,33 @@ export function calcularCotizacion(
     ],
   };
 
-  // Plan B: Credi-Contado (55% al comprar, 45% al instalar)
+  // Plan B: Credi-Contado (55% al confirmar, 45% al instalar pagado por link)
   const ccCompraPct = opciones?.planesConfig?.crediContadoPorcentajeCompra ?? 55;
   const ccPago1 = Math.round(totalCentavos * (ccCompraPct / 100));
   const ccPago2 = totalCentavos - ccPago1; // Ajuste exacto de centavos
   planesPago["credi_contado"] = {
     tipo: "credi_contado",
     nombre: `Credi-Contado (${ccCompraPct}% / ${100 - ccCompraPct}%)`,
-    descripcion: `${ccCompraPct}% al confirmar tu pedido y ${100 - ccCompraPct}% al concluir la instalación técnica.`,
+    descripcion: `${ccCompraPct}% al confirmar y ${100 - ccCompraPct}% al instalar (pagado por link).`,
     montoPrimerPagoCentavos: ccPago1,
     saldoRestanteCentavos: ccPago2,
     totalCentavos,
     pagos: [
       {
         numero: 1,
-        concepto: `Anticipo de compra (${ccCompraPct}%)`,
+        concepto: `Anticipo de confirmación (${ccCompraPct}%)`,
         montoCentavos: ccPago1,
         momento: "inmediato",
         montoFormateado: formatMxn(ccPago1),
-        fechaEstimada: "Inmediato (hoy al confirmar)",
+        fechaEstimada: "Inmediato al confirmar",
       },
       {
         numero: 2,
-        concepto: `Finiquito contra instalación (${100 - ccCompraPct}%)`,
+        concepto: `Saldo al instalar (pagado por link, ${100 - ccCompraPct}%)`,
         montoCentavos: ccPago2,
         momento: "al_instalar",
         montoFormateado: formatMxn(ccPago2),
-        fechaEstimada: "Al concluir instalación técnica",
+        fechaEstimada: "Al concluir instalación técnica (vía enlace de pago)",
       },
     ],
   };
