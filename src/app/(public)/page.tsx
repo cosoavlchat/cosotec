@@ -83,28 +83,30 @@ export default async function HomePage() {
       />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#4A0C18] via-[#7A1428] to-[#4A0C18] text-white py-20 px-6 sm:py-28">
+      <section className="relative overflow-hidden bg-[#140306] text-white py-20 px-6 sm:py-28">
         <div className="absolute inset-0 z-0">
           <img
             src="/hero-fleet-protection.jpg"
             alt="Rastreo Satelital y Telemetría de Flotillas CosoTec"
-            className="w-full h-full object-cover object-center opacity-25 mix-blend-luminosity"
+            fetchPriority="high"
+            className="w-full h-full object-cover object-center"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#4A0C18]/85 via-[#7A1428]/80 to-[#4A0C18]" />
+          {/* Overlay equilibrado: viñeta oscura que protege la legibilidad sin apagar la imagen */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#1C0409]/75 via-[#1C0409]/45 to-[#120205]/90" />
         </div>
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
+        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#C9A15B_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none" />
         
         <div className="max-w-6xl mx-auto relative z-10 text-center space-y-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/30 border border-[#C9A15B]/40 text-[#C9A15B] text-xs font-bold uppercase tracking-wider animate-in fade-in zoom-in duration-300">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/50 border border-[#C9A15B]/50 text-[#C9A15B] text-xs font-bold uppercase tracking-wider backdrop-blur-xs animate-in fade-in zoom-in duration-300">
             <Sparkles className="w-3.5 h-3.5" />
             <span>{hero.badge}</span>
           </div>
 
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight max-w-4xl mx-auto">
+          <h1 className="text-4xl sm:text-6xl font-black tracking-tight leading-tight max-w-4xl mx-auto drop-shadow-md">
             {hero.titulo}
           </h1>
 
-          <p className="text-base sm:text-lg text-gray-200 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg text-gray-100 max-w-2xl mx-auto leading-relaxed drop-shadow-xs">
             {hero.subtitulo}
           </p>
 
@@ -121,7 +123,7 @@ export default async function HomePage() {
 
             <Link
               href="/paquetes"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/20 transition-colors"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl border border-white/20 transition-colors backdrop-blur-xs"
             >
               <span>Ver Paquetes Listos</span>
               <ArrowRight className="w-4 h-4" />
@@ -130,15 +132,15 @@ export default async function HomePage() {
 
           {/* Cifras de Confianza Veraces */}
           <div className="pt-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left max-w-4xl mx-auto border-t border-white/15">
-            <div className="p-4 rounded-xl bg-black/20 border border-white/10 space-y-1">
+            <div className="p-4 rounded-xl bg-black/40 backdrop-blur-xs border border-white/15 space-y-1">
               <span className="text-2xl font-black text-[#C9A15B] block">{stats.cifraDispositivos}</span>
               <p className="text-xs text-gray-200 leading-snug">{stats.dispositivosTexto}</p>
             </div>
-            <div className="p-4 rounded-xl bg-black/20 border border-white/10 space-y-1">
+            <div className="p-4 rounded-xl bg-black/40 backdrop-blur-xs border border-white/15 space-y-1">
               <span className="text-xs font-bold text-[#C9A15B] uppercase tracking-wider block">Homologación</span>
               <p className="text-xs text-gray-200 leading-snug">{stats.gobiernosTexto}</p>
             </div>
-            <div className="p-4 rounded-xl bg-black/20 border border-white/10 space-y-1 sm:col-span-2 lg:col-span-1">
+            <div className="p-4 rounded-xl bg-black/40 backdrop-blur-xs border border-white/15 space-y-1 sm:col-span-2 lg:col-span-1">
               <span className="text-2xl font-black text-[#C9A15B] block">48–72h</span>
               <p className="text-xs text-gray-200 leading-snug">Tiempo récord de instalación garantizado en Toluca, CDMX, MTY, GDL y QRO sin viáticos.</p>
             </div>
