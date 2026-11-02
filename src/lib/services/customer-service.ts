@@ -86,8 +86,15 @@ export async function getCustomers(
     query = query.where("vendedorId", "==", filtroVendedorId);
   }
 
-  const snap = await query.orderBy("updatedAt", "desc").get();
-  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as Customer));
+  let snap;
+  try {
+    snap = await query.orderBy("updatedAt", "desc").get();
+  } catch {
+    snap = await query.get();
+  }
+  const customers = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Customer));
+  customers.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+  return customers;
 }
 
 /**
