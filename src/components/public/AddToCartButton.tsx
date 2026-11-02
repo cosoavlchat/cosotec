@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { Product } from "@/types/catalog";
-import { ShoppingBag, ArrowRight, Check } from "lucide-react";
+import { ShoppingCart, ArrowRight, Check } from "lucide-react";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 
 interface AddToCartButtonProps {
@@ -105,7 +105,7 @@ export function AddToCartButton({ product }: AddToCartButtonProps) {
           </>
         ) : (
           <>
-            <ShoppingBag className="w-4 h-4 text-[#7A1428]" />
+            <ShoppingCart className="w-4 h-4 text-[#7A1428]" />
             <span>{loadingAdd ? "Agregando..." : "Agregar al Carrito"}</span>
           </>
         )}

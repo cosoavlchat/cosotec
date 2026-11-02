@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Product } from "@/types/catalog";
 import { precioConIva, formatMxn } from "@/lib/pricing";
-import { MessageCircle, AlertTriangle, ArrowRight, ShoppingBag, Check } from "lucide-react";
+import { MessageCircle, AlertTriangle, ArrowRight, ShoppingCart, Check } from "lucide-react";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { getProductImage } from "@/lib/catalog/product-image";
@@ -236,7 +236,7 @@ export function ProductCard({ product, msiOptions = [] }: ProductCardProps) {
                   title={added ? "¡Agregado al carrito!" : "Agregar al carrito"}
                   aria-label={`Agregar ${product.nombreComercial} al carrito`}
                 >
-                  {added ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <ShoppingBag className="w-3.5 h-3.5" />}
+                  {added ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : <ShoppingCart className="w-3.5 h-3.5" />}
                 </button>
 
                 {/* WhatsApp Asesoría */}

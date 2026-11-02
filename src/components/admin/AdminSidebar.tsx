@@ -84,14 +84,17 @@ export function AdminSidebar({ currentRole, onRoleChange }: AdminSidebarProps) {
     <aside className="w-64 bg-[#4A0C18] text-white flex flex-col min-h-screen shrink-0 border-r border-[#7A1428]/40 shadow-xl">
       {/* Brand Header */}
       <div className="p-5 border-b border-[#7A1428]/50">
-        <Link href="/admin" className="flex items-center justify-center bg-white rounded-xl py-2 px-3 shadow-sm hover:opacity-95 transition-opacity" aria-label="CosoTec Admin Dashboard">
-          <img
-            src="/logo-cosotec.png"
-            alt="CosoTec by CoSoAVL"
-            className="h-9 w-auto object-contain"
-            width={160}
-            height={36}
-          />
+        <Link href="/admin" className="flex items-center justify-center py-2 px-3 group" aria-label="CosoTec Admin Dashboard">
+          <div className="relative inline-block">
+            <div className="absolute -inset-2 bg-gradient-to-r from-white/20 via-[#C9A15B]/20 to-white/20 blur-md opacity-60 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none" />
+            <img
+              src="/logo-cosotec.png"
+              alt="CosoTec by CoSoAVL"
+              className="relative z-10 h-9 w-auto object-contain drop-shadow-[0_2px_8px_rgba(201,161,91,0.35)]"
+              width={160}
+              height={36}
+            />
+          </div>
         </Link>
       </div>
 

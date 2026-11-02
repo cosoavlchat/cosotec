@@ -10,14 +10,17 @@ export function PublicFooter() {
         {/* Columna 1: Marca y Presencia */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center gap-3">
-            <Link href="/" className="inline-block bg-white rounded-xl px-3 py-1.5 shadow-sm hover:opacity-95 transition-opacity" aria-label="CosoTec Inicio">
-              <img
-                src="/logo-cosotec.png"
-                alt="CosoTec by CoSoAVL"
-                className="h-9 sm:h-10 w-auto object-contain"
-                width={180}
-                height={40}
-              />
+            <Link href="/" className="inline-block group py-1" aria-label="CosoTec Inicio">
+              <div className="relative inline-block">
+                <div className="absolute -inset-2 bg-gradient-to-r from-white/25 via-[#C9A15B]/25 to-white/25 blur-lg opacity-60 group-hover:opacity-100 transition-opacity rounded-full pointer-events-none" />
+                <img
+                  src="/logo-cosotec.png"
+                  alt="CosoTec by CoSoAVL"
+                  className="relative z-10 h-10 w-auto object-contain drop-shadow-[0_2px_12px_rgba(201,161,91,0.4)]"
+                  width={180}
+                  height={44}
+                />
+              </div>
             </Link>
           </div>
 

@@ -196,3 +196,4 @@ export function esMunicipioSinCosto(
   const municipiosSinCosto = getMunicipiosSinCosto(estadoId, zonas);
   return municipiosSinCosto.some((m) => normalizeString(m) === target);
 }
+

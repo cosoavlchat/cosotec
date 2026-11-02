@@ -7,7 +7,7 @@ import { SolutionTier } from "@/lib/services/solutions-service";
 import { useCart } from "@/context/CartContext";
 import { formatMxn, precioConIva } from "@/lib/pricing";
 import { buildWhatsAppLink } from "@/lib/utils/whatsapp";
-import { Check, ShoppingBag, ArrowRight, MessageCircle, AlertTriangle, Sparkles, PackageCheck } from "lucide-react";
+import { Check, ShoppingCart, ArrowRight, MessageCircle, AlertTriangle, Sparkles, PackageCheck } from "lucide-react";
 
 interface SolutionTierCardProps {
   tier: SolutionTier;
@@ -238,7 +238,7 @@ export function SolutionTierCard({ tier, products, solucionTitulo }: SolutionTie
                 title={added ? "¡Agregado al carrito!" : "Agregar al carrito"}
                 aria-label={`Agregar nivel ${tier.nivel} al carrito`}
               >
-                {added ? <Check className="w-4 h-4 stroke-[3]" /> : <ShoppingBag className="w-4 h-4" />}
+                {added ? <Check className="w-4 h-4 stroke-[3]" /> : <ShoppingCart className="w-4 h-4" />}
               </button>
             </div>
 

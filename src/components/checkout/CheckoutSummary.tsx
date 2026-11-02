@@ -3,7 +3,7 @@
 import React from "react";
 import { useCart } from "@/context/CartContext";
 import {
-  ShoppingBag,
+  ShoppingCart,
   ShieldCheck,
   Tag,
   MapPin,
@@ -26,7 +26,7 @@ export function CheckoutSummary() {
       {/* Header con indicador de auto-guardado */}
       <div className="flex items-center justify-between border-b border-gray-100 pb-3">
         <div className="flex items-center gap-2">
-          <ShoppingBag className="w-4 h-4 text-[#7A1428]" />
+          <ShoppingCart className="w-4 h-4 text-[#7A1428]" />
           <h3 className="font-bold text-sm text-gray-900">Resumen del Pedido</h3>
         </div>
 

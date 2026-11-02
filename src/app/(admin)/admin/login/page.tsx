@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 border border-white/20 relative z-10 space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-3">
-          <div className="inline-block bg-white rounded-2xl p-3 shadow-md mx-auto border border-gray-100">
+          <div className="flex justify-center py-1">
             <img
               src="/logo-cosotec.png"
               alt="CosoTec by CoSoAVL"

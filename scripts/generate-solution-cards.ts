@@ -130,8 +130,9 @@ async function generateSolutionCards() {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  const logoBuffer = await sharp(path.resolve(process.cwd(), "public/logo-cosotec.png"))
-    .resize({ width: 225, height: 54, fit: "contain", background: { r: 255, g: 255, b: 255, alpha: 1 } })
+  const logoBuffer = await sharp(path.resolve(process.cwd(), "public/logo-cosotec-transparent.png"))
+    .resize({ width: 220, height: 53, fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+    .png()
     .toBuffer();
 
   const width = 800;
@@ -154,6 +155,12 @@ async function generateSolutionCards() {
           <stop offset="0%" stop-color="${sol.accentColor}" stop-opacity="0.8"/>
           <stop offset="100%" stop-color="${sol.accentColor}" stop-opacity="0"/>
         </linearGradient>
+        <radialGradient id="logoRadialGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.75"/>
+          <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.45"/>
+          <stop offset="75%" stop-color="#FFFFFF" stop-opacity="0.12"/>
+          <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+        </radialGradient>
       </defs>
 
       <!-- Fondo Degradado -->
@@ -203,8 +210,8 @@ async function generateSolutionCards() {
         Hardware de alta resistencia • Garantía CoSoAVL
       </text>
 
-      <!-- Contenedor del Logo Oficial -->
-      <rect x="525" y="495" width="245" height="66" rx="14" fill="#FFFFFF" fill-opacity="0.96" stroke="${sol.accentColor}" stroke-width="1.2" stroke-opacity="0.4"/>
+      <!-- Resplandor Radial Blanco Suave detrás del Logo (Sin caja sólida) -->
+      <ellipse cx="645" cy="528" rx="140" ry="46" fill="url(#logoRadialGlow)" />
 
       <!-- Borde general de tarjeta -->
       <rect x="1" y="1" width="${width - 2}" height="${height - 2}" rx="24" fill="none" stroke="white" stroke-width="1.5" stroke-opacity="0.12"/>

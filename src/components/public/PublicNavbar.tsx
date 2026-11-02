@@ -11,7 +11,7 @@ import {
   Shield,
   ChevronDown,
   MapPin,
-  ShoppingBag,
+  ShoppingCart,
   Car,
   Truck,
   Clock,
@@ -191,7 +191,7 @@ export function PublicNavbar() {
               className="relative p-2.5 rounded-xl border border-gray-200 text-gray-700 hover:text-[#7A1428] hover:border-[#7A1428]/30 hover:bg-[#7A1428]/5 transition-all"
               aria-label={`Ver carrito y checkout (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#7A1428] text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
                   {cartCount}
