@@ -482,8 +482,8 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                         const tieneInstalacionSeparada = quote.calculo?.lineasCalculadas?.some(
                           (l) =>
                             l.esInstalacionAgregada &&
-                            ((l.id && l.id.includes(it.id)) ||
-                              (l.nombre && l.nombre.toLowerCase().includes(it.nombre.toLowerCase())))
+                            (l.id.includes(it.id) ||
+                              l.nombre.toLowerCase().includes(it.nombre.toLowerCase()))
                         );
 
                         return (
@@ -574,7 +574,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                     <span className="font-bold text-gray-900 block text-[11px] uppercase tracking-wider">
                       Notas del Asesor:
                     </span>
-                    <p className="italic leading-relaxed">{quote.condiciones?.notasCliente}</p>
+                    <p className="italic leading-relaxed">{quote.condiciones.notasCliente}</p>
                   </div>
                 )}
               </div>

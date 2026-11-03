@@ -599,8 +599,8 @@ export function QuotePdfDocument({
                               !quote.calculo?.lineasCalculadas?.some(
                                 (l) =>
                                   l.esInstalacionAgregada &&
-                                  ((l.id && l.id.includes(it.id)) ||
-                                    (l.nombre && l.nombre.toLowerCase().includes(it.nombre.toLowerCase())))
+                                  (l.id.includes(it.id) ||
+                                    l.nombre.toLowerCase().includes(it.nombre.toLowerCase()))
                               ) && (
                                 <Text style={styles.itemBullet}>
                                   ✓ Instalación incluida con equipo principal
