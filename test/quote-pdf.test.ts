@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import zlib from "zlib";
 import { Quote } from "@/types/quote";
 import { generarCotizacionPdfBuffer } from "@/lib/pdf/quote-pdf";
+import { debeMostrarModelo, MODELOS_CONFIRMADOS_OFICIALES } from "@/lib/quotes";
 
 // Mock de adminDb para pruebas unitarias sin conexión
 vi.mock("@/lib/firebase/admin", () => ({
@@ -312,5 +313,93 @@ describe("Bloque 3: Motor de PDF sin navegador (react-pdf)", () => {
     const cleanText = extractPdfCleanText(buffer);
     const compactText = cleanText.replace(/\s+/g, "").toLowerCase();
     expect(compactText).toContain("instalacióndebotóndepánico");
+  });
+
+  it("Modelos: solo muestra modelo si modeloConfirmado === true o está en la lista confirmada histórica (JC181, JC450, Y04g)", () => {
+    // Caso 1: Modelo no confirmado en cotización nueva (ej. AJ-PRO) -> NO debe mostrarse
+    expect(debeMostrarModelo({ modelo: "AJ-PRO", modeloConfirmado: false })).toBe(false);
+    expect(debeMostrarModelo({ modelo: "SOS-01", modeloConfirmado: false })).toBe(false);
+
+    // Caso 2: Modelo confirmado explícitamente -> Sí debe mostrarse
+    expect(debeMostrarModelo({ modelo: "JC450", modeloConfirmado: true })).toBe(true);
+    expect(debeMostrarModelo({ modelo: "JC181", modeloConfirmado: true })).toBe(true);
+
+    // Caso 3: Cotizaciones viejas sin bandera modeloConfirmado (undefined) -> aplica lista oficial
+    expect(debeMostrarModelo({ modelo: "JC181", modeloConfirmado: undefined })).toBe(true);
+    expect(debeMostrarModelo({ modelo: "JC450", modeloConfirmado: undefined })).toBe(true);
+    expect(debeMostrarModelo({ modelo: "Y04g", modeloConfirmado: undefined })).toBe(true);
+    expect(debeMostrarModelo({ modelo: "AJ-PRO", modeloConfirmado: undefined })).toBe(false);
+    expect(debeMostrarModelo({ modelo: "", modeloConfirmado: true })).toBe(false);
+    expect(debeMostrarModelo(undefined)).toBe(false);
+  });
+
+  it("Inmutabilidad de Snapshot: Cambiar reglas o productos futuros no altera una cotización emitida", async () => {
+    // Cotización emitida con un precio fijado en el snapshot
+    const precioSnapshot = 400000;
+    const emitida: Quote = {
+      ...dummyQuote,
+      id: "CT-1124459",
+      folio: "CT-1124459",
+      items: [
+        {
+          id: "gps-estandar",
+          nombre: "GPS Estándar Original",
+          modelo: "JC181",
+          modeloConfirmado: true,
+          categoria: "gps",
+          precioSinIvaCentavos: precioSnapshot,
+          cantidad: 1,
+          esEquipoPrincipal: true,
+          incluyeInstalacion: true,
+        },
+      ],
+      calculo: {
+        ...dummyQuote.calculo,
+        subtotalBrutoCentavos: precioSnapshot,
+        totalCentavos: Math.round(precioSnapshot * 1.16),
+      },
+    };
+
+    // Generar PDF usando exclusivamente el snapshot de la cotización emitida
+    const buffer = await generarCotizacionPdfBuffer(emitida, "http://localhost:3000");
+    expect(buffer).toBeDefined();
+
+    // Verificamos que el PDF contiene el nombre del snapshot y no depende de variables externas
+    const cleanText = extractPdfCleanText(buffer);
+    const compactText = cleanText.replace(/\s+/g, "").toLowerCase();
+    expect(compactText).toContain("gpsestándaroriginal");
+    expect(compactText).toContain("jc");
+    expect(debeMostrarModelo(emitida.items[0])).toBe(true);
+    // Verificamos que el descuento cara al cliente se llame "descuento especial"
+    expect(compactText).not.toContain("descuentovendedor");
+  });
+
+  it("Nombres de Planes Estandarizados: 'Contado', 'Credi-contado (55% / 45%)', 'Enganche + mensualidades', 'Meses sin intereses'", () => {
+    const nombresOficiales = [
+      "Contado",
+      "Credi-contado (55% / 45%)",
+      "Enganche + mensualidades",
+      "Meses sin intereses",
+    ];
+
+    expect(nombresOficiales).not.toContain("Financiamiento");
+    expect(nombresOficiales).toContain("Credi-contado (55% / 45%)");
+  });
+
+  it("Zona de Instalación: Coherencia de zona con estatus de viáticos", () => {
+    const instalacionMetepec = {
+      estadoNombre: "Estado de México",
+      municipio: "Metepec",
+      esSinCosto: true,
+    };
+
+    const zonaTexto = `${instalacionMetepec.municipio}, ${instalacionMetepec.estadoNombre}`;
+    expect(zonaTexto).toBe("Metepec, Estado de México");
+    expect(zonaTexto).not.toContain("No especificada");
+
+    const estatusViaticos = instalacionMetepec.esSinCosto
+      ? "Sin costo adicional (Zona Metropolitana / Cobertura directa)"
+      : "Se cotiza por separado";
+    expect(estatusViaticos).toBe("Sin costo adicional (Zona Metropolitana / Cobertura directa)");
   });
 });

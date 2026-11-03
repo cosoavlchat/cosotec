@@ -1,7 +1,27 @@
 import Link from "next/link";
 import { Metadata } from "next";
-import { ShieldAlert, ShieldX, Clock, CheckCircle2, AlertTriangle, FileText, ArrowRight, Printer, MessageCircle, Phone, Download, HelpCircle } from "lucide-react";
-import { obtenerCotizacionPorFolio, validarTokenCotizacion } from "@/lib/quotes";
+import {
+  ShieldAlert,
+  ShieldX,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  FileText,
+  ArrowRight,
+  Printer,
+  MessageCircle,
+  Phone,
+  Download,
+  Calendar,
+  CreditCard,
+  Building,
+  Check,
+} from "lucide-react";
+import {
+  obtenerCotizacionPorFolio,
+  validarTokenCotizacion,
+  debeMostrarModelo,
+} from "@/lib/quotes";
 import { registrarAperturaCotizacion } from "@/lib/services/quotes-service";
 import { formatMxn } from "@/lib/pricing";
 
@@ -12,12 +32,37 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { folio } = await params;
+  const title = `Cotización ${folio} · CosoTec by CoSoAVL`;
+  const description = "Revisa tu cotización y paga en línea de forma segura";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://cosotec--cosotec7.us-east4.hosted.app";
+
   return {
-    title: `Cotización ${folio} | CosoTec`,
-    description: `Cotización oficial emitida por CosoTec para soluciones telemáticas y rastreo GPS.`,
+    title,
+    description,
     robots: {
       index: false,
       follow: false,
+    },
+    openGraph: {
+      title,
+      description,
+      url: `${baseUrl}/c/${folio}`,
+      siteName: "CosoTec by CoSoAVL",
+      type: "website",
+      images: [
+        {
+          url: `${baseUrl}/og-quote.png`,
+          width: 1200,
+          height: 630,
+          alt: `Cotización ${folio} · CosoTec by CoSoAVL`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [`${baseUrl}/og-quote.png`],
     },
   };
 }
@@ -99,10 +144,10 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
           </div>
           <div className="pt-2">
             <Link
-              href="/cotizar"
+              href="/soluciones"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#7A1428] hover:bg-[#5C0F1E] text-white font-bold text-xs transition-colors shadow-xs"
             >
-              Crear Nueva Cotización
+              Ver Soluciones
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -179,7 +224,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
               Cotización en Proceso de Aprobación
             </h1>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Esta cotización se encuentra en revisión interna por la gerencia para validar los descuentos y condiciones solicitadas.
+              Esta cotización se encuentra en revisión interna para validar los descuentos y condiciones solicitadas.
             </p>
           </div>
           <p className="text-xs text-gray-500">
@@ -201,7 +246,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
     );
   }
 
-  // CASO 6: Token válido -> Renderizar cotización
+  // CASO 6: Token válido -> Renderizar cotización desde su Snapshot
   const venceAtTimestamp = quote.venceAt ? new Date(quote.venceAt).getTime() : Date.now() + 86400000;
   const vencida = venceAtTimestamp < Date.now();
   const esVersionObsoleta = quote.esVersionActiva === false;
@@ -223,6 +268,33 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
 
   const vendedorWa = quote.vendedorWhatsapp || "7224322053";
   const vendedorNombre = quote.vendedorNombre || "Asesor CoSoAVL";
+
+  // Zona de Instalación oficial desde Snapshot
+  const zonaInstalacion = (() => {
+    if (quote.instalacion?.municipio && quote.instalacion?.estadoNombre) {
+      return `${quote.instalacion.municipio}, ${quote.instalacion.estadoNombre}`;
+    }
+    if (quote.instalacion?.estadoNombre) return quote.instalacion.estadoNombre;
+    if (quote.estadoInstalacion?.nombre) return quote.estadoInstalacion.nombre;
+    return "Zona por definir con asesor";
+  })();
+
+  const estatusViaticos = (() => {
+    if (quote.calculo.viaticosCentavos === 0 && !quote.calculo.viaticosPorConfirmar) {
+      return "Sin costo adicional (Zona Metropolitana / Cobertura directa)";
+    }
+    if (quote.calculo.viaticosPorConfirmar) {
+      return "Fuera de las zonas metropolitanas indicadas, los viáticos se cotizan por separado";
+    }
+    return formatMxn(quote.calculo.viaticosCentavos);
+  })();
+
+  // Plan Pactado por el vendedor y regla de permitirCambioPlan
+  const planPactadoKey = quote.condiciones?.planSeleccionado || "contado";
+  const planPactado =
+    quote.calculo.planesPago?.[planPactadoKey] ||
+    quote.calculo.planesPago?.["contado"];
+  const permitirCambioPlan = quote.condiciones?.permitirCambioPlan === true;
 
   return (
     <div className="min-h-screen bg-[#F5F3F2] py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
@@ -345,7 +417,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                 {quote.cliente.empresa && (
                   <p className="text-gray-600 font-medium">{quote.cliente.empresa}</p>
                 )}
-                <p className="text-gray-500 mt-1">Tel: {quote.cliente.telefono || "No especificado"}</p>
+                <p className="text-gray-500 mt-1">Tel: {quote.cliente.whatsappDisplay || quote.cliente.telefono || "No especificado"}</p>
                 {quote.cliente.correo && <p className="text-gray-500">{quote.cliente.correo}</p>}
               </div>
 
@@ -354,19 +426,14 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                   Zona de Instalación
                 </p>
                 <p className="font-extrabold text-gray-900 text-sm mt-0.5">
-                  {quote.estadoInstalacion?.nombre || "No especificada (Se cotiza)"}
+                  {zonaInstalacion}
                 </p>
                 <p className="text-gray-600 mt-1">
                   Estatus de viáticos:{" "}
                   <span className="font-semibold text-gray-900">
-                    {quote.calculo.viaticosDescripcion}
+                    {estatusViaticos}
                   </span>
                 </p>
-                {quote.calculo.viaticosPorConfirmar && (
-                  <p className="text-[11px] text-amber-700 font-medium mt-1">
-                    * Los viáticos quedan pendientes por confirmar con el técnico según municipio exacto.
-                  </p>
-                )}
               </div>
             </div>
 
@@ -411,11 +478,19 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                       }
                       return tableItems.map((it, idx) => {
                         const totalRenglon = it.precioSinIvaCentavos * it.cantidad;
+                        // Comprobar si para este accesorio se agregó un renglón de instalación por separado
+                        const tieneInstalacionSeparada = quote.calculo?.lineasCalculadas?.some(
+                          (l) =>
+                            l.esInstalacionAgregada &&
+                            ((l.id && l.id.includes(it.id)) ||
+                              (l.nombre && l.nombre.toLowerCase().includes(it.nombre.toLowerCase())))
+                        );
+
                         return (
                           <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                             <td className="py-3 px-4">
                               <p className="font-bold text-gray-900">{it.nombre}</p>
-                              {it.modelo && (
+                              {debeMostrarModelo(it) && (
                                 <p className="text-[11px] text-gray-500">Modelo: {it.modelo}</p>
                               )}
                               <div className="flex flex-wrap gap-1.5 mt-1">
@@ -435,9 +510,14 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
                                         ✓ 1er año plataforma y datos incluido
                                       </span>
                                     )}
-                                    {it.incluyeInstalacion === false && (
+                                    {it.incluyeInstalacion === false && !tieneInstalacionSeparada && (
                                       <span className="inline-flex items-center text-[10px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded">
                                         ✓ Instalación incluida con equipo principal
+                                      </span>
+                                    )}
+                                    {tieneInstalacionSeparada && (
+                                      <span className="inline-flex items-center text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                                        + Instalación por separado
                                       </span>
                                     )}
                                   </>
@@ -486,15 +566,17 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
             {/* Resumen Financiero e IVA */}
             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pt-2">
               <div className="text-xs text-gray-500 space-y-2 max-w-sm">
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1 text-[11px]">
-                  <p className="font-bold text-gray-800">Garantía de Integridad CosoTec:</p>
-                  <p>
-                    • Precios calculados al centavo exacto en servidor.
-                  </p>
-                  <p>
-                    • Si requieres factura CFDI 4.0, se emitirá con desglose de IVA exacto al liquidar.
-                  </p>
-                </div>
+                <p className="text-[11px] text-gray-500 font-medium">
+                  ¿Requieres factura? Indícalo a tu asesor o al pagar.
+                </p>
+                {Boolean(quote.condiciones?.notasCliente) && (
+                  <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-700 space-y-1">
+                    <span className="font-bold text-gray-900 block text-[11px] uppercase tracking-wider">
+                      Notas del Asesor:
+                    </span>
+                    <p className="italic leading-relaxed">{quote.condiciones?.notasCliente}</p>
+                  </div>
+                )}
               </div>
 
               <div className="w-full sm:w-80 bg-gray-50/80 rounded-2xl p-4 border border-gray-200/70 text-xs space-y-2.5 font-mono">
@@ -512,7 +594,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
 
                 {quote.calculo.descuentoVendedorPorcentaje > 0 && (
                   <div className="flex justify-between text-emerald-700 font-semibold">
-                    <span>Descuento Vendedor ({quote.calculo.descuentoVendedorPorcentaje}%):</span>
+                    <span>Descuento especial ({quote.calculo.descuentoVendedorPorcentaje}%):</span>
                     <span>-{quote.calculo.formato.descuentoVendedor}</span>
                   </div>
                 )}
@@ -541,49 +623,107 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
               </div>
             </div>
 
-            {/* Esquemas de Pago Disponibles */}
+            {/* Plan de Pago Destacado con Calendario Completo */}
             <div className="space-y-4 pt-4 border-t border-gray-100">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
-                Opciones de Pago Disponibles
-              </h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#7A1428]">
+                    Condición Comercial Acordada
+                  </span>
+                  <h2 className="text-base font-black text-gray-900 tracking-tight flex items-center gap-2">
+                    <CreditCard className="w-4 h-4 text-[#7A1428]" />
+                    <span>Plan de Pago: {planPactado?.nombre || "Contado"}</span>
+                  </h2>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-[#7A1428]/10 text-[#7A1428] border border-[#7A1428]/20">
+                  Pactado con Asesor
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {Object.values(quote.calculo.planesPago).map((plan, idx) => (
-                  <div
-                    key={idx}
-                    className="p-4 rounded-2xl border border-gray-200 hover:border-[#7A1428]/40 bg-white transition-all space-y-2 flex flex-col justify-between"
-                  >
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#C9A15B]">
-                        Plan {idx + 1}
-                      </span>
-                      <h3 className="font-bold text-gray-900 text-xs sm:text-sm mt-0.5">
-                        {plan.nombre}
-                      </h3>
-                      <p className="text-[11px] text-gray-500 mt-1 leading-snug">
-                        {plan.descripcion}
-                      </p>
-                    </div>
+              {planPactado && (
+                <div className="rounded-2xl border-2 border-[#7A1428]/20 bg-linear-to-b from-white to-gray-50/40 p-5 space-y-4 shadow-xs">
+                  <p className="text-xs text-gray-600 leading-relaxed font-medium">
+                    {planPactado.descripcion}
+                  </p>
 
-                    <div className="pt-2 border-t border-gray-100 space-y-1">
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-gray-500">Primer Pago:</span>
-                        <span className="font-bold text-gray-900 font-mono">
-                          {formatMxn(plan.montoPrimerPagoCentavos)}
-                        </span>
-                      </div>
-                      {plan.saldoRestanteCentavos > 0 && (
-                        <div className="flex justify-between text-[11px]">
-                          <span className="text-gray-500">Saldo:</span>
-                          <span className="font-bold text-gray-600 font-mono">
-                            {formatMxn(plan.saldoRestanteCentavos)}
-                          </span>
+                  {/* Calendario de Pagos del Plan */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wider block">
+                      Calendario de Pagos
+                    </span>
+                    <div className="divide-y divide-gray-100 border border-gray-200/80 rounded-xl overflow-hidden bg-white">
+                      {planPactado.pagos?.map((p, idx) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                        >
+                          <div className="flex items-start sm:items-center gap-2.5">
+                            <span className="w-6 h-6 rounded-full bg-[#7A1428]/10 text-[#7A1428] font-bold text-[11px] flex items-center justify-center shrink-0">
+                              {p.numero}
+                            </span>
+                            <div>
+                              <strong className="text-gray-900 block font-bold">
+                                {p.concepto}
+                              </strong>
+                              {p.fechaEstimada && (
+                                <span className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5">
+                                  <Calendar className="w-3 h-3 text-gray-400" />
+                                  {p.fechaEstimada}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between sm:justify-end gap-3 pl-8 sm:pl-0">
+                            {idx === 0 ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800">
+                                Pagas hoy
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                Pago diferido
+                              </span>
+                            )}
+                            <span className="font-mono font-bold text-gray-900 text-sm">
+                              {p.montoFormateado}
+                            </span>
+                          </div>
                         </div>
-                      )}
+                      ))}
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Planes alternativos SOLO si permitirCambioPlan === true */}
+              {permitirCambioPlan && (
+                <div className="pt-4 space-y-3">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block">
+                    Otras Opciones de Pago Disponibles
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {Object.entries(quote.calculo.planesPago)
+                      .filter(([k]) => k !== planPactadoKey)
+                      .map(([k, plan], idx) => (
+                        <div
+                          key={idx}
+                          className="p-3.5 rounded-xl border border-gray-200 bg-white text-xs space-y-2 flex flex-col justify-between"
+                        >
+                          <div>
+                            <h4 className="font-bold text-gray-900">{plan.nombre}</h4>
+                            <p className="text-[11px] text-gray-500 mt-0.5 leading-snug">
+                              {plan.descripcion}
+                            </p>
+                          </div>
+                          <div className="pt-2 border-t border-gray-100 flex justify-between font-mono font-bold text-gray-800">
+                            <span className="text-[11px] text-gray-400 font-sans">Inicial:</span>
+                            <span>{formatMxn(plan.montoPrimerPagoCentavos)}</span>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Botones de Acción */}
@@ -611,7 +751,7 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
 
                 {puedePagar ? (
                   <Link
-                    href={`/checkout?cotizacion=${quote.folio}&t=${token}`}
+                    href={`/checkout?cotizacion=${quote.folio}&t=${token}&plan=${planPactadoKey}`}
                     className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#7A1428] hover:bg-[#5C0F1E] text-white font-bold text-xs transition-colors shadow-xs"
                   >
                     Pagar Cotización en Línea
@@ -652,4 +792,3 @@ export default async function CotizacionPublicaPage({ params, searchParams }: Pa
     </div>
   );
 }
-

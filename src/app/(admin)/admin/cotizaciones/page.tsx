@@ -368,7 +368,8 @@ export default function AdminCotizacionesPage() {
                     clienteWhatsapp: q.cliente.telefono,
                     clienteNombre: q.cliente.nombre || "Cliente",
                     folio: q.folio,
-                    token: q.token || "token",
+                    token: q.token || "",
+                    vendedorNombre: q.vendedorNombre || user?.displayName || "Asesor CoSoAVL",
                     totalFormateado: totalFormatted,
                   });
 
@@ -438,10 +439,12 @@ export default function AdminCotizacionesPage() {
                       <td className="px-6 py-4 space-y-1">
                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-gray-100 text-gray-700">
                           {q.condiciones?.planSeleccionado === "credi_contado"
-                            ? "Credi-Contado (55%/45%)"
+                            ? "Credi-contado (55% / 45%)"
                             : q.condiciones?.planSeleccionado === "contado"
-                            ? "Contado (100%)"
-                            : "Financiamiento"}
+                            ? "Contado"
+                            : q.condiciones?.planSeleccionado === "msi"
+                            ? "Meses sin intereses"
+                            : "Enganche + mensualidades"}
                         </span>
                         {(q.condiciones?.descuentoAdicionalPorcentaje ?? 0) > 0 && (
                           <span className="text-[11px] font-bold text-emerald-700 block">

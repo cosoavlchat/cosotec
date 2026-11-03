@@ -73,6 +73,7 @@ export interface Quote {
   condiciones?: {
     planSeleccionado: "contado" | "credi_contado" | "enganche_mensualidades" | "msi";
     msiPlazoSeleccionado?: number;
+    permitirCambioPlan?: boolean; // Opción del vendedor para mostrar otros planes (por defecto false)
     descuentoAdicionalPorcentaje: number;
     solicitoExcesoDescuento?: boolean;
     justificacionDescuento?: string;

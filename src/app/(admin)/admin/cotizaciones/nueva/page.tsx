@@ -74,6 +74,8 @@ export default function NuevaCotizacionPage() {
   const [vigenciaDias, setVigenciaDias] = useState<number>(15);
   const [notasCliente, setNotasCliente] = useState("");
   const [notasInternas, setNotasInternas] = useState("");
+  const [permitirCambioPlan, setPermitirCambioPlan] = useState(false);
+  const [esPrueba, setEsPrueba] = useState(false);
 
   // Concepto libre habilitado
   const [permitirConceptoLibre, setPermitirConceptoLibre] = useState(false);
@@ -277,8 +279,10 @@ export default function NuevaCotizacionPage() {
           municipio,
           viaticosManualCentavos: viaticosCentavos,
         },
+        esPrueba,
         condiciones: {
           planSeleccionado: planPago,
+          permitirCambioPlan,
           descuentoAdicionalPorcentaje: Number(descuentoAdicional),
           solicitoExcesoDescuento: requiereAutorizacion,
           justificacionDescuento: justificacionDescuento.trim(),
@@ -632,12 +636,35 @@ export default function NuevaCotizacionPage() {
                   onChange={(e) => setPlanPago(e.target.value as any)}
                   className="w-full px-3 py-2 rounded-xl border border-gray-200 font-medium"
                 >
-                  <option value="contado">Pago de Contado (100%)</option>
-                  <option value="credi_contado">
-                    Credi-Contado (55% al confirmar y 45% al instalar pagado por link)
-                  </option>
-                  <option value="enganche_mensualidades">Enganche 55% + 2 Mensualidades</option>
+                  <option value="contado">Contado</option>
+                  <option value="credi_contado">Credi-contado (55% / 45%)</option>
+                  <option value="enganche_mensualidades">Enganche + mensualidades</option>
+                  <option value="msi">Meses sin intereses</option>
                 </select>
+
+                <label className="flex items-center gap-2 cursor-pointer pt-1">
+                  <input
+                    type="checkbox"
+                    checked={permitirCambioPlan}
+                    onChange={(e) => setPermitirCambioPlan(e.target.checked)}
+                    className="w-4 h-4 text-[#7A1428] rounded border-gray-300 focus:ring-[#7A1428]"
+                  />
+                  <span className="text-xs text-gray-700 font-medium">
+                    Permitir al cliente elegir otro plan de pago en línea
+                  </span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer pt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={esPrueba}
+                    onChange={(e) => setEsPrueba(e.target.checked)}
+                    className="w-4 h-4 text-gray-500 rounded border-gray-300 focus:ring-gray-400"
+                  />
+                  <span className="text-xs text-gray-500 font-medium">
+                    Cotización de prueba (marcar esPrueba)
+                  </span>
+                </label>
               </div>
 
               <div className="space-y-1">
@@ -715,7 +742,13 @@ export default function NuevaCotizacionPage() {
             <h3 className="font-bold text-sm text-gray-900 border-b border-gray-100 pb-3 flex items-center justify-between">
               <span>Resumen de Inversión</span>
               <span className="text-[11px] font-semibold text-[#7A1428] bg-[#7A1428]/10 px-2 py-0.5 rounded-md">
-                {planPago === "credi_contado" ? "Credi-Contado" : planPago === "contado" ? "Contado" : "Financiamiento"}
+                {planPago === "credi_contado"
+                  ? "Credi-contado (55% / 45%)"
+                  : planPago === "contado"
+                  ? "Contado"
+                  : planPago === "msi"
+                  ? "Meses sin intereses"
+                  : "Enganche + mensualidades"}
               </span>
             </h3>
 

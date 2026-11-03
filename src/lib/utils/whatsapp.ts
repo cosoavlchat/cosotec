@@ -125,31 +125,39 @@ export function formatearWhatsapp(input: string): string {
 
 /**
  * Genera el enlace de WhatsApp que el vendedor envía al cliente con la cotización lista.
+ * REGLA FASE 4: Mensaje exacto parametrizado y editable desde content:
+ * "Hola [nombre], te comparto tu cotización [folio] de CosoTec. Puedes revisarla, descargar el PDF y pagar en línea aquí: [link]. Cualquier duda, estoy a tus órdenes. — [vendedor]"
  */
 export function buildEnvioCotizacionWhatsAppLink({
   clienteWhatsapp,
   clienteNombre,
   folio,
   token,
-  totalFormateado,
+  vendedorNombre = "Asesor CoSoAVL",
+  plantillaMensaje,
   baseUrl = "https://cosotec--cosotec7.us-east4.hosted.app",
 }: {
   clienteWhatsapp: string;
   clienteNombre: string;
   folio: string;
   token: string;
-  totalFormateado: string;
+  vendedorNombre?: string;
+  totalFormateado?: string;
+  plantillaMensaje?: string;
   baseUrl?: string;
 }): string {
   const norm = normalizarWhatsapp(clienteWhatsapp);
   const linkWeb = `${baseUrl}/c/${folio}?t=${token}`;
 
-  const mensaje =
-    `Hola ${clienteNombre}, te comparto tu cotización oficial de *CoSoAVL - CosoTec* con folio *${folio}*:\n\n` +
-    `💰 *Inversión Total:* ${totalFormateado} (IVA e instalación profesional incluidos)\n\n` +
-    `📄 *Puedes consultar el detalle completo y pagar en línea aquí:*\n` +
-    `${linkWeb}\n\n` +
-    `Quedo a tus órdenes para cualquier duda o para agendar la fecha de instalación de tus unidades.`;
+  let mensaje =
+    plantillaMensaje ||
+    "Hola [nombre], te comparto tu cotización [folio] de CosoTec. Puedes revisarla, descargar el PDF y pagar en línea aquí: [link]. Cualquier duda, estoy a tus órdenes. — [vendedor]";
+
+  mensaje = mensaje
+    .replace(/\[nombre\]|\{nombre\}/gi, clienteNombre || "Cliente")
+    .replace(/\[folio\]|\{folio\}/gi, folio)
+    .replace(/\[link\]|\{link\}|\[enlace\]|\{enlace\}/gi, linkWeb)
+    .replace(/\[vendedor\]|\{vendedor\}|\[asesor\]|\{asesor\}/gi, vendedorNombre);
 
   return `https://wa.me/521${norm}?text=${encodeURIComponent(mensaje)}`;
 }

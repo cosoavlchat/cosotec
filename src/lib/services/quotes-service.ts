@@ -46,6 +46,7 @@ export interface CrearCotizacionVendedorInput {
   condiciones: {
     planSeleccionado: "contado" | "credi_contado" | "enganche_mensualidades" | "msi";
     msiPlazoSeleccionado?: number;
+    permitirCambioPlan?: boolean;
     descuentoAdicionalPorcentaje: number;
     solicitoExcesoDescuento?: boolean;
     justificacionDescuento?: string;
@@ -54,6 +55,7 @@ export interface CrearCotizacionVendedorInput {
     notasInternas?: string;
   };
   origen?: "vendedor" | "admin";
+  esPrueba?: boolean;
 }
 
 /**
@@ -419,6 +421,7 @@ export async function crearCotizacionVendedor(
     condiciones: {
       planSeleccionado: input.condiciones.planSeleccionado,
       msiPlazoSeleccionado: input.condiciones.msiPlazoSeleccionado,
+      permitirCambioPlan: input.condiciones.permitirCambioPlan === true,
       descuentoAdicionalPorcentaje: descuentoSolicitado,
       solicitoExcesoDescuento,
       justificacionDescuento: input.condiciones.justificacionDescuento || "",
@@ -427,6 +430,11 @@ export async function crearCotizacionVendedor(
       notasCliente: input.condiciones.notasCliente || "",
       notasInternas: input.condiciones.notasInternas || "",
     },
+    esPrueba: Boolean(
+      input.esPrueba ||
+      cliente.nombre?.toLowerCase().includes("prueba") ||
+      cliente.empresa?.toLowerCase().includes("prueba")
+    ),
     calculo,
     snapshotPrecios: {
       fecha: now,

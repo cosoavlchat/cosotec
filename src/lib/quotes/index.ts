@@ -50,6 +50,20 @@ export function generarTokenAleatorio(): string {
   return crypto.randomBytes(24).toString("base64url");
 }
 
+export const MODELOS_CONFIRMADOS_OFICIALES = ["JC181", "JC450", "Y04g", "Y04G"];
+
+/**
+ * Determina si se debe mostrar el modelo del equipo en vista de cliente, PDF, admin y correos.
+ * REGLA FASE 4: Solo se muestra si modeloConfirmado === true.
+ * Para cotizaciones históricas o sin esa bandera, aplica la lista oficial de confirmados.
+ */
+export function debeMostrarModelo(item?: { modelo?: string; modeloConfirmado?: boolean }): boolean {
+  if (!item || !item.modelo || !item.modelo.trim()) return false;
+  const mod = item.modelo.trim();
+  if (item.modeloConfirmado === true) return true;
+  return MODELOS_CONFIRMADOS_OFICIALES.some((m) => m.toLowerCase() === mod.toLowerCase());
+}
+
 /**
  * Genera el hash criptográfico HMAC-SHA256 del token para almacenarlo en Firestore.
  * El token plano jamás se almacena en la base de datos.

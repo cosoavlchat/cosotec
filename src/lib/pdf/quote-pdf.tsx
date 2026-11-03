@@ -14,6 +14,7 @@ import {
 } from "@react-pdf/renderer";
 import { Quote, ItemSnapshot } from "@/types/quote";
 import { formatMxn } from "@/lib/pricing";
+import { debeMostrarModelo } from "@/lib/quotes";
 import { adminDb } from "@/lib/firebase/admin";
 import { getProductImage } from "@/lib/catalog/product-image";
 
@@ -430,12 +431,14 @@ export function QuotePdfDocument({
     quote.calculo?.planesPago?.[planSeleccionadoKey] ||
     quote.calculo?.planesPago?.["contado"];
 
-  const estadoInstalacion =
-    quote.instalacion?.estadoNombre ||
-    quote.estadoInstalacion?.nombre ||
-    quote.instalacion?.estadoClave ||
-    "Zona no especificada";
-  const municipioInstalacion = quote.instalacion?.municipio;
+  const zonaInstalacion = (() => {
+    if (quote.instalacion?.municipio && quote.instalacion?.estadoNombre) {
+      return `${quote.instalacion.municipio}, ${quote.instalacion.estadoNombre}`;
+    }
+    if (quote.instalacion?.estadoNombre) return quote.instalacion.estadoNombre;
+    if (quote.estadoInstalacion?.nombre) return quote.estadoInstalacion.nombre;
+    return "Zona por definir";
+  })();
 
   return (
     <Document>
@@ -519,14 +522,9 @@ export function QuotePdfDocument({
           {/* Col 3: Instalación */}
           <View style={styles.infoCol}>
             <Text style={styles.infoColTitle}>Instalación y Viáticos</Text>
-            <Text style={styles.infoTextBold}>{estadoInstalacion}</Text>
-            {Boolean(municipioInstalacion) && (
-              <Text style={styles.infoText}>
-                Municipio: {municipioInstalacion}
-              </Text>
-            )}
+            <Text style={styles.infoTextBold}>{zonaInstalacion}</Text>
             <Text style={styles.infoText}>
-              Estatus: {quote.calculo?.viaticosDescripcion || "Sin costo en zona metropolitana"}
+              Estatus: {quote.calculo?.viaticosDescripcion || (quote.calculo?.viaticosCentavos === 0 ? "Sin costo en zona metropolitana" : "Se cotiza")}
             </Text>
           </View>
         </View>
@@ -578,7 +576,7 @@ export function QuotePdfDocument({
                       {thumb ? <Image src={thumb} style={styles.itemThumb} /> : null}
                       <View style={styles.itemDetails}>
                         <Text style={styles.itemTitle}>{it.nombre}</Text>
-                        {it.modeloConfirmado && it.modelo ? (
+                        {debeMostrarModelo(it) ? (
                           <Text style={styles.itemModel}>Modelo: {it.modelo}</Text>
                         ) : null}
                         {it.esInstalacionAgregada ? (
@@ -597,11 +595,17 @@ export function QuotePdfDocument({
                                 ✓ 1er año de plataforma y datos SIM 4G incluido
                               </Text>
                             )}
-                            {it.incluyeInstalacion === false && (
-                              <Text style={styles.itemBullet}>
-                                ✓ Instalación incluida con equipo principal
-                              </Text>
-                            )}
+                            {it.incluyeInstalacion === false &&
+                              !quote.calculo?.lineasCalculadas?.some(
+                                (l) =>
+                                  l.esInstalacionAgregada &&
+                                  ((l.id && l.id.includes(it.id)) ||
+                                    (l.nombre && l.nombre.toLowerCase().includes(it.nombre.toLowerCase())))
+                              ) && (
+                                <Text style={styles.itemBullet}>
+                                  ✓ Instalación incluida con equipo principal
+                                </Text>
+                              )}
                           </>
                         )}
                       </View>
@@ -688,7 +692,7 @@ export function QuotePdfDocument({
             ) && (
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>
-                  Desc. Adicional ({quote.calculo?.descuentoVendedorPorcentaje}%):
+                  Descuento especial ({quote.calculo?.descuentoVendedorPorcentaje}%):
                 </Text>
                 <Text style={styles.totalDiscount}>
                   -{quote.calculo?.formato?.descuentoVendedor}

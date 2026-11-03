@@ -491,7 +491,7 @@ export function calcularCotizacion(
   // Plan A: Contado 100%
   planesPago["contado"] = {
     tipo: "contado",
-    nombre: "Pago de Contado (100%)",
+    nombre: "Contado",
     descripcion: "Liquida el total en una sola exhibición mediante tarjeta o transferencia SPEI.",
     montoPrimerPagoCentavos: totalCentavos,
     saldoRestanteCentavos: 0,
@@ -514,7 +514,7 @@ export function calcularCotizacion(
   const ccPago2 = totalCentavos - ccPago1; // Ajuste exacto de centavos
   planesPago["credi_contado"] = {
     tipo: "credi_contado",
-    nombre: `Credi-Contado (${ccCompraPct}% / ${100 - ccCompraPct}%)`,
+    nombre: "Credi-contado (55% / 45%)",
     descripcion: `${ccCompraPct}% al confirmar y ${100 - ccCompraPct}% al instalar (pagado por link).`,
     montoPrimerPagoCentavos: ccPago1,
     saldoRestanteCentavos: ccPago2,
@@ -575,7 +575,7 @@ export function calcularCotizacion(
 
   planesPago["enganche_mensualidades"] = {
     tipo: "enganche_mensualidades",
-    nombre: `Enganche ${engPct}% + ${mensualidadesCount} Pagos`,
+    nombre: "Enganche + mensualidades",
     descripcion: `Anticipo del ${engPct}% y el resto dividido en ${mensualidadesCount} exhibiciones mensuales.`,
     montoPrimerPagoCentavos: engMonto,
     saldoRestanteCentavos: engRestante,
@@ -605,7 +605,7 @@ export function calcularCotizacion(
         }
         planesPago[`msi_${plazo}`] = {
           tipo: "msi",
-          nombre: `${plazo} Meses Sin Intereses`,
+          nombre: `${plazo} Meses sin intereses`,
           descripcion: `Paga en ${plazo} cuotas de ${formatMxn(cuotaMsiBase)}/mes con tarjetas de crédito participantes.`,
           montoPrimerPagoCentavos: totalCentavos,
           saldoRestanteCentavos: 0,
