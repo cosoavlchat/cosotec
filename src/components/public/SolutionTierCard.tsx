@@ -17,7 +17,7 @@ interface SolutionTierCardProps {
 
 export function SolutionTierCard({ tier, products, solucionTitulo }: SolutionTierCardProps) {
   const router = useRouter();
-  const { addItem } = useCart();
+  const { addItems } = useCart();
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -50,20 +50,24 @@ export function SolutionTierCard({ tier, products, solucionTitulo }: SolutionTie
     tipoConsulta: hasRevisarPrecio ? "cotizacion" : "asesoria",
   });
 
+  const grupoId = `tier_${solucionTitulo.toLowerCase().replace(/[^a-z0-9]/g, "_")}_nv${tier.nivel}`;
+  const grupoNombre = `${solucionTitulo} · Nivel ${tier.nivel}: ${tier.titulo}`;
+
   const addAllToCart = async () => {
-    for (const p of products) {
-      await addItem({
-        id: p.slug,
-        tipo: "producto",
-        nombre: p.nombreComercial,
-        categoria: p.categoria,
-        precioSinIvaCentavos: p.precioSinIvaCentavos,
-        cantidad: 1,
-        esEquipoPrincipal: p.esEquipoPrincipal ?? true,
-        incluyeInstalacion: p.incluyeInstalacion ?? true,
-        incluyePlanPrimerAnio: p.incluyePlanPrimerAnio ?? true,
-      });
-    }
+    const itemsToAdd = products.map((p) => ({
+      id: p.slug,
+      tipo: "producto" as const,
+      nombre: p.nombreComercial,
+      categoria: p.categoria,
+      precioSinIvaCentavos: p.precioSinIvaCentavos,
+      cantidad: 1,
+      esEquipoPrincipal: p.esEquipoPrincipal ?? true,
+      incluyeInstalacion: p.incluyeInstalacion ?? true,
+      incluyePlanPrimerAnio: p.incluyePlanPrimerAnio ?? true,
+      grupoId,
+      grupoNombre,
+    }));
+    await addItems(itemsToAdd);
   };
 
   const handleAddToCart = async () => {

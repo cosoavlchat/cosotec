@@ -13,6 +13,14 @@ import {
 } from "@/types/cart";
 import { CotizacionResultado } from "@/lib/pricing";
 
+export interface DeletedAction {
+  id: string;
+  nombre: string;
+  tipo: "item" | "group";
+  items: CartItem[];
+  timestamp: number;
+}
+
 interface CartContextType {
   cart: Cart | null;
   items: CartItem[];
@@ -21,10 +29,19 @@ interface CartContextType {
   isSaving: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error";
   lastSavedAt: Date | null;
+  lastDeleted: DeletedAction | null;
+  isCartDrawerOpen: boolean;
+  maxUnidadesPorItem: number;
+  openCartDrawer: () => void;
+  closeCartDrawer: () => void;
   addItem: (item: CartItem) => Promise<void>;
-  removeItem: (id: string) => Promise<void>;
-  updateQuantity: (id: string, cantidad: number) => Promise<void>;
-  clearCart: () => void;
+  addItems: (items: CartItem[]) => Promise<void>;
+  removeItem: (id: string, grupoId?: string) => Promise<void>;
+  removeGroup: (grupoId: string) => Promise<void>;
+  updateQuantity: (id: string, cantidad: number, grupoId?: string) => Promise<void>;
+  undoDelete: () => Promise<void>;
+  dismissUndo: () => void;
+  clearCart: () => Promise<void>;
   updateContacto: (contacto: Partial<CartContacto>, saveImmediately?: boolean) => void;
   updateInstalacion: (instalacion: Partial<CartInstalacion>, saveImmediately?: boolean) => void;
   updateUnidades: (unidades: CartUnidadVehiculo[], saveImmediately?: boolean) => void;
@@ -43,11 +60,30 @@ function generateClientCartId(): string {
   return "crt_" + Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
 }
 
+function matchItem(item: CartItem, id: string, grupoId?: string): boolean {
+  if (grupoId !== undefined) {
+    return item.id === id && item.grupoId === grupoId;
+  }
+  return item.id === id && !item.grupoId;
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [lastDeleted, setLastDeleted] = useState<DeletedAction | null>(null);
+  const [isCartDrawerOpen, setIsCartDrawerOpen] = useState(false);
+  const [maxUnidadesPorItem, setMaxUnidadesPorItem] = useState<number>(50);
   const isSavingRef = useRef(false);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const openCartDrawer = useCallback(() => setIsCartDrawerOpen(true), []);
+  const closeCartDrawer = useCallback(() => setIsCartDrawerOpen(false), []);
+
+  const dismissUndo = useCallback(() => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastDeleted(null);
+  }, []);
 
   // Inicialización o recuperación de carrito persistido
   useEffect(() => {
@@ -64,6 +100,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           const json = await res.json();
           if (json.cart) {
             setCart(json.cart);
+            if (json.maxUnidadesPorItem) {
+              setMaxUnidadesPorItem(json.maxUnidadesPorItem);
+            }
             return;
           }
         }
@@ -71,7 +110,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         console.warn("No se pudo cargar el carrito previo:", e);
       }
 
-      // Si no existe en backend aún, inicializar objeto local
       setCart({
         id: cartId,
         pasoActual: 1,
@@ -104,6 +142,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const json = await res.json();
       if (json.cart) {
         setCart(json.cart);
+        if (json.maxUnidadesPorItem) {
+          setMaxUnidadesPorItem(json.maxUnidadesPorItem);
+        }
         setSaveStatus("saved");
         setLastSavedAt(new Date());
         return json.cart;
@@ -128,19 +169,29 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     return await persistToServer(target);
   }, [cart, persistToServer]);
 
-  // Modificadores de items
+  // Si proviene de cotización de vendedor (snapshot), las ediciones están bloqueadas
+  const isLocked = Boolean(cart?.isQuoteSnapshot || cart?.quoteFolio);
+
+  // Agregar un solo item
   const addItem = useCallback(async (item: CartItem) => {
-    if (!cart) return;
-    const existingIndex = cart.items.findIndex((i) => i.id === item.id);
+    if (!cart || isLocked) return;
+    const existingIndex = cart.items.findIndex((i) => matchItem(i, item.id, item.grupoId));
     let updatedItems = [...cart.items];
 
     if (existingIndex >= 0) {
+      const nuevaCantidad = Math.min(
+        maxUnidadesPorItem,
+        updatedItems[existingIndex].cantidad + item.cantidad
+      );
       updatedItems[existingIndex] = {
         ...updatedItems[existingIndex],
-        cantidad: updatedItems[existingIndex].cantidad + item.cantidad,
+        cantidad: nuevaCantidad,
       };
     } else {
-      updatedItems.push(item);
+      updatedItems.push({
+        ...item,
+        cantidad: Math.min(maxUnidadesPorItem, item.cantidad),
+      });
     }
 
     const updatedCart: Cart = {
@@ -150,11 +201,32 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
     setCart(updatedCart);
     await persistToServer(updatedCart);
-  }, [cart, persistToServer]);
+  }, [cart, isLocked, maxUnidadesPorItem, persistToServer]);
 
-  const removeItem = useCallback(async (id: string) => {
-    if (!cart) return;
-    const updatedItems = cart.items.filter((i) => i.id !== id);
+  // Agregar varios items juntos (ej. nivel de solución completo)
+  const addItems = useCallback(async (newItems: CartItem[]) => {
+    if (!cart || isLocked || newItems.length === 0) return;
+    let updatedItems = [...cart.items];
+
+    for (const item of newItems) {
+      const existingIndex = updatedItems.findIndex((i) => matchItem(i, item.id, item.grupoId));
+      if (existingIndex >= 0) {
+        const nuevaCantidad = Math.min(
+          maxUnidadesPorItem,
+          updatedItems[existingIndex].cantidad + item.cantidad
+        );
+        updatedItems[existingIndex] = {
+          ...updatedItems[existingIndex],
+          cantidad: nuevaCantidad,
+        };
+      } else {
+        updatedItems.push({
+          ...item,
+          cantidad: Math.min(maxUnidadesPorItem, item.cantidad),
+        });
+      }
+    }
+
     const updatedCart: Cart = {
       ...cart,
       items: updatedItems,
@@ -162,17 +234,79 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
     setCart(updatedCart);
     await persistToServer(updatedCart);
-  }, [cart, persistToServer]);
+  }, [cart, isLocked, maxUnidadesPorItem, persistToServer]);
 
-  const updateQuantity = useCallback(async (id: string, cantidad: number) => {
-    if (!cart) return;
+  // Eliminar un item individual con opción de deshacer
+  const removeItem = useCallback(async (id: string, grupoId?: string) => {
+    if (!cart || isLocked) return;
+    const found = cart.items.find((i) => matchItem(i, id, grupoId));
+    if (!found) return;
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastDeleted({
+      id,
+      nombre: found.nombre,
+      tipo: "item",
+      items: [found],
+      timestamp: Date.now(),
+    });
+    undoTimerRef.current = setTimeout(() => {
+      setLastDeleted(null);
+    }, 6000);
+
+    const updatedItems = cart.items.filter((i) => !matchItem(i, id, grupoId));
+    const updatedCart: Cart = {
+      ...cart,
+      items: updatedItems,
+      updatedAt: new Date().toISOString(),
+    };
+    setCart(updatedCart);
+    await persistToServer(updatedCart);
+  }, [cart, isLocked, persistToServer]);
+
+  // Eliminar un grupo completo (ej. nivel de solución) con opción de deshacer
+  const removeGroup = useCallback(async (grupoId: string) => {
+    if (!cart || isLocked) return;
+    const itemsInGroup = cart.items.filter((i) => i.grupoId === grupoId);
+    if (itemsInGroup.length === 0) return;
+
+    const groupName = itemsInGroup[0]?.grupoNombre || "Nivel de solución";
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastDeleted({
+      id: grupoId,
+      nombre: groupName,
+      tipo: "group",
+      items: itemsInGroup,
+      timestamp: Date.now(),
+    });
+    undoTimerRef.current = setTimeout(() => {
+      setLastDeleted(null);
+    }, 6000);
+
+    const updatedItems = cart.items.filter((i) => i.grupoId !== grupoId);
+    const updatedCart: Cart = {
+      ...cart,
+      items: updatedItems,
+      updatedAt: new Date().toISOString(),
+    };
+    setCart(updatedCart);
+    await persistToServer(updatedCart);
+  }, [cart, isLocked, persistToServer]);
+
+  // Actualizar cantidad de un item. Si es <= 0, elimina el item
+  const updateQuantity = useCallback(async (id: string, cantidad: number, grupoId?: string) => {
+    if (!cart || isLocked) return;
     if (cantidad <= 0) {
-      await removeItem(id);
+      await removeItem(id, grupoId);
       return;
     }
+
+    const capped = Math.min(maxUnidadesPorItem, cantidad);
     const updatedItems = cart.items.map((i) =>
-      i.id === id ? { ...i, cantidad } : i
+      matchItem(i, id, grupoId) ? { ...i, cantidad: capped } : i
     );
+
     const updatedCart: Cart = {
       ...cart,
       items: updatedItems,
@@ -180,22 +314,61 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     };
     setCart(updatedCart);
     await persistToServer(updatedCart);
-  }, [cart, persistToServer, removeItem]);
+  }, [cart, isLocked, maxUnidadesPorItem, persistToServer, removeItem]);
 
-  const clearCart = useCallback(() => {
-    const newId = generateClientCartId();
-    localStorage.setItem(LOCAL_STORAGE_KEY, newId);
-    const freshCart: Cart = {
-      id: newId,
-      pasoActual: 1,
-      estado: "activo",
-      items: [],
-      createdAt: new Date().toISOString(),
+  // Deshacer última eliminación
+  const undoDelete = useCallback(async () => {
+    if (!cart || !lastDeleted || isLocked) return;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    let updatedItems = [...cart.items];
+    for (const restored of lastDeleted.items) {
+      const idx = updatedItems.findIndex((i) => matchItem(i, restored.id, restored.grupoId));
+      if (idx >= 0) {
+        updatedItems[idx] = {
+          ...updatedItems[idx],
+          cantidad: updatedItems[idx].cantidad + restored.cantidad,
+        };
+      } else {
+        updatedItems.push(restored);
+      }
+    }
+
+    setLastDeleted(null);
+    const updatedCart: Cart = {
+      ...cart,
+      items: updatedItems,
       updatedAt: new Date().toISOString(),
     };
-    setCart(freshCart);
-    persistToServer(freshCart);
-  }, [persistToServer]);
+    setCart(updatedCart);
+    await persistToServer(updatedCart);
+  }, [cart, lastDeleted, isLocked, persistToServer]);
+
+  // Vaciar carrito con snapshot para deshacer
+  const clearCart = useCallback(async () => {
+    if (!cart || isLocked || cart.items.length === 0) return;
+
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setLastDeleted({
+      id: "all",
+      nombre: "Carrito vaciado",
+      tipo: "group",
+      items: [...cart.items],
+      timestamp: Date.now(),
+    });
+    undoTimerRef.current = setTimeout(() => {
+      setLastDeleted(null);
+    }, 6000);
+
+    const updatedCart: Cart = {
+      ...cart,
+      items: [],
+      calculo: undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    setCart(updatedCart);
+    await persistToServer(updatedCart);
+  }, [cart, isLocked, persistToServer]);
 
   // Actualizaciones de campos con guardado opcional inmediato (usado en onBlur)
   const updateContacto = useCallback((contacto: Partial<CartContacto>, saveImmediately = false) => {
@@ -310,9 +483,18 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         isSaving: isSavingRef.current,
         saveStatus,
         lastSavedAt,
+        lastDeleted,
+        isCartDrawerOpen,
+        maxUnidadesPorItem,
+        openCartDrawer,
+        closeCartDrawer,
         addItem,
+        addItems,
         removeItem,
+        removeGroup,
         updateQuantity,
+        undoDelete,
+        dismissUndo,
         clearCart,
         updateContacto,
         updateInstalacion,
@@ -336,4 +518,3 @@ export function useCart() {
   }
   return ctx;
 }
-

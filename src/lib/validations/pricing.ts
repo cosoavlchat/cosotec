@@ -13,6 +13,7 @@ export const PricingSettingsSchema = z.object({
   vigenciaDias: z.number().int().positive(),
   ciudadesSinCosto: z.array(z.string()),
   instalacionAccesorioConEquipo: z.boolean().default(false).optional(),
+  maxUnidadesPorItem: z.number().int().positive().default(50).optional(),
 });
 
 export const TravelFeeSchema = z.object({

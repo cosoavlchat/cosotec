@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCartFromFirestore } from "@/lib/cart";
 import { verifyCartSession, CART_SESSION_COOKIE_NAME } from "@/lib/cart/session";
 import { authenticateServerRequest } from "@/lib/auth/server-auth";
+import { adminDb } from "@/lib/firebase/admin";
 
 export async function GET(
   req: NextRequest,
@@ -39,7 +40,17 @@ export async function GET(
       return NextResponse.json({ error: "Carrito no encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, cart });
+    let maxUnidadesPorItem = 50;
+    try {
+      const pSnap = await adminDb.collection("settings").doc("pricing").get();
+      if (pSnap.exists) {
+        maxUnidadesPorItem = pSnap.data()?.maxUnidadesPorItem ?? 50;
+      }
+    } catch (e) {
+      // fallback a 50
+    }
+
+    return NextResponse.json({ success: true, cart, maxUnidadesPorItem });
   } catch (error: any) {
     console.error("[API Cart Get] Error al consultar carrito:", error);
     return NextResponse.json(

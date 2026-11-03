@@ -12,6 +12,8 @@ export interface CartItem {
   esEquipoPrincipal: boolean;
   incluyeInstalacion?: boolean;
   incluyePlanPrimerAnio?: boolean;
+  grupoId?: string; // ID de agrupación si pertenece a un nivel de solución
+  grupoNombre?: string; // Título legible del nivel de solución
 }
 
 export interface CartContacto {
@@ -75,6 +77,7 @@ export interface Cart {
   pago?: CartPago;
   calculo?: CotizacionResultado;
   quoteFolio?: string;
+  isQuoteSnapshot?: boolean; // Inmutable si proviene de una cotización de vendedor emitida
   orderFolio?: string;
   createdAt: string;
   updatedAt: string;

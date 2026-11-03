@@ -21,13 +21,18 @@ export async function authenticateServerRequest(
   allowedRoles?: UserRole[]
 ): Promise<AuthResult> {
   const authHeader = req.headers.get("authorization");
-  let token: string | undefined;
 
-  if (authHeader && authHeader.startsWith("Bearer ")) {
-    token = authHeader.split("Bearer ")[1].trim();
-  } else {
-    token = req.nextUrl.searchParams.get("token") || req.nextUrl.searchParams.get("auth") || undefined;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return {
+      success: false,
+      response: NextResponse.json(
+        { error: "No autorizado: Token de autenticación ausente" },
+        { status: 401 }
+      ),
+    };
   }
+
+  const token = authHeader.split("Bearer ")[1].trim();
 
   if (!token) {
     return {

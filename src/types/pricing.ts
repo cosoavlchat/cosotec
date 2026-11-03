@@ -11,6 +11,7 @@ export interface PricingSettings {
   vigenciaDias: number; // Días de validez de la cotización (por defecto 15)
   ciudadesSinCosto: string[]; // ["Toluca", "Metepec", "CDMX", "Monterrey", "Guadalajara", "Querétaro"]
   instalacionAccesorioConEquipo?: boolean; // false por defecto (no cobrar instalación de accesorio si hay equipo principal con instalación)
+  maxUnidadesPorItem?: number; // Máximo configurable por producto en carrito (default 50)
 }
 
 export interface TravelFee {

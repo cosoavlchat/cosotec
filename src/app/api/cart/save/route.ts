@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { saveCartToFirestore } from "@/lib/cart";
+import { adminDb } from "@/lib/firebase/admin";
 import {
   generarCartId,
   signCartSession,
@@ -19,6 +20,8 @@ const cartItemSchema = z.object({
   esEquipoPrincipal: z.boolean(),
   incluyeInstalacion: z.boolean().optional(),
   incluyePlanPrimerAnio: z.boolean().optional(),
+  grupoId: z.string().optional(),
+  grupoNombre: z.string().optional(),
 });
 
 const cartContactoSchema = z.object({
@@ -80,6 +83,8 @@ const saveCartBodySchema = z.object({
   unidades: z.array(cartUnidadVehiculoSchema).optional(),
   factura: cartFacturaSchema.optional(),
   pago: cartPagoSchema.optional(),
+  quoteFolio: z.string().optional(),
+  isQuoteSnapshot: z.boolean().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -144,9 +149,20 @@ export async function POST(req: NextRequest) {
       pasoActual: (data.pasoActual as 1 | 2 | 3 | 4 | 5) || 1,
     });
 
+    let maxUnidadesPorItem = 50;
+    try {
+      const pSnap = await adminDb.collection("settings").doc("pricing").get();
+      if (pSnap.exists) {
+        maxUnidadesPorItem = pSnap.data()?.maxUnidadesPorItem ?? 50;
+      }
+    } catch (e) {
+      // fallback
+    }
+
     const response = NextResponse.json({
       success: true,
       cart: savedCart,
+      maxUnidadesPorItem,
     });
 
     if (shouldSetCookie) {

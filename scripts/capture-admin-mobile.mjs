@@ -22,7 +22,7 @@ async function run() {
     deviceScaleFactor: 2,
   });
 
-  const baseUrl = "http://localhost:3001";
+  const baseUrl = "https://cosotec--cosotec7.us-east4.hosted.app";
 
   try {
     // 1. Pantalla de Login Admin
@@ -44,38 +44,55 @@ async function run() {
     // 3. Navegar a /admin/cotizaciones
     console.log("Navigating to /admin/cotizaciones...");
     await page.goto(`${baseUrl}/admin/cotizaciones`, { waitUntil: "networkidle2" });
-    await new Promise((r) => setTimeout(r, 1500));
+    await page.waitForSelector("table, .divide-y, h1", { timeout: 15000 });
+    await new Promise((r) => setTimeout(r, 3000));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-2-cotizaciones.png") });
     console.log("Captured cotizaciones screenshot.");
 
     // 4. Navegar a /admin/cotizaciones/nueva
     console.log("Navigating to /admin/cotizaciones/nueva...");
     await page.goto(`${baseUrl}/admin/cotizaciones/nueva`, { waitUntil: "networkidle2" });
-    await new Promise((r) => setTimeout(r, 2000));
+    await page.waitForSelector("input, button", { timeout: 15000 });
+    await new Promise((r) => setTimeout(r, 2500));
 
     // Capturar Bloque Superior (Cliente y Config)
+    await page.evaluate(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTop = 0;
+    });
+    await new Promise((r) => setTimeout(r, 600));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-3-nueva-cliente.png") });
 
     // Scroll al Bloque Productos
-    await page.evaluate(() => document.querySelector("main")?.scrollBy(0, 500));
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTop = 450;
+    });
+    await new Promise((r) => setTimeout(r, 800));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-4-nueva-productos.png") });
 
     // Scroll al Bloque Viáticos y Condiciones
-    await page.evaluate(() => document.querySelector("main")?.scrollBy(0, 550));
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTop = 950;
+    });
+    await new Promise((r) => setTimeout(r, 800));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-5-nueva-condiciones.png") });
 
     // Scroll al Resumen y Botón Guardar
-    await page.evaluate(() => document.querySelector("main")?.scrollBy(0, 650));
-    await new Promise((r) => setTimeout(r, 600));
+    await page.evaluate(() => {
+      const m = document.querySelector("main");
+      if (m) m.scrollTop = 1500;
+    });
+    await new Promise((r) => setTimeout(r, 800));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-6-nueva-resumen.png") });
 
     // 5. Ver detalle de la cotización CT-1124459
     console.log("Navigating to quote CT-1124459 detail...");
     await page.goto(`${baseUrl}/c/CT-1124459?t=8ZNFBRqR54CvOT_moUd5GWGK0diZRlUj`, { waitUntil: "networkidle2" });
-    await new Promise((r) => setTimeout(r, 1500));
+    await new Promise((r) => setTimeout(r, 3000));
     await page.screenshot({ path: path.join(outputDir, "admin-mobile-7-detalle-cotizacion.png") });
+    await page.screenshot({ path: path.join(outputDir, "vista-cliente-completa-CT-1124459.png"), fullPage: true });
 
     console.log("All mobile screenshots captured successfully!");
   } catch (err) {

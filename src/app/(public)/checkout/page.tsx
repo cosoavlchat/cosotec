@@ -10,7 +10,7 @@ import { Step4Factura } from "@/components/checkout/Step4Factura";
 import { Step5Pago } from "@/components/checkout/Step5Pago";
 import { CheckoutSummary } from "@/components/checkout/CheckoutSummary";
 import { CartStep, CartItem } from "@/types/cart";
-import { ShieldCheck, ShieldAlert, Plus, ShoppingCart, ArrowRight, MessageCircle } from "lucide-react";
+import { ShieldCheck, ShieldAlert, Plus, ShoppingCart, ArrowRight, MessageCircle, Package } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -169,22 +169,6 @@ function CheckoutInner() {
     }
   }, [parsedStep, ctxStep]);
 
-  // Si no hay items y no proviene de cotización, asegurar que exista al menos 1 producto principal de prueba
-  useEffect(() => {
-    if (!cotizacionParam && items.length === 0) {
-      const defaultGps: CartItem = {
-        id: "gps-tracker-4g",
-        tipo: "producto",
-        nombre: "GPS Tracker 4G Alta Precisión",
-        categoria: "gps",
-        precioSinIvaCentavos: 474138, // $4,741.38 MXN
-        cantidad: 1,
-        esEquipoPrincipal: true,
-        incluyeInstalacion: false, // Genera instalación de $950 por separado
-      };
-      addItem(defaultGps);
-    }
-  }, [cotizacionParam, items.length, addItem]);
 
   // Prellenar datos coherentes si se navega a pasos avanzados directamente
   useEffect(() => {
@@ -338,6 +322,33 @@ function CheckoutInner() {
               <Link
                 href="/tienda"
                 className="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold text-xs transition-colors"
+              >
+                Ver Tienda
+              </Link>
+            </div>
+          </div>
+        ) : items.length === 0 && !cotizacionParam ? (
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border border-gray-200/80 shadow-md text-center max-w-lg mx-auto space-y-5 my-8">
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 text-gray-400 flex items-center justify-center mx-auto">
+              <Package className="w-9 h-9 stroke-[1.5]" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-black text-gray-900">Tu carrito está vacío</h2>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                No tienes productos o paquetes agregados a tu cotización. Selecciona una solución o equipo de nuestro catálogo para continuar con el proceso de checkout.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+              <Link
+                href="/soluciones"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#7A1428] text-white text-xs font-bold hover:bg-[#4A0C18] transition-all shadow-xs"
+              >
+                Ver Soluciones
+                <ArrowRight className="w-4 h-4 text-[#C9A15B]" />
+              </Link>
+              <Link
+                href="/tienda"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-gray-300 text-gray-700 text-xs font-bold hover:bg-gray-50 transition-all"
               >
                 Ver Tienda
               </Link>

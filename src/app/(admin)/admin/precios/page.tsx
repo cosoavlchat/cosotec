@@ -233,6 +233,23 @@ export default function AdminPreciosPage() {
             <p className="text-[11px] text-gray-500">Expira enlace de pago público</p>
           </div>
 
+          {/* Máximo de Unidades por Item en Carrito */}
+          <div className="space-y-1.5 p-3.5 rounded-xl bg-gray-50/70 border border-gray-200/70">
+            <label className="text-xs font-bold text-gray-700 block">Máx. Unidades por Producto</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="999"
+                value={pricing.maxUnidadesPorItem ?? 50}
+                onChange={(e) => setPricing({ ...pricing, maxUnidadesPorItem: Number(e.target.value) })}
+                className="w-20 text-sm font-bold px-2.5 py-1.5 border border-gray-300 rounded-lg bg-white"
+              />
+              <span className="text-xs text-gray-500">unidades por línea</span>
+            </div>
+            <p className="text-[11px] text-gray-500">Límite permitido en carrito y cotizador</p>
+          </div>
+
           {/* Instalación de Accesorios con Equipo Principal */}
           <div className="space-y-1.5 p-3.5 rounded-xl bg-gray-50/70 border border-gray-200/70 col-span-1 sm:col-span-2 lg:col-span-4">
             <label className="text-xs font-bold text-gray-700 block">Regla de Instalación de Accesorios</label>

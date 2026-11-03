@@ -20,6 +20,7 @@ import {
 import { WHATSAPP_DISPLAY, TELEFONO_MATRIZ } from "@/lib/utils/whatsapp";
 import { trackAnalyticsEvent } from "@/lib/analytics";
 import { useCart } from "@/context/CartContext";
+import { CartDrawer } from "@/components/cart/CartDrawer";
 
 const solucionesList = [
   { name: "Autos y Camionetas", href: "/soluciones/auto-camioneta", icon: Car },
@@ -36,7 +37,7 @@ export function PublicNavbar() {
   const [solutionsDropdownOpen, setSolutionsDropdownOpen] = useState(false);
   const [mobileSolutionsOpen, setMobileSolutionsOpen] = useState(false);
   const pathname = usePathname();
-  const { items } = useCart();
+  const { items, openCartDrawer } = useCart();
   const cartCount = items?.reduce((sum, it) => sum + it.cantidad, 0) || 0;
 
   const handleCtaClick = () => {
@@ -186,10 +187,11 @@ export function PublicNavbar() {
 
           {/* Action CTA & Mobile Trigger */}
           <div className="flex items-center gap-2 sm:gap-3">
-            <Link
-              href="/checkout"
-              className="relative p-2.5 rounded-xl border border-gray-200 text-gray-700 hover:text-[#7A1428] hover:border-[#7A1428]/30 hover:bg-[#7A1428]/5 transition-all"
-              aria-label={`Ver carrito y checkout (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
+            <button
+              type="button"
+              onClick={openCartDrawer}
+              className="relative p-2.5 rounded-xl border border-gray-200 text-gray-700 hover:text-[#7A1428] hover:border-[#7A1428]/30 hover:bg-[#7A1428]/5 transition-all cursor-pointer"
+              aria-label={`Ver carrito y cotización (${cartCount} ${cartCount === 1 ? "artículo" : "artículos"})`}
             >
               <ShoppingCart className="w-5 h-5" />
               {cartCount > 0 && (
@@ -197,7 +199,7 @@ export function PublicNavbar() {
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             <Link
               href="/soluciones"
@@ -300,6 +302,7 @@ export function PublicNavbar() {
           </div>
         )}
       </header>
+      <CartDrawer />
     </>
   );
 }

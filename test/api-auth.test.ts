@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { PUT as putCatalogo } from "@/app/api/admin/catalogo/route";
 import { PUT as putPrecios } from "@/app/api/admin/precios/route";
 import { POST as postUpload } from "@/app/api/upload/route";
+import { GET as getPdfAdmin } from "@/app/api/admin/cotizaciones/[folio]/pdf/route";
 
 // Mock de servicios de backend para aislar la capa de autenticación y autorización en la API
 vi.mock("@/lib/services/catalog-service", () => ({
@@ -156,6 +157,22 @@ describe("Seguridad y Verificación de Roles en Rutas API (/api/admin/*)", () =>
 
       const res = await postUpload(req);
       expect(res.status).toBe(403);
+    });
+  });
+
+  describe("GET /api/admin/cotizaciones/[folio]/pdf", () => {
+    it("rechaza peticiones con token en query param (?token= o ?auth=) y responde 401 si falta encabezado Authorization", async () => {
+      const req1 = new NextRequest("http://localhost:3000/api/admin/cotizaciones/CT-1124451/pdf?token=test-token-admin");
+      const res1 = await getPdfAdmin(req1, { params: Promise.resolve({ folio: "CT-1124451" }) });
+      expect(res1.status).toBe(401);
+      const json1 = await res1.json();
+      expect(json1.error).toContain("Token de autenticación ausente");
+
+      const req2 = new NextRequest("http://localhost:3000/api/admin/cotizaciones/CT-1124451/pdf?auth=test-token-admin");
+      const res2 = await getPdfAdmin(req2, { params: Promise.resolve({ folio: "CT-1124451" }) });
+      expect(res2.status).toBe(401);
+      const json2 = await res2.json();
+      expect(json2.error).toContain("Token de autenticación ausente");
     });
   });
 });

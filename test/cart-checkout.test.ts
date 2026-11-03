@@ -39,6 +39,10 @@ vi.mock("@/lib/firebase/admin", () => {
   });
 
   return {
+    FieldValue: {
+      delete: vi.fn().mockReturnValue("__DELETE_FIELD__"),
+      serverTimestamp: vi.fn().mockReturnValue(new Date().toISOString()),
+    },
     adminDb: {
       collection: (col: string) => {
         const createQuery = (filters: Array<{ field: string; op: string; val: any }>) => ({
@@ -244,5 +248,152 @@ describe("Paso 3.3: Carrito y Checkout Seguro, Estados Unificados y Worker de Ab
     expect(verifyCartSession(null)).toBeNull();
     expect(verifyCartSession("")).toBeNull();
     expect(verifyCartSession("solo_un_string")).toBeNull();
+  });
+
+  it("Carrito: Permite eliminar un item y recalcula el total y montos en Firestore", async () => {
+    const cartId = generarCartId();
+    const item1: CartItem = {
+      id: "gps-estandar",
+      tipo: "producto",
+      nombre: "GPS Estándar",
+      categoria: "gps",
+      precioSinIvaCentavos: 399999,
+      cantidad: 1,
+      esEquipoPrincipal: true,
+      incluyeInstalacion: true,
+    };
+    const item2: CartItem = {
+      id: "boton-panico",
+      tipo: "producto",
+      nombre: "Botón de Pánico",
+      categoria: "accesorios",
+      precioSinIvaCentavos: 45000,
+      cantidad: 1,
+      esEquipoPrincipal: false,
+      incluyeInstalacion: false,
+    };
+
+    // Guardar con 2 items
+    const saved = await saveCartToFirestore({
+      id: cartId,
+      items: [item1, item2],
+    });
+    expect(saved.items.length).toBe(2);
+    expect(saved.calculo).toBeDefined();
+    const totalInicial = saved.calculo!.totalCentavos;
+
+    // Eliminar item2 (Botón de pánico)
+    const updated = await saveCartToFirestore({
+      id: cartId,
+      items: [item1],
+    });
+    expect(updated.items.length).toBe(1);
+    expect(updated.items[0].id).toBe("gps-estandar");
+    expect(updated.calculo!.totalCentavos).toBeLessThan(totalInicial);
+  });
+
+  it("Carrito: Modificar cantidad de items (+ y −) recalcula montos canónicos", async () => {
+    const cartId = generarCartId();
+    const item: CartItem = {
+      id: "gps-estandar",
+      tipo: "producto",
+      nombre: "GPS Estándar",
+      categoria: "gps",
+      precioSinIvaCentavos: 300000,
+      cantidad: 1,
+      esEquipoPrincipal: true,
+      incluyeInstalacion: true,
+    };
+
+    const cart1 = await saveCartToFirestore({ id: cartId, items: [item] });
+    expect(cart1.items[0].cantidad).toBe(1);
+    const subtotal1 = cart1.calculo!.subtotalBrutoCentavos;
+
+    // Aumentar a 3 unidades
+    const cart3 = await saveCartToFirestore({
+      id: cartId,
+      items: [{ ...item, cantidad: 3 }],
+    });
+    expect(cart3.items[0].cantidad).toBe(3);
+    expect(cart3.calculo!.subtotalBrutoCentavos).toBe(subtotal1 * 3);
+  });
+
+  it("Carrito: Vaciar carrito completo remueve items y cálculo en Firestore", async () => {
+    const cartId = generarCartId();
+    await saveCartToFirestore({
+      id: cartId,
+      items: sampleItems,
+    });
+
+    const cleared = await saveCartToFirestore({
+      id: cartId,
+      items: [],
+    });
+    expect(cleared.items.length).toBe(0);
+    expect(cleared.calculo).toBeUndefined();
+
+    const inDb = await getCartFromFirestore(cartId);
+    expect(inDb?.items.length).toBe(0);
+  });
+
+  it("Recálculo de Descuento por Volumen: Al pasar de 6 a 5 equipos principales el descuento cae del 10% al 0%", async () => {
+    const cartId = generarCartId();
+    const gpsItem: CartItem = {
+      id: "gps-flotilla",
+      tipo: "producto",
+      nombre: "GPS Flotilla 4G",
+      categoria: "gps",
+      precioSinIvaCentavos: 400000, // $4,000.00
+      cantidad: 6,
+      esEquipoPrincipal: true,
+      incluyeInstalacion: true,
+    };
+
+    // Caso A: 6 equipos principales (> 5 unidades)
+    const cart6 = await saveCartToFirestore({
+      id: cartId,
+      items: [gpsItem],
+    });
+    expect(cart6.calculo!.aplicaDescuentoVolumen).toBe(true);
+    expect(cart6.calculo!.porcentajeDescuentoVolumen).toBe(10);
+    expect(cart6.calculo!.descuentoVolumenCentavos).toBeGreaterThan(0);
+
+    // Caso B: Reducir cantidad de 6 a 5 equipos (umbral no alcanzado, <= 5)
+    const cart5 = await saveCartToFirestore({
+      id: cartId,
+      items: [{ ...gpsItem, cantidad: 5 }],
+    });
+    expect(cart5.calculo!.aplicaDescuentoVolumen).toBe(false);
+    expect(cart5.calculo!.porcentajeDescuentoVolumen).toBe(0);
+    expect(cart5.calculo!.descuentoVolumenCentavos).toBe(0);
+  });
+
+  it("Inmutabilidad de Cotización (Snapshot): Carrito con isQuoteSnapshot rechaza modificación de items", async () => {
+    const cartId = generarCartId();
+    await saveCartToFirestore({
+      id: cartId,
+      quoteFolio: "CT-1124459",
+      isQuoteSnapshot: true,
+      items: sampleItems,
+    });
+
+    // Intentar alterar productos de una cotización oficial de asesor
+    await expect(
+      saveCartToFirestore({
+        id: cartId,
+        items: [
+          ...sampleItems,
+          {
+            id: "hack-item",
+            tipo: "producto",
+            nombre: "Producto No Autorizado",
+            categoria: "gps",
+            precioSinIvaCentavos: 100,
+            cantidad: 1,
+            esEquipoPrincipal: false,
+          },
+        ],
+      })
+    ).rejects.toThrow(/Esta compra corresponde a la cotización CT-1124459; para cambios contacta a tu asesor/);
   });
 });

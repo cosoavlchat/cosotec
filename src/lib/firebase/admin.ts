@@ -69,6 +69,7 @@ try {
 }
 export const adminAuth = getAuth(adminApp);
 export const adminStorage = getStorage(adminApp);
+export { FieldValue };
 
 // Detector instantáneo de emulador local (evita bloqueos de red gRPC de 45s cuando no está levantado)
 let emulatorChecked = false;
